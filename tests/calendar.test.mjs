@@ -2,6 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calendarSegments, calendarHTML } from '../scripts/calendar.mjs';
 
+test('사용자 재현 사례: 10월 7일~27일 진행 중 업무는 4·7·7·3일 막대로 이어진다', () => {
+  const weeks=calendarSegments([{id:'test',date:'2026-10-07',due:'2026-10-27',workType:'long',status:'진행 중',title:'Test'}],'2026-09-27',35,'2026-10-27');
+  const segments=weeks.flatMap(week=>week.segments);
+  assert.deepEqual(segments.map(s=>s.span),[4,7,7,3]);
+  assert.equal(segments.reduce((sum,s)=>sum+s.span,0),21);
+});
+
 test('장기업무가 주·월 경계를 가로질러 이어지고 같은 주에서 겹치지 않는다', () => {
   const entries = [
     { id: 'long', date: '2026-10-29', due: '2026-11-05', workType: 'long', status: '진행 중', title: '기간 업무' },

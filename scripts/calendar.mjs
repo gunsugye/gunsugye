@@ -60,6 +60,7 @@ export function updateCalendarJs(js) {
  for(const entry of entries){if(entry.due&&entry.status!=='완료')dayDetails[entry.due]=(dayDetails[entry.due]||'')+'<span class="wx-cal-pill due">마감</span>';}
  calendar.innerHTML=calendarHTML(entries,{start:gridStart,count,today,selected,month,miniMode:mode,details:dayDetails});`);
   js = js.replace("function v298Click(e){", "function v298Click(e){const range=e.target.closest('[data-calendar-entry]');if(range){showModal(range.dataset.calendarEntry);return;}");
+  js = js.replace("entries.filter(e=>e.status!=='완료'&&journalVisibleOn(e,today)).map", "entries.filter(e=>e.status!=='완료').map");
   const general = `const gridStart=wxRangeV231==='week'?weekStart:calendarShift(wxCalendarMonth+'-01',-start);
  const count=wxRangeV231==='week'?7:Math.ceil((start+total)/7)*7;
  const dayDetails={};
@@ -88,6 +89,8 @@ export function updateCalendarJs(js) {
 
 export const calendarCSS = `
 .v298-grid{grid-template-columns:minmax(0,1fr)}
+.v298-priority-panel{order:-1}
+.v298-priority-list{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .calendar-range-week{grid-column:1/-1;position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
 .calendar-range-week .range-day{border-radius:0;min-height:calc(85px + var(--range-lanes)*30px);padding:8px 6px;border-color:#e3e9f0;background:#fff}
 .calendar-range-week .range-day.selected{padding:7px 5px;background:#eff6ff;border:2px solid #4483dc}

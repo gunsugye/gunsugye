@@ -26,6 +26,8 @@ const css = unpack('v275CssGzip') + calendarCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
+html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
+  .replace('v2.99 · Google Forms 조사', 'v3.02 · 기간 캘린더');
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
 html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">

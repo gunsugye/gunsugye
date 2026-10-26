@@ -243,7 +243,7 @@ function v298Render(mode){
  const gridStart=calendarShift(month+'-01',-offset),count=Math.ceil((offset+days)/7)*7,dayDetails={};
  for(const entry of entries){if(entry.due&&entry.status!=='완료')dayDetails[entry.due]=(dayDetails[entry.due]||'')+'<span class="wx-cal-pill due">마감</span>';}
  calendar.innerHTML=calendarHTML(entries,{start:gridStart,count,today,selected,month,miniMode:mode,details:dayDetails});
- const active=entries.filter(e=>e.status!=='완료'&&journalVisibleOn(e,today)).map(e=>({...v298PriorityInfo(e,today),e})).sort((a,b)=>a.rank-b.rank||(a.e.due||'9999-99-99').localeCompare(b.e.due||'9999-99-99')||(({긴급:0,높음:1,보통:2})[a.e.priority]??2)-(({긴급:0,높음:1,보통:2})[b.e.priority]??2)||String(a.e.date||'').localeCompare(String(b.e.date||'')));
+ const active=entries.filter(e=>e.status!=='완료').map(e=>({...v298PriorityInfo(e,today),e})).sort((a,b)=>a.rank-b.rank||(a.e.due||'9999-99-99').localeCompare(b.e.due||'9999-99-99')||(({긴급:0,높음:1,보통:2})[a.e.priority]??2)-(({긴급:0,높음:1,보통:2})[b.e.priority]??2)||String(a.e.date||'').localeCompare(String(b.e.date||'')));
  countEl.textContent=active.length+'건 미완료';
  const visible=v298Expanded[mode]?active.slice(0,80):active.slice(0,7);
  list.innerHTML=visible.length?visible.map(({e,label})=>{

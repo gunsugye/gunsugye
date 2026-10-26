@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-app-version="ae611be62e29bbac" lang="ko">
+<html data-app-version="2d7a758f0f8a8395" lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -67,7 +67,7 @@ body.v294-training-mode #sidebarMenu,body.v294-training-mode #wxAddMenu,body.v29
 body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 @media(max-width:700px){.mobile-nav .v294-mobile-training{white-space:nowrap}.mobile-nav .v294-mobile-training.hidden{display:none!important}body.v294-training-mode .mobile-nav [data-view]:not([data-view="today"]):not([data-view="train"]){display:none!important}}
 </style>
-<link rel="stylesheet" href="./assets/app.css?v=0336d09cae04bd7f">
+<link rel="stylesheet" href="./assets/app.css?v=41192e18c8ec8a40">
 <link rel="stylesheet" href="./assets/pages.css?v=f598b7ec7fca1f3b">
 <script src="./config.js?v=32d1574ddff155dc"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -148,7 +148,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div class="v273-detail" id="v273Detail" role="status"></div>
   <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
 </div>
-<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v2.99 · Google Forms 조사</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.02 · 기간 캘린더</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
  <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
  <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
 <div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
@@ -156,7 +156,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 <section class="v298-dashboard" id="diaryDashboardV298" aria-label="업무 우선순위 및 월간 캘린더">
   <div class="v298-grid">
    <section class="panel v298-calendar-panel"><div class="v298-head"><div><h2>월간 업무 캘린더</h2><p>날짜를 선택하면 아래 일지 기록도 바뀝니다.</p></div><div class="v298-controls"><button type="button" class="btn" data-v298-shift="-1" data-v298-mode="general" aria-label="이전 달">‹</button><strong id="v298GeneralMonth"></strong><button type="button" class="btn" data-v298-shift="1" data-v298-mode="general" aria-label="다음 달">›</button><button type="button" class="btn btn-soft" data-v298-today="general">오늘</button></div></div><div class="v298-legend"><span><i class="v298-dot v298-red"></i>마감 지남</span><span><i class="v298-dot v298-orange"></i>마감 임박</span><span><i class="v298-dot v298-blue"></i>진행 중</span><span><i class="v298-dot v298-green"></i>완료</span></div><div class="v298-cal" id="v298GeneralCalendar"></div><button type="button" class="v298-calendar-link" data-v298-full="general">전체 캘린더 보기 →</button></section>
-   <section class="panel v298-priority-panel"><div class="v298-head"><div><h2>우선 처리할 업무</h2><p>마감 경과 → 오늘 마감 → 임박 → 기타 미완료 순</p></div><span class="v298-total" id="v298GeneralCount">0건</span></div><div id="v298GeneralPriority" class="v298-priority-list" aria-live="polite"></div><button type="button" class="v298-more" data-v298-more="general" id="v298GeneralMore">더 보기</button></section>
+   <section class="panel v298-priority-panel"><div class="v298-head"><div><h2>마감 임박 · 우선 처리할 업무</h2><p>마감 경과 → 오늘 마감 → 임박 → 기타 미완료 순</p></div><span class="v298-total" id="v298GeneralCount">0건</span></div><div id="v298GeneralPriority" class="v298-priority-list" aria-live="polite"></div><button type="button" class="v298-more" data-v298-more="general" id="v298GeneralMore">더 보기</button></section>
   </div></section>
   <div class="stats-grid" id="dashboardStats"></div>
   <div class="workspace"><div>
@@ -175,7 +175,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 <section class="v298-dashboard" id="trainDiaryDashboardV298" aria-label="업무 우선순위 및 월간 캘린더">
   <div class="v298-grid">
    <section class="panel v298-calendar-panel"><div class="v298-head"><div><h2>훈련 업무 캘린더</h2><p>날짜를 선택하면 아래 훈련 일지 기록도 바뀝니다.</p></div><div class="v298-controls"><button type="button" class="btn" data-v298-shift="-1" data-v298-mode="training" aria-label="이전 달">‹</button><strong id="v298TrainingMonth"></strong><button type="button" class="btn" data-v298-shift="1" data-v298-mode="training" aria-label="다음 달">›</button><button type="button" class="btn btn-soft" data-v298-today="training">오늘</button></div></div><div class="v298-legend"><span><i class="v298-dot v298-red"></i>마감 지남</span><span><i class="v298-dot v298-orange"></i>마감 임박</span><span><i class="v298-dot v298-blue"></i>진행 중</span><span><i class="v298-dot v298-green"></i>완료</span></div><div class="v298-cal" id="v298TrainingCalendar"></div><button type="button" class="v298-calendar-link" data-v298-full="training">훈련 캘린더 보기 →</button></section>
-   <section class="panel v298-priority-panel"><div class="v298-head"><div><h2>우선 처리할 업무</h2><p>마감 경과 → 오늘 마감 → 임박 → 기타 미완료 순</p></div><span class="v298-total" id="v298TrainingCount">0건</span></div><div id="v298TrainingPriority" class="v298-priority-list" aria-live="polite"></div><button type="button" class="v298-more" data-v298-more="training" id="v298TrainingMore">더 보기</button></section>
+   <section class="panel v298-priority-panel"><div class="v298-head"><div><h2>마감 임박 · 우선 처리할 업무</h2><p>마감 경과 → 오늘 마감 → 임박 → 기타 미완료 순</p></div><span class="v298-total" id="v298TrainingCount">0건</span></div><div id="v298TrainingPriority" class="v298-priority-list" aria-live="polite"></div><button type="button" class="v298-more" data-v298-more="training" id="v298TrainingMore">더 보기</button></section>
   </div></section>
  <div class="v292-head"><div><b>성무기초군사훈련 · 전용 일지</b><p>일반학기 일지와 화면은 분리됩니다. 기훈 기록만 표시하며 저장은 기존 공용 업무기록 시트에 반영됩니다.</p></div><button type="button" class="btn btn-soft" data-training-quick="train">훈련 메뉴로</button></div>
  <div class="panel"><div class="panel-head"><div><h2 class="panel-title">성무훈련 일자별 업무일지</h2><p class="panel-sub" id="trainJournalCountV292">훈련 기록을 조회합니다.</p></div><div class="v292-actions"><button class="btn" type="button" id="trainJournalPrevV292">‹</button><input type="date" id="trainJournalDayV292" class="field" aria-label="훈련 일지 조회 날짜"><button class="btn" type="button" id="trainJournalNextV292">›</button></div></div><div class="v292-actions"><button type="button" id="trainJournalAddV292" class="btn btn-primary">+ 훈련 업무 등록</button><button type="button" class="btn btn-soft" id="trainJournalCalendarV292">훈련 캘린더로 이동 →</button></div><div id="trainJournalRowsV292" class="v292-list"></div></div>
