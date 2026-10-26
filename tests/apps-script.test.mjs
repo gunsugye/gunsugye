@@ -14,7 +14,7 @@ function fixture() {
     ['LOGBOOK_FULL_EDITOR_EMAILS_V281', '["editor@gmail.com"]'],
     ['LOGBOOK_LIMITED_EDITOR_EMAILS_V226', '["limited@gmail.com"]']
   ]);
-  const props = { getProperty: key => values.get(key) ?? null, setProperty: (key, value) => values.set(key, value) };
+  const props = { getProperty: key => values.get(key) ?? null, setProperty: (key, value) => values.set(key, value), deleteProperty: key => values.delete(key), getProperties: () => Object.fromEntries(values) };
   const cache = new Map();
   const context = vm.createContext({
     console,
@@ -23,6 +23,7 @@ function fixture() {
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
     Utilities: {
       Charset: { UTF_8: 'utf8' }, DigestAlgorithm: { SHA_256: 'sha256' },
+      getUuid: randomUUID,
       computeHmacSha256Signature: (payload, key) => createHmac('sha256', key).update(payload).digest(),
       computeDigest: (_algorithm, value) => createHash('sha256').update(value).digest(),
       base64EncodeWebSafe: bytes => Buffer.from(bytes).toString('base64url')
@@ -43,6 +44,18 @@ test('원본 업무 함수가 공개 전역에 노출되지 않는다', () => {
   const { context } = fixture();
   for (const method of ['getBootstrap', 'saveEntry', 'requireOwner_', 'config_', 'setupLogbook', 'grantFullEditorV281']) assert.equal(context[method], undefined);
   assert.equal(typeof context.doPost, 'function');
+});
+
+test('서버 세션은 만료·계정 불일치·로그아웃 이후 요청을 차단한다', () => {
+  const { context, values, signed, rpc } = fixture();
+  const sessionId = randomUUID();
+  values.set('PAGES_SESSION_' + sessionId, JSON.stringify({ email: 'owner@gmail.com', sub: 'google-sub-owner@gmail.com', expiresAt: Date.now() + 86400000 }));
+  assert.equal(rpc(signed(undefined, undefined, [], { sessionId })).ok, true);
+  assert.equal(rpc(signed('editor@gmail.com', undefined, [], { sessionId })).code, 'SESSION_EXPIRED');
+  assert.equal(rpc(signed(undefined, 'pagesSessionLogout', [], { sessionId })).ok, true);
+  assert.equal(rpc(signed(undefined, undefined, [], { sessionId })).code, 'SESSION_EXPIRED');
+  values.set('PAGES_SESSION_' + sessionId, JSON.stringify({ email: 'owner@gmail.com', sub: 'google-sub-owner@gmail.com', expiresAt: Date.now() - 1 }));
+  assert.throws(() => context.pagesCheckSession_({ sessionId, email: 'owner@gmail.com', sub: 'google-sub-owner@gmail.com' }));
 });
 test('서명된 소유자는 기존 계정 관리 조회를 할 수 있다', () => {
   const { rpc, signed } = fixture();

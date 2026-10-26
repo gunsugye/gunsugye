@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { updateJournalJs, updateJournalHtml } from './journal.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -12,11 +13,11 @@ const unpack = id => {
   if (!match) throw new Error(`압축 원본을 찾을 수 없습니다: ${id}`);
   return gunzipSync(Buffer.from(match[1].replace(/\s/g, ''), 'base64')).toString('utf8');
 };
-const js = unpack('v275JsGzip')
+const js = updateJournalJs(unpack('v275JsGzip')
   .replace(/const maxWait=method==='getBootstrap'\?23000:method==='pingConnectionV273'\?12000:30000;/,
     'const maxWait=90000;')
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
-    "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'");
+    "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
 const css = unpack('v275CssGzip');
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
@@ -26,7 +27,13 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
  <div class="pages-login-card">
   <p class="pages-eyebrow">군수계 업무일지</p><h1 id="pagesLoginTitle">Google 계정으로 로그인</h1>
-  <p>등록된 계정으로 로그인하면 업무일지를 불러옵니다.</p>
+  <p>등록된 Google 계정으로 로그인하세요.<br>같은 브라우저에서 30일간 로그인이 유지됩니다.</p>
+  <form id="pagesEmailForm" class="pages-email-form">
+   <label for="pagesEmail">이메일 직접 입력 <span>(선택)</span></label>
+   <input id="pagesEmail" type="email" autocomplete="username" inputmode="email" maxlength="254" placeholder="example@gmail.com" aria-describedby="pagesEmailHelp">
+   <p id="pagesEmailHelp">이메일을 입력하면 해당 Google 계정으로 로그인하도록 안내합니다.</p>
+   <button type="submit">입력한 이메일 적용</button>
+  </form>
   <div id="pagesGoogleButton"></div>
   <p id="pagesLoginStatus" role="status" aria-live="polite">연결 설정을 확인하고 있습니다.</p>
   <button id="pagesRetry" type="button" hidden>다시 시도</button>
@@ -34,7 +41,7 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
 </section>
 <div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>`);
 html = html.replace('</body>', '<script src="./assets/pages.js"></script>\n</body>');
-write('docs/index.html', html);
+write('docs/index.html', updateJournalHtml(html));
 write('docs/assets/app.css', css);
 // app.js는 인증 성공 후에만 로드합니다. 원래 google.script.run 호출은 pages.js 어댑터로 연결합니다.
 write('docs/assets/app.js', js);

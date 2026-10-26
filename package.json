@@ -5,7 +5,16 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node tests/run.mjs",
-    "package": "node scripts/package.mjs"
+    "package": "node scripts/package.mjs",
+    "deploy": "node scripts/deploy.mjs --publish",
+    "deploy:check": "node scripts/deploy.mjs --check",
+    "deploy:preview": "node scripts/deploy.mjs --dry-run"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.4.1",
+    "wrangler": "^4.153.0"
+  }
 }

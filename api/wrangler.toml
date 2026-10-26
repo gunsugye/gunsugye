@@ -1,6 +1,11 @@
 name = "logbook-api"
 main = "worker.mjs"
 compatibility_date = "2026-10-26"
+keep_vars = true
+preview_urls = false
+
+[observability]
+enabled = true
 
 [vars]
 # 경로 없이 origin만 입력. 프로젝트 Pages의 /저장소명 경로는 포함하지 않습니다.

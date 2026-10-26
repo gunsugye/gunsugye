@@ -1,111 +1,69 @@
-/* Google ID 토큰은 메모리에만 보관합니다. 새로고침 시 다시 로그인합니다. */
+﻿/* Google 토큰은 메모리에서만 사용하며 서버 발급 세션을 30일 보관합니다. */
 (() => {
-  'use strict';
-  const config = window.LOGBOOK_CONFIG || {};
-  const $ = id => document.getElementById(id);
-  let token = '', expiresAt = 0, appLoaded = false, expiryTimer, authenticating = false;
-  const status = message => { $('pagesLoginStatus').textContent = message; };
-  function showLogin(message) {
-    token = ''; expiresAt = 0; clearTimeout(expiryTimer);
-    $('pagesLogin').hidden = false; $('pagesSession').hidden = true;
-    if (appLoaded) {
-      $('pagesGoogleButton').hidden = true;
-      $('pagesRetry').hidden = false;
-      $('pagesRetry').textContent = '새로고침 후 다시 로그인';
-    }
-    if (message) status(message);
-  }
-  async function call(method, args = []) {
-    if (!token || Date.now() >= expiresAt) {
-      showLogin('로그인 시간이 만료되었습니다. 새로고침 후 다시 로그인하세요.');
-      throw Error('Google 로그인이 필요합니다.');
-    }
-    let response;
-    try {
-      response = await fetch(config.apiUrl.replace(/\/$/, '') + '/rpc', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ method, args }), cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(90000)
-      });
-    } catch { throw Error('서버 응답을 확인할 수 없습니다. 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'); }
-    let body;
-    try { body = await response.json(); }
-    catch { throw Error('API 서버 응답 형식을 확인하세요.'); }
-    if (response.status === 401) showLogin('Google 로그인이 만료되었습니다. 다시 로그인하세요.');
-    if (!response.ok || !body.ok) throw Error(body.error || '요청 처리에 실패했습니다.');
-    return body.result;
-  }
-  // 기존 화면의 콜백/체이닝 계약을 유지합니다. 사용자 객체도 지원합니다.
-  function runner(success, failure, userObject) {
-    return new Proxy({}, { get(_target, name) {
-      if (name === 'withSuccessHandler') return fn => runner(fn, failure, userObject);
-      if (name === 'withFailureHandler') return fn => runner(success, fn, userObject);
-      if (name === 'withUserObject') return object => runner(success, failure, object);
-      if (name === 'then' || typeof name !== 'string') return undefined;
-      return (...args) => { call(name, args).then(result => success?.(result, userObject), error => failure ? failure(error, userObject) : console.error(error.message)); };
-    } });
-  }
-  window.google = window.google || {};
-  window.google.script = { run: runner() };
-  $('pagesLogout').addEventListener('click', () => {
-    if (!confirm('저장 중인 작업이 있다면 먼저 완료하세요. 로그아웃하시겠습니까?')) return;
-    token = ''; window.google.accounts?.id.disableAutoSelect();
-    location.reload();
-  });
-  $('pagesRetry').addEventListener('click', () => location.reload());
-  async function onCredential(response) {
-    if (authenticating) return;
-    if (appLoaded) { location.reload(); return; } // 이전 계정 데이터와 새 계정 데이터를 섞지 않습니다.
-    authenticating = true;
-    status('로그인과 업무일지 접근 권한을 확인하고 있습니다.');
-    try {
-      // exp는 화면 타이머 용도입니다. 서명/이메일/권한의 신뢰 여부는 서버에서 검증합니다.
-      const middle = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const claims = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(middle.padEnd(Math.ceil(middle.length / 4) * 4, '=')), c => c.charCodeAt(0))));
-      token = response.credential; expiresAt = Number(claims.exp) * 1000;
-      if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) throw Error('로그인 시간이 만료되었습니다. 다시 로그인하세요.');
-      // 단순 ping이 아니라 권한과 실제 데이터 조회까지 성공해야 화면을 엽니다.
-      const bootstrap = await call('getBootstrap');
-      const originalCall = call;
-      let firstBootstrap = bootstrap;
-      // 최초 화면 로딩의 동일 조회를 한 번 재사용합니다. 이후 요청은 항상 서버로 보냅니다.
-      window.google.script.run = (() => {
-        const make = (success, failure, userObject) => new Proxy({}, { get(_target, name) {
-          if (name === 'withSuccessHandler') return fn => make(fn, failure, userObject);
-          if (name === 'withFailureHandler') return fn => make(success, fn, userObject);
-          if (name === 'withUserObject') return obj => make(success, failure, obj);
-          if (name === 'then' || typeof name !== 'string') return undefined;
-          return (...args) => {
-            let pending;
-            if (firstBootstrap && ((name === 'readCompressedV282' && args[0] === 'getBootstrap') || name === 'getBootstrap')) {
-              pending = Promise.resolve(firstBootstrap); firstBootstrap = null;
-            } else pending = originalCall(name, args);
-            pending.then(result => success?.(result, userObject), error => failure ? failure(error, userObject) : console.error(error.message));
-          };
-        } });
-        return make();
-      })();
-      $('pagesAccount').textContent = bootstrap.userEmail || '로그인됨';
-      $('pagesSession').hidden = false;
-      const script = document.createElement('script'); script.src = './assets/app.js';
-      script.onerror = () => { showLogin('화면 파일을 불러오지 못했습니다. 다시 시도하세요.'); $('pagesRetry').hidden = false; };
-      script.onload = () => { $('pagesLogin').hidden = true; };
-      appLoaded = true; document.body.appendChild(script);
-      expiryTimer = setTimeout(() => showLogin('로그인 시간이 만료되었습니다. 작업을 계속하려면 다시 로그인하세요.'), Math.max(1, expiresAt - Date.now()));
-    } catch (error) {
-      showLogin(error.message || '로그인에 실패했습니다.');
-    } finally { authenticating = false; }
-  }
-  function init(attempt = 0) {
-    if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(config.googleClientId || '') || !/^https:\/\//.test(config.apiUrl || '')) {
-      status('관리자 설정이 필요합니다. docs/config.js에 Google 클라이언트 ID와 API 주소를 입력하세요.'); return;
-    }
-    if (!window.google.accounts?.id) {
-      if (attempt >= 150) { status('Google 로그인 화면을 불러오지 못했습니다. 네트워크 연결을 확인하세요.'); $('pagesRetry').hidden = false; return; }
-      setTimeout(() => init(attempt + 1), 100); return;
-    }
-    window.google.accounts.id.initialize({ client_id: config.googleClientId, callback: onCredential, auto_select: false });
-    window.google.accounts.id.renderButton($('pagesGoogleButton'), { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', locale: 'ko' });
-    status('관리자에게 등록한 Google 계정으로 로그인하세요.');
-  }
-  init();
+'use strict';
+const config=window.LOGBOOK_CONFIG||{}, key='logbook.session.v1', $=id=>document.getElementById(id);
+let token='',expiresAt=0,appLoaded=false,authenticating=false,firstBootstrap=null;
+const status=message=>{$('pagesLoginStatus').textContent=message;};
+function forget(){token='';expiresAt=0;try{localStorage.removeItem(key);}catch(_){}}
+function showLogin(message){forget();$('pagesLogin').hidden=false;$('pagesSession').hidden=true;if(appLoaded){$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;}status(message);}
+async function request(path,method,args=[]){
+ const loginEmail=path==='/session'?String($('pagesEmail').value||'').trim().toLowerCase():undefined;
+ let response;try{response=await fetch(config.apiUrl.replace(/\/$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({method,args,...(loginEmail?{loginEmail}:{})}),cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(90000)});}
+ catch{throw Error('서버 응답을 확인할 수 없습니다. 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.');}
+ let body;try{body=await response.json();}catch{throw Error('API 서버 응답 형식을 확인하세요.');}
+ if(response.status===401||response.status===403)showLogin(body.error||'다시 로그인하세요.');
+ if(!response.ok||!body.ok)throw Error(body.error||'요청 처리에 실패했습니다.');return body.result;
+}
+async function call(method,args=[]){
+ if(!token||Date.now()>=expiresAt){showLogin('로그인 유지 기간이 만료되었습니다. 다시 로그인하세요.');throw Error('Google 로그인이 필요합니다.');}
+ if(firstBootstrap&&(method==='getBootstrap'||(method==='readCompressedV282'&&args[0]==='getBootstrap'))){const result=firstBootstrap;firstBootstrap=null;return result;}
+ return request('/rpc',method,args);
+}
+function runner(success,failure,userObject){return new Proxy({},{get(_target,name){
+ if(name==='withSuccessHandler')return fn=>runner(fn,failure,userObject);
+ if(name==='withFailureHandler')return fn=>runner(success,fn,userObject);
+ if(name==='withUserObject')return object=>runner(success,failure,object);
+ if(name==='then'||typeof name!=='string')return undefined;
+ return(...args)=>{call(name,args).then(result=>success?.(result,userObject),error=>failure?failure(error,userObject):console.error(error.message));};
+}});}
+window.google=window.google||{};window.google.script={run:runner()};
+function loadApp(bootstrap){
+ firstBootstrap=bootstrap;$('pagesAccount').textContent=bootstrap.userEmail||'로그인됨';$('pagesSession').hidden=false;
+ if(appLoaded){location.reload();return;}
+ const script=document.createElement('script');script.src='./assets/app.js';
+ script.onerror=()=>{showLogin('화면 파일을 불러오지 못했습니다. 다시 시도하세요.');$('pagesRetry').hidden=false;};
+ script.onload=()=>{$('pagesLogin').hidden=true;};appLoaded=true;document.body.appendChild(script);
+}
+$('pagesLogout').addEventListener('click',async()=>{
+ if(!confirm('저장 중인 작업이 있다면 먼저 완료하세요. 로그아웃하시겠습니까?'))return;
+ try{await request('/logout','logout');}catch(error){if(token){alert('로그아웃을 완료하지 못했습니다. 연결을 확인하고 다시 시도하세요.');return;}}
+ forget();window.google.accounts?.id.disableAutoSelect();location.reload();
+});
+$('pagesRetry').addEventListener('click',()=>location.reload());
+$('pagesEmailForm').addEventListener('submit',event=>{
+ event.preventDefault();if(authenticating)return;
+ if(!$('pagesEmail').reportValidity())return;
+ initGoogle();status($('pagesEmail').value.trim()?'이메일을 적용했습니다. 아래 Google 버튼을 눌러 계속하세요.':'아래 Google 버튼에서 계정을 선택하세요.');
+});
+async function onCredential(response){
+ if(authenticating)return;authenticating=true;status('로그인과 업무일지 접근 권한을 확인하고 있습니다.');
+ try{if(!$('pagesEmail').reportValidity())throw Error('이메일 형식을 확인하세요.');token=response.credential;const session=await request('/session','login');token=session.token;expiresAt=session.expiresAt;
+ if(!token?.startsWith('session.')||!Number.isFinite(expiresAt))throw Error('API 서버를 새 버전으로 배포하세요.');
+ try{localStorage.setItem(key,JSON.stringify({token,expiresAt}));}catch(_){status('이 브라우저에서는 로그인 유지가 지원되지 않습니다.');}
+ loadApp(session.bootstrap);
+ }catch(error){showLogin(error.message||'로그인에 실패했습니다.');}finally{authenticating=false;}
+}
+function initGoogle(attempt=0){
+ if(!window.google.accounts?.id){if(attempt>=150){status('Google 로그인 화면을 불러오지 못했습니다.');$('pagesRetry').hidden=false;return;}setTimeout(()=>initGoogle(attempt+1),100);return;}
+ window.google.accounts.id.initialize({client_id:config.googleClientId,callback:onCredential,auto_select:false,login_hint:String($('pagesEmail').value||'').trim()||undefined});
+ $('pagesGoogleButton').textContent='';
+ window.google.accounts.id.renderButton($('pagesGoogleButton'),{type:'standard',theme:'filled_blue',size:'large',text:'continue_with',width:Math.min(400,$('pagesGoogleButton').clientWidth||320),locale:'ko'});
+}
+async function init(){
+ if(!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(config.googleClientId||'')||!/^https:\/\//.test(config.apiUrl||'')){status('관리자 설정이 필요합니다. docs/config.js에 Google 클라이언트 ID와 API 주소를 입력하세요.');return;}
+ try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.token?.startsWith('session.')&&saved.expiresAt>Date.now()){token=saved.token;expiresAt=saved.expiresAt;status('저장된 로그인으로 업무일지를 불러옵니다.');loadApp(await call('getBootstrap'));return;}}
+ catch(error){if(token){status(error.message);$('pagesRetry').hidden=false;return;}}
+ forget();status('등록된 Google 계정으로 로그인하세요. 같은 브라우저에서 30일간 유지됩니다.');initGoogle();
+}
+init();
 })();

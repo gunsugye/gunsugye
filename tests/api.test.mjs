@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import worker, { verifyGoogleToken, signPayload, handleRequest, readBody } from '../api/worker.mjs';
+import worker, { verifyGoogleToken, signPayload, handleRequest, readBody, sessionToken, verifySession } from '../api/worker.mjs';
 
 const now = Date.now();
 const clientId = 'test-client.apps.googleusercontent.com';
@@ -15,7 +15,36 @@ async function token(claims = {}, header = {}) {
   return body + '.' + Buffer.from(signature).toString('base64url');
 }
 const certs = async () => Response.json({ keys: [jwk] }, { headers: { 'Cache-Control': 'max-age=600' } });
+test('30일 세션은 서명·만료·위조를 검사하고 Google 인증 없이 검증된다', async () => {
+  const actor = { email: 'owner@gmail.com', sub: '123', sessionId: crypto.randomUUID(), expiresAt: now + 30 * 86400000 };
+  const value = await sessionToken(actor, 'secret');
+  assert.deepEqual(await verifySession(value, 'secret', now), { email: actor.email, sub: actor.sub, sessionId: actor.sessionId });
+  await assert.rejects(verifySession(value, 'other', now));
+  await assert.rejects(verifySession(value, 'secret', actor.expiresAt));
+  await assert.rejects(verifySession(value.replace('session.', 'session.A'), 'secret', now));
+});
 const env = { ALLOWED_ORIGINS: 'https://example.github.io', GOOGLE_CLIENT_ID: clientId, API_SHARED_SECRET: 'a-long-random-test-secret-at-least-32-characters', APPS_SCRIPT_URL: 'https://script.google.com/macros/s/test/exec' };
+test('로그인 발급과 세션 요청은 검증된 계정 및 서버 세션ID만 전달한다', async () => {
+  const sessionId = crypto.randomUUID(), expiresAt = Date.now() + 30 * 86400000 - 1000;
+  const forwarded = [];
+  const fetcher = async (url, options) => {
+    if (url.includes('/certs')) return certs();
+    const actor = JSON.parse(JSON.parse(options.body).payload); forwarded.push(actor);
+    return Response.json({ ok: true, result: actor.method === 'pagesSessionCreate' ? { sessionId, expiresAt, bootstrap: { userEmail: actor.email } } : true });
+  };
+  const login = new Request('https://api.example/session', { method: 'POST', headers: { Origin: env.ALLOWED_ORIGINS, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'login', args: [] }) });
+  const result = await (await handleRequest(login, env, fetcher)).json();
+  assert.equal(forwarded[0].method, 'pagesSessionCreate');
+  assert.ok(result.result.token.startsWith('session.'));
+  assert.equal((await handleRequest(request({ method: 'getBootstrap', args: [], sessionId: 'fake' }, result.result.token), env, fetcher)).status, 200);
+  assert.equal(forwarded[1].sessionId, sessionId);
+});
+test('이메일 직접 입력이 인증된 Google 계정과 다르면 세션을 발급하지 않는다', async () => {
+  let forwarded = false;
+  const login = new Request('https://api.example/session', { method: 'POST', headers: { Origin: env.ALLOWED_ORIGINS, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'login', args: [], loginEmail: 'other@gmail.com' }) });
+  const response = await handleRequest(login, env, async url => { if (url.includes('/certs')) return certs(); forwarded = true; });
+  assert.equal(response.status, 403); assert.equal(forwarded, false);
+});
 function request(body = { method: 'getBootstrap', args: [] }, credential, origin = 'https://example.github.io') {
   return new Request('https://api.example/rpc', { method: 'POST', headers: { Origin: origin, Authorization: 'Bearer ' + credential, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 }

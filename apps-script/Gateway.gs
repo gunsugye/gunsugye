@@ -7,11 +7,42 @@ function doGet() {
 function doPost(e) {
   try {
     const actor = pagesVerifyRequest_(e);
+    if (actor.sessionId) pagesCheckSession_(actor);
+    if (actor.method === 'pagesSessionLogout') {
+      if (actor.sessionId) PropertiesService.getScriptProperties().deleteProperty('PAGES_SESSION_' + actor.sessionId);
+      return pagesJson_({ ok: true, result: true });
+    }
+    if (actor.method === 'pagesSessionCreate') {
+      const bootstrap = pagesCreateLegacy_(actor).call('getBootstrap', []);
+      const props = PropertiesService.getScriptProperties(), now = Date.now();
+      const all = props.getProperties();
+      let count = 0;
+      Object.keys(all).filter(k => k.indexOf('PAGES_SESSION_') === 0).forEach(k => {
+        let value; try { value = JSON.parse(all[k]); } catch (_) {}
+        if (!value || value.expiresAt <= now) props.deleteProperty(k);
+        else if (value.email === actor.email) count++;
+      });
+      if (count >= 30) throw Error('로그인한 기기가 너무 많습니다. 기존 기기에서 로그아웃하세요.');
+      const sessionId = Utilities.getUuid(), expiresAt = now + 30 * 86400000;
+      props.setProperty('PAGES_SESSION_' + sessionId, JSON.stringify({ email: actor.email, sub: actor.sub, expiresAt: expiresAt }));
+      return pagesJson_({ ok: true, result: { bootstrap: bootstrap, sessionId: sessionId, expiresAt: expiresAt } });
+    }
     const result = pagesCreateLegacy_(actor).call(actor.method, actor.args);
     return pagesJson_({ ok: true, result: result === undefined ? null : result });
   } catch (error) {
     // 스택, 토큰, 서명, 원문 요청은 응답/로그에 기록하지 않습니다.
     return pagesJson_({ ok: false, code: error.pagesCode || 'APPLICATION_ERROR', error: String(error.message || error).slice(0, 1000) });
+  }
+}
+
+function pagesCheckSession_(actor) {
+  let stored;
+  if (/^[0-9a-f-]{36}$/.test(actor.sessionId)) {
+    try { stored = JSON.parse(PropertiesService.getScriptProperties().getProperty('PAGES_SESSION_' + actor.sessionId) || 'null'); } catch (_) {}
+  }
+  if (!stored || stored.email !== actor.email || stored.sub !== actor.sub || stored.expiresAt <= Date.now()) {
+    const error = new Error('로그인 유지 기간이 만료되었거나 로그아웃한 기기입니다. 다시 로그인하세요.');
+    error.pagesCode = 'SESSION_EXPIRED'; throw error;
   }
 }
 
