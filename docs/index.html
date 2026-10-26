@@ -131,10 +131,10 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
  <section id="navOrderControls" class="nav-order-controls hidden" aria-label="메뉴 순서 관리">
   <button id="navEditButton" class="nav-order-edit" type="button" title="상위·하위 메뉴 편집">☷ 메뉴 구성 편집</button>
   <div id="navEditActions" class="nav-order-actions hidden">
-    <p class="nav-order-help">☷ 이동 · ✎ 이름 변경 · × 메뉴 삭제(화면에서만 숨김) · ↩ 삭제 취소. 원본 시트·기록은 유지됩니다.</p>
+    <p class="nav-order-help">☷ 이동 · ✎ 이름 변경 · × 메뉴 구성에서 삭제. 삭제한 메뉴는 편집 목록에서도 제거됩니다. 업무 기록과 설문 응답은 유지됩니다.</p>
     <button id="navSaveButton" type="button" class="nav-order-save">변경사항 저장</button>
     <button id="navCancelButton" type="button" class="nav-order-cancel">취소</button>
-    <button id="navRestoreButtonV266" type="button" class="nav-order-cancel" title="숨겨 둔 모든 메뉴를 다시 표시">숨김 복원</button>
+    <button id="navRestoreButtonV266" type="button" class="nav-order-cancel" title="상위 메뉴나 기능 항목을 추가">＋ 메뉴 추가</button>
     <button id="navResetButton" type="button" class="nav-order-reset">기본 배치 복원</button>
   </div>
 </section>
@@ -875,5 +875,5 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
  </div>
 </div>
 <script src="./assets/pages.js"></script>
-</body>
+<dialog id="navCatalogV301" class="nav-catalog"><h2>메뉴 추가</h2><p>상위 메뉴를 추가하거나, 기존 상위 메뉴 안에 기능을 넣으세요.</p><label for="navAddGroupV301">상위 메뉴</label><select id="navAddGroupV301"></select><button id="navAddGroupButtonV301" type="button">상위 메뉴 추가</button><hr><label for="navAddParentV301">추가할 위치</label><select id="navAddParentV301"></select><label for="navAddItemV301">하위 메뉴</label><select id="navAddItemV301"></select><button id="navAddItemButtonV301" type="button">하위 메뉴 추가</button><button id="navCatalogCloseV301" type="button">닫기</button><p>추가 후 ‘변경사항 저장’을 누르면 적용됩니다.</p></dialog></body>
 </html>

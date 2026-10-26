@@ -4,6 +4,15 @@ import vm from 'node:vm';
 import { readFileSync, existsSync } from 'node:fs';
 import { journalVisibleOn } from '../scripts/journal.mjs';
 
+test('다시 불러오기와 백업 가져오기에서 업무유형·완료일을 유지한다', () => {
+  const app = readFileSync(new URL('../docs/assets/app.js', import.meta.url), 'utf8');
+  const fragment = app.slice(app.indexOf('function normalizeData('), app.indexOf('function makeId('));
+  const context = vm.createContext({ STATUSES: ['진행 중','완료'], PRIORITIES: ['보통'], DEFAULT_CATS: ['행정'], makeId: () => 'new' });
+  new vm.Script(fragment).runInContext(context);
+  const data = context.normalizeData({ categories: ['행정'], notes: {}, entries: [{ id: 'long', date: '2026-10-20', workType: 'long', status: '완료', completedOn: '2026-10-27' }] });
+  assert.equal(data.entries[0].workType, 'long'); assert.equal(data.entries[0].completedOn, '2026-10-27');
+});
+
 test('당일업무는 지정일만, 장기업무는 시작일부터 완료일까지 중복 생성 없이 표시한다', () => {
   const entry = { date: '2026-10-20', status: '진행 중' };
   assert.equal(journalVisibleOn(entry, '2026-10-21'), false);

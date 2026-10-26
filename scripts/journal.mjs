@@ -7,6 +7,7 @@ export function journalVisibleOn(entry, day) {
 export function updateJournalJs(js) {
   js = `const journalVisibleOn = ${journalVisibleOn.toString()};\n` + js;
   js = js.replaceAll('e=>e.date===selectedDay', 'e=>journalVisibleOn(e,selectedDay)')
+    .replace("date:String(e.date),time:", "date:String(e.date),workType:e.workType==='long'?'long':'daily',completedOn:/^\\d{4}-\\d{2}-\\d{2}$/.test(e.completedOn||'')?e.completedOn:'',time:")
     .replaceAll('e=>e.date===day', 'e=>journalVisibleOn(e,day)')
     .replaceAll('e=>e.date===trainJournalDateV292', 'e=>journalVisibleOn(e,trainJournalDateV292)')
     .replaceAll('e=>e.date===trainCalendarSelectedV292', 'e=>journalVisibleOn(e,trainCalendarSelectedV292)')
