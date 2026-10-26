@@ -1,0 +1,8 @@
+import { existsSync } from 'node:fs';
+await import('./api.test.mjs');
+await import('./static.test.mjs');
+if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
+  await import('./apps-script.test.mjs');
+} else {
+  console.log('비공개 Legacy.gs가 없어 Apps Script 업무 통합 테스트는 로컬에서 실행합니다.');
+}

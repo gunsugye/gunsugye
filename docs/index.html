@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#13243a">
+<title>군수계 업무일지 v2.99 | Google Forms 조사</title>
+
+<!-- v2.73: PDF 라이브러리는 PDF 추출을 요청할 때만 로드하여 초기화 차단 방지 -->
+<style>
+/* v2.73 · 화면 스크립트가 중단되어도 연결 상태 및 복구 버튼을 유지합니다. */
+#cloudRecoveryV273{display:none;position:relative;margin:11px 16px 9px;padding:14px 16px;border:1px solid #d4e0ef;border-left:4px solid #376ab8;border-radius:10px;background:#f4f8fd;color:#213b59;font-size:12px;line-height:1.65;box-shadow:0 2px 5px rgba(14,38,80,.04)}
+#cloudRecoveryV273[data-state="error"]{background:#fff5f0;border-color:#efb7a7;border-left-color:#b94e32}
+#cloudRecoveryV273[data-state="slow"]{display:block}
+#cloudRecoveryV273[data-state="error"]{display:block}
+#cloudRecoveryV273 strong{font-size:14px;display:block;margin-bottom:3px}
+#cloudRecoveryV273 .v273-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+#cloudRecoveryV273 button{border:1px solid #c4d4e7;background:white;border-radius:7px;color:#1d4c81;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:700}
+#cloudRecoveryV273 .v273-detail{white-space:pre-wrap;word-break:break-word;margin-top:8px;color:#4c5969}
+#cloudRecoveryV273 .v273-muted{color:#64748b;font-size:11px;margin-top:5px}
+#cloudRecoveryV273 .v273-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+#v273Shortcut{border:1px solid #b9cee8;background:#fff;border-radius:7px;padding:6px 10px;color:#245584;font-size:12px;cursor:pointer;font-weight:700}
+</style>
+
+<style>
+.v288-active-term{display:inline-flex;align-items:center;margin-top:6px;padding:5px 11px;border:1px solid #b7d1ef;border-radius:999px;background:#eaf3ff;color:#174477;font-size:13px;font-weight:800;letter-spacing:.02em}
+.v288-active-term.hidden{display:none}
+.v288-term-controls{display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1fr) auto;gap:9px;align-items:center}
+.v288-history-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #e1e9f3}
+.v288-history-row label{font-size:13px;font-weight:700}.v288-history-row select{max-width:210px}.v288-history-row .help{font-size:12px}
+@media(max-width:760px){.v288-term-controls{grid-template-columns:1fr}.v288-history-row select{max-width:100%}}
+</style>
+<style>
+.v292-sidebar-links{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}.v292-sidebar-links .btn{padding:8px 4px;font-size:11px;white-space:normal}.v292-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.v292-head b{font-size:16px}.v292-head p{font-size:12px;color:var(--muted,#6d7991);margin:4px 0 0}.v292-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.v292-actions .field{width:155px}.v292-list{display:grid;gap:11px;padding-top:14px}.v292-task{border:1px solid #dce4ee;border-radius:12px;padding:15px;background:#fff;overflow-wrap:anywhere}.v292-task>b{font-size:15px;display:block;margin:7px 0}.v292-task p{font-size:13px;line-height:1.7;margin:7px 0;white-space:pre-wrap}.v292-task-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:#5b6b7f;font-size:11px}.v292-tag{border-radius:6px;background:#eaf1fc;color:#244c84;padding:4px 7px;font-weight:700}.v292-empty{padding:30px 15px;text-align:center;border:1px dashed #cfdbed;border-radius:12px;color:#68788f}.v292-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;padding-top:12px}.v292-weekday{text-align:center;font-weight:700;font-size:12px;color:#53627b;padding:8px}.v292-blank{min-height:86px}.v292-date{cursor:pointer;border:1px solid #dce5ef;border-radius:7px;min-height:90px;background:#fff;display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:5px;padding:7px;overflow:hidden}.v292-date strong{font-size:12px}.v292-date.active{border-color:#3467a8;background:#edf4fe}.v292-date.today strong{color:#1762bf}.v292-calendar-pill{border-radius:5px;background:#e0ecfe;color:#1d487c;font-size:10px;padding:3px;word-break:break-all}.v292-date small{font-size:9px;color:#5c718b}@media(max-width:700px){.v292-head,.v292-calendar-grid{min-width:0}.v292-head{flex-direction:column;align-items:stretch}.v292-date{min-height:65px;padding:4px}.v292-calendar-pill{font-size:8px}.v292-weekday{font-size:10px}.v292-actions .field{width:130px}.v292-sidebar-links{grid-template-columns:1fr 1fr}}
+</style>
+<style>
+/* v2.93 calendar state colors */
+.v293-legend{display:flex;flex-wrap:wrap;align-items:center;gap:9px 15px;padding:10px 2px;color:#48576b;font-size:12px}
+.v293-legend>span{display:inline-flex;gap:5px;align-items:center}
+.v293-state-dot{display:inline-block;flex:0 0 8px;width:8px;height:8px;vertical-align:middle;border-radius:50%;background:#9ca7b8}
+.v293-state-dot.v293-waiting{background:#97a3b3}.v293-state-dot.v293-progress{background:#246fd2}.v293-state-dot.v293-paused{background:#e6a12c}.v293-state-dot.v293-complete{background:#2c956e}.v293-state-dot.v293-overdue{background:#d64949}
+.v293-task-pill,.v293-due-pill{display:flex!important;gap:4px;align-items:center;min-width:0;max-width:100%;padding:4px 5px;border-radius:6px;font-size:10px;line-height:1.3;font-weight:600;overflow:hidden;word-break:break-word}
+.v293-task-pill>span:last-child,.v293-due-pill>span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v293-task-pill.v293-progress,.v293-due-pill.v293-progress{background:#e8f1ff;color:#1754a3}.v293-task-pill.v293-paused,.v293-due-pill.v293-paused{background:#fff4da;color:#825312}.v293-task-pill.v293-complete,.v293-due-pill.v293-complete{background:#e2f5ea;color:#216b4e}.v293-task-pill.v293-waiting,.v293-due-pill.v293-waiting{background:#edf0f3;color:#4b5869}.v293-due-pill.v293-overdue{background:#fff0f0;color:#a62f2f}
+.v293-due-label{display:inline-flex;align-items:center;gap:6px;color:#3d536e;font-size:12px;font-weight:700}
+.v293-more{color:#5b6d80;font-size:10px}
+.v293-running-panel{background:#fff;border:1px solid #dde5ef;border-radius:12px;padding:15px;margin:14px 0 18px}
+.v293-running-header{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:10px;color:#26384e}
+.v293-running-header>b{font-size:15px}.v293-running-count{font-size:12px;border-radius:100px;background:#e7f1ff;padding:4px 10px;color:#245a92;font-weight:700}
+.v293-running-list{display:grid;gap:6px;max-height:310px;overflow-y:auto}
+.v293-running-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid #e6eaf0;border-radius:7px;padding:10px 12px;background:#fafcff;color:#263c59;cursor:pointer}
+.v293-running-row:hover{background:#eaf3ff;border-color:#bdd3ee}.v293-running-main{flex:1;min-width:0;display:grid;gap:3px}.v293-running-main>b{font-size:13px;white-space:normal;overflow-wrap:anywhere}.v293-running-main>small{font-size:11px;color:#697990}.v293-running-empty{text-align:center;padding:20px;font-size:12px;color:#748399}
+.v293-calendar-subhead{font-weight:800;color:#455b76;margin:12px 0 0}
+.v292-date .v293-task-pill,.v292-date .v293-due-pill{font-size:9px}
+.wx-day .v293-task-pill,.wx-day .v293-due-pill{font-size:9px}
+@media(max-width:650px){.v293-legend{gap:7px 10px;font-size:10px}.v292-date .v293-task-pill,.v292-date .v293-due-pill,.wx-day .v293-task-pill,.wx-day .v293-due-pill{font-size:8px;padding:2px}.v293-running-panel{padding:11px}}
+</style>
+<style>
+/* v2.94 · 운영모드는 스위치만, 해당 모드별 기능은 아래 메뉴로 분리 */
+#trainingSidebarMenuV294{display:flex;flex-direction:column;gap:4px;min-height:0}
+#trainingSidebarMenuV294.hidden{display:none!important}
+.v294-train-menu-section{color:#7ea5d5;font-size:11px;font-weight:800;letter-spacing:.45px;margin:7px 14px 4px}
+#trainingSidebarMenuV294 .nav-btn{min-height:43px;margin:2px 0;gap:11px;white-space:normal}
+.v294-nav-ico{display:grid;place-items:center;flex:none;width:20px;font-size:18px;color:#8ebeff}
+.v294-train-menu-note{font-size:11px;line-height:1.6;color:#91abc9;border-top:1px solid #354961;margin:13px 10px 0;padding-top:12px}
+body.v294-training-mode #sidebarMenu,body.v294-training-mode #wxAddMenu,body.v294-training-mode #navOrderControls{display:none!important}
+body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
+@media(max-width:700px){.mobile-nav .v294-mobile-training{white-space:nowrap}.mobile-nav .v294-mobile-training.hidden{display:none!important}body.v294-training-mode .mobile-nav [data-view]:not([data-view="today"]):not([data-view="train"]){display:none!important}}
+</style>
+<link rel="stylesheet" href="./assets/app.css">
+<link rel="stylesheet" href="./assets/pages.css">
+<script src="./config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
+ <div class="pages-login-card">
+  <p class="pages-eyebrow">군수계 업무일지</p><h1 id="pagesLoginTitle">Google 계정으로 로그인</h1>
+  <p>등록된 계정으로 로그인하면 업무일지를 불러옵니다.</p>
+  <div id="pagesGoogleButton"></div>
+  <p id="pagesLoginStatus" role="status" aria-live="polite">연결 설정을 확인하고 있습니다.</p>
+  <button id="pagesRetry" type="button" hidden>다시 시도</button>
+ </div>
+</section>
+<div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>
+<div class="app">
+<aside class="sidebar">
+ <div class="brand"><div class="brandmark"><svg viewBox="0 0 24 24"><path d="M7 3h10l3 3v15H4V3h3zM7 8h10M7 12h10M7 16h7"/></svg></div><div><small>LOGBOOK</small><strong>군수계 업무일지</strong></div></div>
+ <section id="journalModeBar" class="sidebar-mode-switch" aria-label="운영 모드 선택">
+  <span class="sidebar-mode-label">운영 모드</span>
+  <button type="button" class="btn btn-primary" data-train-nav="today">일반학기</button>
+  <button type="button" class="btn" data-train-nav="train">성무기초군사훈련</button>
+ </section>
+ <div class="nav-header" id="v294MenuHeading">일반학기 메뉴</div>
+ <nav id="trainingSidebarMenuV294" class="v294-training-menu hidden" aria-label="성무기초군사훈련 메뉴">
+   <div class="v294-train-menu-section">성무기초군사훈련</div>
+   <button type="button" class="nav-btn" data-training-quick="trainJournal"><span class="v294-nav-ico">▤</span><span>일자별 업무일지</span></button>
+   <button type="button" class="nav-btn" data-training-quick="trainCalendar"><span class="v294-nav-ico">▦</span><span>캘린더</span></button>
+   <button type="button" class="nav-btn" data-training-quick="train"><span class="v294-nav-ico">♧</span><span>예비생도 명단·자산 관리</span></button>
+   <div class="v294-train-menu-note">일지 데이터는 일반학기와 공유하며, 훈련 전용 화면에는 기훈 기록만 표시됩니다.</div>
+ </nav>
+ <nav id="sidebarMenu" aria-label="일반학기 메뉴">
+ <button class="nav-btn active" data-view="today"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3V10zM9 20v-7h6v7"/></svg>일자별 업무일지 · 일반학기</button>
+ <button class="nav-btn" data-view="all"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>전체 업무 관리</button>
+ <button class="nav-btn" data-view="stats"><svg viewBox="0 0 24 24"><path d="M5 21V12M12 21V4M19 21v-9"/></svg>업무 통계</button>
+ <button class="nav-btn" data-view="dorm">생활실 인원 현황</button>
+ <button class="nav-btn" data-view="roomAsset">생활실 비품 관리</button>
+ <button class="nav-btn" data-view="equipment"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><path d="M13 17h8M17 13v8"/></svg>공용비품 현황</button>
+ <button class="nav-btn" data-view="roster"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>명단(총기번호) 관리</button>
+ <button class="nav-btn" data-view="supply"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="8" rx="1"/><path d="M14 6h7M14 10h7M3 17h18M3 21h18"/></svg>군수품 관리 현황</button>
+ <button class="nav-btn" data-view="saber">예도 관리</button>
+ <button class="nav-btn" data-view="uniform">피복 사이즈표</button>
+ <button class="nav-btn" data-view="repairs"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3zM12 9v5M12 18h.01"/></svg>수리 필요 목록</button>
+ <button class="nav-btn" data-view="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>캘린더</button>
+ <button class="nav-btn" data-view="laborCalc">사역 계산</button>
+ <button class="nav-btn" data-view="laborRecords">사역 내역</button>
+ <button class="nav-btn" data-view="surveys">Google Forms 조사</button>
+ <button class="nav-btn" data-view="changes">수정 사항 내역</button>
+ <button class="nav-btn" data-view="access">편집 권한 부여</button>
+ <button class="nav-btn" data-view="staff">군수계 명단</button>
+ <button class="nav-btn" data-view="updates">업데이트 내역</button>
+ <button class="nav-btn" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>설정 · 백업</button>
+ </nav>
+ <button id="wxAddMenu" class="wx-add-menu hidden" type="button">＋ 새 메뉴 추가</button>
+ <section id="navOrderControls" class="nav-order-controls hidden" aria-label="메뉴 순서 관리">
+  <button id="navEditButton" class="nav-order-edit" type="button" title="상위·하위 메뉴 편집">☷ 메뉴 구성 편집</button>
+  <div id="navEditActions" class="nav-order-actions hidden">
+    <p class="nav-order-help">☷ 이동 · ✎ 이름 변경 · × 메뉴 삭제(화면에서만 숨김) · ↩ 삭제 취소. 원본 시트·기록은 유지됩니다.</p>
+    <button id="navSaveButton" type="button" class="nav-order-save">변경사항 저장</button>
+    <button id="navCancelButton" type="button" class="nav-order-cancel">취소</button>
+    <button id="navRestoreButtonV266" type="button" class="nav-order-cancel" title="숨겨 둔 모든 메뉴를 다시 표시">숨김 복원</button>
+    <button id="navResetButton" type="button" class="nav-order-reset">기본 배치 복원</button>
+  </div>
+</section>
+ <div class="nav-end"><strong>기록은 Google Sheets에 저장됩니다.</strong>승인된 계정으로 다른 PC에서도 이용 가능<br>정기적으로 백업 파일을 저장해 주세요.</div>
+</aside>
+<main class="main">
+ <div id="cloudRecoveryV273" data-state="pending" role="alert" aria-live="polite">
+  <div class="v273-top"><strong id="v273Heading">Google Sheets 연결 확인</strong><span style="font-weight:800;color:#52729c">v2.75</span></div>
+  <div id="v273Message">현재 연결 상태를 확인하고 있습니다.</div>
+  <div class="v273-actions"><button id="v273Ping" type="button">연동 상태 즉시 진단</button><button id="v273Retry" type="button">화면 다시 연결</button><button id="v273Guide" type="button">해결 방법</button></div>
+  <div class="v273-detail" id="v273Detail" role="status"></div>
+  <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
+</div>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v2.99 · Google Forms 조사</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
+ <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
+ <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
+<div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
+<section id="todayView">
+<section class="v298-dashboard" id="diaryDashboardV298" aria-label="업무 우선순위 및 월간 캘린더">
+  <div class="v298-grid">
+   <section class="panel v298-calendar-panel"><div class="v298-head"><div><h2>월간 업무 캘린더</h2><p>날짜를 선택하면 아래 일지 기록도 바뀝니다.</p></div><div class="v298-controls"><button type="button" class="btn" data-v298-shift="-1" data-v298-mode="general" aria-label="이전 달">‹</button><strong id="v298GeneralMonth"></strong><button type="button" class="btn" data-v298-shift="1" data-v298-mode="general" aria-label="다음 달">›</button><button type="button" class="btn btn-soft" data-v298-today="general">오늘</button></div></div><div class="v298-legend"><span><i class="v298-dot v298-red"></i>마감 지남</span><span><i class="v298-dot v298-orange"></i>마감 임박</span><span><i class="v298-dot v298-blue"></i>진행 중</span><span><i class="v298-dot v298-green"></i>완료</span></div><div class="v298-cal" id="v298GeneralCalendar"></div><button type="button" class="v298-calendar-link" data-v298-full="general">전체 캘린더 보기 →</button></section>
+   <section class="panel v298-priority-panel"><div class="v298-head"><div><h2>우선 처리할 업무</h2><p>마감 경과 → 오늘 마감 → 임박 → 기타 미완료 순</p></div><span class="v298-total" id="v298GeneralCount">0건</span></div><div id="v298GeneralPriority" class="v298-priority-list" aria-live="polite"></div><button type="button" class="v298-more" data-v298-more="general" id="v298GeneralMore">더 보기</button></section>
+  </div></section>
+  <div class="stats-grid" id="dashboardStats"></div>
+  <div class="workspace"><div>
+   <section class="panel"><div class="panel-head"><div><h2 class="panel-title">일자별 업무 기록</h2><p class="panel-sub" id="selectedDateSub"></p></div><div class="date-controls"><button class="icon-btn" id="prevDate" aria-label="이전 날짜"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><input type="date" id="selectedDate" aria-label="기록 조회 날짜"><button class="icon-btn" id="nextDate" aria-label="다음 날짜"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div></div><div id="dailyEntries" class="entry-list"></div></section>
+  </div><div>
+   <section class="panel"><div class="panel-head"><div><h2 class="panel-title">인수인계 · 당일 메모</h2><p class="panel-sub">선택한 날짜에 연결되는 메모</p></div></div><textarea class="memo" id="dailyMemo" maxlength="10000" placeholder="인수인계 사항, 확인할 내용, 특이사항 등을 자유롭게 기록하세요."></textarea><div class="memo-footer"><span>입력 후 약 1초 뒤 Google Sheets에 저장</span><span id="memoCount">0자</span></div><button class="btn btn-soft" id="printBtn" style="margin-top:18px;width:100%"><svg viewBox="0 0 24 24"><path d="M7 8V3h10v5M6 17H4V9h16v8h-2M7 14h10v7H7z"/></svg>선택일 업무일지 인쇄</button></section>
+   <section class="panel"><div class="panel-head"><div><h2 class="panel-title">마감 확인</h2><p class="panel-sub">미완료 업무 중 가까운 마감일</p></div></div><div id="deadlineList" class="deadlines"></div></section>
+   <section id="changeRightV283" class="panel" role="region" aria-label="수정사항 알림 팝업"><div class="change-head-v283"><div class="change-count-v283" id="changeCountV283">0건의 수정사항</div><button class="change-refresh-v283" id="changeRefreshV283" type="button" title="수정사항 새로고침">↻</button><button class="change-x-v283" id="changePanelHideV283" type="button" title="알림 상자 닫기">×</button></div><div class="change-items-v283" id="changeItemsV283"><div class="change-empty-v283">아직 확인할 수정사항이 없습니다.</div></div><button class="change-all-v283" type="button" id="changeHistoryLinkV283">수정사항 내역 전체 보기 →</button></section>
+  </div></div>
+ </section>
+ 
+<button type="button" id="changePopupRestoreV285" class="v285-popup-restore hidden" aria-label="수정사항 알림 팝업 다시 열기">수정사항 알림 <span class="v285-popup-badge" id="changePopupRestoreCountV285">0</span></button>
+<section id="changesView" class="hidden"><div class="panel"><div class="panel-head"><div><h2 class="panel-title">수정 사항 내역</h2><p class="panel-sub">등록·수정·삭제된 항목을 개별 기록으로 확인할 수 있습니다. X는 본인의 알림만 숨기며 원본 이력은 남습니다.</p></div><button class="btn" id="changeHistoryRefreshV283" type="button">↻ 새로고침</button></div><div class="change-filter-v283"><label for="changeGroupV283">하위메뉴</label><select class="field" id="changeGroupV283" style="width:auto;min-width:145px"><option value="">전체 하위메뉴</option></select><span class="change-muted-v283" id="changeHistoryCountV283">0건</span></div><div class="change-history-list-v283" id="changeHistoryRowsV283"></div></div></section>
+
+<section id="trainJournalView" class="hidden">
+<section class="v298-dashboard" id="trainDiaryDashboardV298" aria-label="업무 우선순위 및 월간 캘린더">
+  <div class="v298-grid">
+   <section class="panel v298-calendar-panel"><div class="v298-head"><div><h2>훈련 업무 캘린더</h2><p>날짜를 선택하면 아래 훈련 일지 기록도 바뀝니다.</p></div><div class="v298-controls"><button type="button" class="btn" data-v298-shift="-1" data-v298-mode="training" aria-label="이전 달">‹</button><strong id="v298TrainingMonth"></strong><button type="button" class="btn" data-v298-shift="1" data-v298-mode="training" aria-label="다음 달">›</button><button type="button" class="btn btn-soft" data-v298-today="training">오늘</button></div></div><div class="v298-legend"><span><i class="v298-dot v298-red"></i>마감 지남</span><span><i class="v298-dot v298-orange"></i>마감 임박</span><span><i class="v298-dot v298-blue"></i>진행 중</span><span><i class="v298-dot v298-green"></i>완료</span></div><div class="v298-cal" id="v298TrainingCalendar"></div><button type="button" class="v298-calendar-link" data-v298-full="training">훈련 캘린더 보기 →</button></section>
+   <section class="panel v298-priority-panel"><div class="v298-head"><div><h2>우선 처리할 업무</h2><p>마감 경과 → 오늘 마감 → 임박 → 기타 미완료 순</p></div><span class="v298-total" id="v298TrainingCount">0건</span></div><div id="v298TrainingPriority" class="v298-priority-list" aria-live="polite"></div><button type="button" class="v298-more" data-v298-more="training" id="v298TrainingMore">더 보기</button></section>
+  </div></section>
+ <div class="v292-head"><div><b>성무기초군사훈련 · 전용 일지</b><p>일반학기 일지와 화면은 분리됩니다. 기훈 기록만 표시하며 저장은 기존 공용 업무기록 시트에 반영됩니다.</p></div><button type="button" class="btn btn-soft" data-training-quick="train">훈련 메뉴로</button></div>
+ <div class="panel"><div class="panel-head"><div><h2 class="panel-title">성무훈련 일자별 업무일지</h2><p class="panel-sub" id="trainJournalCountV292">훈련 기록을 조회합니다.</p></div><div class="v292-actions"><button class="btn" type="button" id="trainJournalPrevV292">‹</button><input type="date" id="trainJournalDayV292" class="field" aria-label="훈련 일지 조회 날짜"><button class="btn" type="button" id="trainJournalNextV292">›</button></div></div><div class="v292-actions"><button type="button" id="trainJournalAddV292" class="btn btn-primary">+ 훈련 업무 등록</button><button type="button" class="btn btn-soft" id="trainJournalCalendarV292">훈련 캘린더로 이동 →</button></div><div id="trainJournalRowsV292" class="v292-list"></div></div>
+</section>
+<section id="trainCalendarView" class="hidden">
+ <div class="v292-head"><div><b>성무기초군사훈련 · 전용 캘린더</b><p>기훈(항목)으로 기록된 훈련 업무만 표시합니다. 일반학기 업무·학사일정은 이 달력에 표시하지 않습니다.</p></div><button type="button" class="btn btn-soft" data-training-quick="train">훈련 메뉴로</button></div>
+ <div class="panel"><div class="panel-head"><div><h2 class="panel-title">성무훈련 캘린더</h2><p class="panel-sub">훈련 업무기록 기준 · 일반학기 캘린더는 두 종류 모두 표시</p></div><div class="v292-actions"><button class="btn" type="button" id="trainCalendarPrevV292">‹</button><b id="trainCalendarMonthLabelV292"></b><button class="btn" type="button" id="trainCalendarNextV292">›</button><button class="btn btn-soft" type="button" id="trainCalendarTodayV292">오늘</button></div></div><div class="v293-legend" aria-label="업무 상태 표시"><span><i class="v293-state-dot v293-waiting"></i>미착수</span><span><i class="v293-state-dot v293-progress"></i>진행 중</span><span><i class="v293-state-dot v293-paused"></i>보류</span><span><i class="v293-state-dot v293-complete"></i>완료</span><span><i class="v293-state-dot v293-overdue"></i>기한 지남</span></div><div id="trainCalendarGridV292" class="v292-calendar-grid"></div></div><section class="v293-running-panel" id="trainOngoingPanelV293" aria-label="성무훈련 진행 중 업무"></section>
+ <div class="panel"><div class="panel-head"><div><h3 id="trainCalendarDateLabelV292" class="panel-title">선택 날짜</h3><div class="v292-actions"><button type="button" id="trainCalendarJournalV292" class="btn btn-soft">선택일 훈련 일지 →</button><button type="button" id="trainCalendarAddV292" class="btn btn-primary">+ 훈련 업무 등록</button></div></div><div id="trainCalendarDetailsV292" class="v292-list"></div></div>
+</section>
+<section id="trainView" class="hidden">
+<div id="trainFoundationV289" class="v289-train-wrap">
+ <div class="v289-train-hero">
+  <span class="v289-kicker">BASIC MILITARY TRAINING</span>
+  <h2>성무기초군사훈련</h2>
+  <p>업무일지와 캘린더는 <strong>성무훈련 전용 화면</strong>으로 분리했습니다. 기록은 일반학기 업무기록 시트에 공동 저장하고 일반학기 캘린더에서도 확인할 수 있습니다.</p>
+ </div>
+ <div class="panel v289-train-card">
+   <div class="v289-train-cardtop"><div><div class="v289-number">01 · 성무훈련 전용 화면</div><h3>훈련 업무일지 · 훈련 캘린더</h3><p>훈련 일지는 기훈 기록만 조회·등록하고 작성자 7개 직책을 사용합니다. 훈련 캘린더는 기훈 항목만, 일반학기 캘린더는 일반학기·기훈 항목을 모두 표시합니다.</p></div><span class="v289-ok">공용</span></div>
+   <div class="v292-actions"><button type="button" id="trainFoundationOpenJournalV289" class="btn btn-primary">훈련 업무일지 열기 →</button><button type="button" id="trainFoundationOpenCalendarV292" class="btn btn-soft">훈련 캘린더 열기 →</button></div>
+ </div>
+ <div class="panel v289-train-card">
+   <div class="v289-train-cardtop"><div><div class="v289-number">02 · 전용 데이터 파일</div><h3>훈련용 Google 스프레드시트</h3><p>기존 일반학기 파일에는 시트 탭을 추가하지 않습니다. 별도의 스프레드시트 파일에 기본 설정 탭 하나만 만들어 두고, 향후 군수·훈련 항목을 추가합니다.</p></div></div>
+   <p id="trainFoundationStatusV289" class="v289-foundation-status" role="status" aria-live="polite">상태를 확인하려면 연결이 완료될 때까지 기다려 주세요.</p>
+   <div class="v289-train-actions"><button type="button" id="trainFoundationCreateV289" class="btn btn-primary hidden">훈련 전용 파일 만들기</button><a id="trainFoundationLinkV289" class="btn btn-soft hidden" href="#" target="_blank" rel="noopener noreferrer">훈련 파일 열기 ↗</a><button type="button" id="trainFoundationRefreshV289" class="btn">↻ 상태 확인</button><button type="button" id="trainV291OpenWorkspace" class="btn btn-primary">예비생도 명단 · 자산 관리 열기</button></div>
+ </div>
+ <div class="v289-train-next"><b>성무훈련 별도 데이터</b> · 예비생도 명단, 예비 자산, 훈련 군수품·피복 사이즈, 일반학기 인계 기능을 별도 훈련 파일에 저장합니다. 업무일지는 일반학기와 공용입니다.</div>
+</div>
+<div id="v289LegacyTrainingUI" style="display:none">
+
+ <div class="train-header"><h2>성무기초군사훈련 군수계</h2><p>예비생도 자료는 일반학기와 다른 Google 스프레드시트 파일에 저장됩니다. 종료 후 인계 시 명단·총기번호·품목별 사이즈가 일반학기 파일로 전달됩니다.</p><a id="trBookLink" class="btn btn-soft hidden" target="_blank" rel="noopener noreferrer" style="margin-top:12px">훈련 전용 스프레드시트 열기 ↗</a></div>
+ <div id="trAlert" class="train-alert">훈련 데이터를 불러오는 중...</div>
+ <div id="trSetup" class="panel hidden"><h3>성무기초군사훈련 최초 설정</h3><p>먼저 위쪽에서 생성한 성무훈련 전용 파일에 명단·군수품·피복·예비현황 탭을 준비합니다. 기존 일반학기 스프레드시트는 변경하지 않습니다. 최고 관리자 계정에서 실행하세요.</p><button id="trSetupBtn" type="button" class="btn btn-primary">훈련 명단·예비 자산 시트 준비</button></div>
+ <div id="trWorkspace" class="hidden">
+  <div class="train-tabs" role="group" aria-label="성무훈련 관리 페이지"><button class="btn btn-primary" type="button" data-train-tab="journal" style="display:none">훈련 업무일지</button><button class="btn" type="button" data-train-tab="roster">예비생도 명단·총기</button><button class="btn" type="button" data-train-tab="gear">훈련 군수품·사이즈</button><button type="button" data-train-tab="uniform" class="btn">피복 사이즈표</button><button type="button" data-train-tab="reserve" class="btn">예비 현황표 · 재배정</button><button class="btn" type="button" data-train-tab="handoff">종료·인계 설정</button></div>
+  <div id="trJournalPanel">
+   <div class="panel"><div class="panel-head"><div><h3 class="panel-title">훈련 업무일지</h3><p class="panel-sub" id="trJournalSub">선택한 기수의 기록만 표시됩니다.</p></div><a id="trJournalSheet" target="_blank" rel="noopener" class="btn btn-soft">원본 시트 열기 ↗</a></div><div class="train-toolbar"><label>업무일 <input type="date" id="trJournalDate" class="field"></label><button id="trJournalNew" class="btn btn-primary" type="button">+ 훈련 업무 등록</button></div><div id="trJournalRows" class="train-cards"></div></div>
+   <form id="trJournalForm" class="panel hidden"><h3 id="trJournalFormTitle">훈련 업무 등록</h3><input id="trEntryId" type="hidden"><div class="train-grid">
+    <label>업무명 <input class="field" id="trTitle" required maxlength="150"></label><label>업무일 <input class="field" id="trDate" type="date" required></label><label>시간 (24시간제) <input class="field" id="trTime" type="text" maxlength="5" placeholder="13:00"></label><label>분류 <select class="field" id="trCategory"></select></label>
+    <label>상태 <select class="field" id="trStatus"><option>미착수</option><option>진행 중</option><option>완료</option><option>보류</option></select></label><label>중요도 <select class="field" id="trPriority"><option>보통</option><option>높음</option><option>긴급</option></select></label><label>마감일 <input class="field" id="trDue" type="date"></label><label>담당자 <input class="field" id="trOwner" placeholder="예: 훈련 군수 담당"></label>
+    <label class="train-wide">업무내용 <textarea class="field" id="trDetail" rows="4"></textarea></label><label class="train-wide">추후 조치 / 인수인계 <textarea class="field" id="trFollow" rows="3"></textarea></label></div><div class="train-toolbar"><button class="btn btn-primary" type="submit" id="trJournalSave">업무 저장</button><button class="btn" type="button" id="trJournalCancel">취소</button></div></form>
+  </div>
+  <div id="trRosterPanel" class="hidden"><div class="panel"><div class="panel-head"><div><h3 class="panel-title">예비생도 명단 · 총기번호</h3><p class="panel-sub">이름·교번·총기번호·배정 중대를 관리합니다. 편대는 인계하지 않습니다.</p></div><a id="trRosterSheet" target="_blank" rel="noopener" class="btn btn-soft">명단 시트 ↗</a></div><div class="train-toolbar"><input id="trRosterSearch" class="field" type="search" placeholder="이름 · 교번 · 중대 · 총기번호 검색"><button id="trAddCadet" class="btn btn-primary" type="button">+ 예비생도 추가</button></div><div class="train-scroll"><table class="train-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>교번</th><th>총기번호</th><th>총기상태</th><th>상태 비고</th><th>인계</th><th>관리</th></tr></thead><tbody id="trRosterRows"></tbody></table></div></div>
+   <form class="panel hidden" id="trCadetForm"><h3 id="trCadetTitle">예비생도 등록</h3><input type="hidden" id="trCadetId"><div class="train-grid"><label>기수 <input class="field" id="trCadetCohort" required readonly title="훈련 설정에서 지정한 기수를 사용합니다"></label><label>중대 <select class="field" id="trCadetCompany" required><option value="">중대 선택</option><option value="1">1중대</option><option value="2">2중대</option><option value="3">3중대</option><option value="4">4중대</option><option value="5">5중대</option><option value="6">6중대</option><option value="7">7중대</option><option value="8">8중대</option></select></label><label>이름 <input class="field" id="trCadetName" required maxlength="60"></label><label>교번 <input class="field" id="trCadetNumber"></label><label>총기번호 <input class="field" id="trFirearmNumber"></label><label>총기상태 <select class="field" id="trFirearmState"><option>정상</option><option>수리필요(보고 완료)</option><option>수리필요(미보고)</option></select></label><label class="train-wide">비고 <textarea class="field" id="trCadetMemo" rows="2"></textarea></label></div><div class="train-toolbar"><button class="btn btn-primary" type="submit">명단 저장</button><button class="btn" type="button" id="trCadetCancel">취소</button></div></form>
+   <div class="panel"><h3>명단 일괄 입력 · 구글 시트 복사/붙여넣기</h3><p class="train-help">열 순서: <b>기수 | 중대 | 이름 | 교번 | 총기번호 | 총기상태 | 비고</b> (첫 행 헤더 가능). 중복 교번은 건너뜁니다.</p><textarea id="trBulkRoster" class="field" rows="4" placeholder="기수&#9;중대&#9;이름&#9;교번&#9;총기번호&#9;총기상태&#9;비고&#10;79기&#9;1&#9;홍길동&#9;7900001&#9;A123&#9;정상"></textarea><button type="button" class="btn btn-primary" id="trBulkRosterSave">명단 일괄 등록</button></div>
+  </div>
+  <div id="trGearPanel" class="hidden"><div class="panel"><div class="panel-head"><div><h3 class="panel-title">훈련 군수품 · 사이즈</h3><p class="panel-sub">훈련 품목별로 각 인원의 사이즈·수량·상태·세부내용을 저장합니다.</p></div><a id="trGearSheet" target="_blank" rel="noopener" class="btn btn-soft">군수품 시트 ↗</a></div><div class="train-toolbar"><label>품목명 <input class="field" id="trGearName" placeholder="예: 전투복, 운동화" list="trGearNames"></label><datalist id="trGearNames"></datalist><button id="trGearRefresh" class="btn" type="button">선택 품목 보기</button></div><div class="train-scroll"><table class="train-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>교번</th><th>사이즈</th><th>수량</th><th>상태</th><th>세부내용</th><th>저장</th></tr></thead><tbody id="trGearRows"></tbody></table></div></div>
+   <div class="panel"><h3>사이즈·수량 일괄 입력</h3><p class="train-help">위에서 품목명을 선택하고 Google Sheets의 <b>기수 | 중대 | 이름 | 사이즈 | 수량</b> 순서로 붙여넣어. 예전 교번·사이즈·수량 3열 형식도 지원하며 다른 품목 기록은 보존돼.</p><textarea class="field" id="trGearPaste" rows="4" placeholder="기수&#9;중대&#9;이름&#9;사이즈&#9;수량&#10;79기&#9;1&#9;홍길동&#9;260&#9;1"></textarea><button id="trGearBulkSave" class="btn btn-primary" type="button">선택 품목 일괄 저장</button></div>
+  </div>
+  <div id="trUniformPanel" class="hidden">
+ <div class="panel"><h3>훈련 피복 사이즈표</h3><p class="train-help">현재 명단에서 대상을 선택한 뒤 품목별 사이즈를 저장하세요. 퇴소하면 피복 사이즈는 예비현황으로 보관되며, 재입소 시 체크해 재배정할 수 있습니다.</p>
+ <div class="train-toolbar"><label>대상 예비생도 <select class="field" id="trainV291UniformPerson"></select></label><button type="button" class="btn btn-soft" id="trainV291UniformReload">불러오기</button></div>
+ <div class="train-grid" id="trainV291UniformFields"></div>
+ <button type="button" id="trainV291UniformSave" class="btn btn-primary">선택 인원 피복 사이즈 저장</button><p class="train-help" id="trainV291UniformInfo"></p>
+ </div>
+</div>
+<div id="trReservePanel" class="hidden">
+ <div class="panel"><h3>훈련 예비 현황표</h3><p class="train-help">명단에서 ‘퇴소·예비보관’을 선택하면 총기번호·군수품·피복 사이즈가 이곳으로 이동합니다. <b>실제 총기·물품을 회수한 경우에만</b> 퇴소를 확정하세요.</p><p class="train-help" id="trainV291ReserveStats"></p>
+ <div class="train-toolbar"><label>재배정 대상 (현재 명단) <select class="field" id="trainV291Recipient"></select></label><button type="button" class="btn btn-soft" id="trainV291ReserveRefresh">↻ 예비 현황 갱신</button></div>
+ <div class="train-scroll"><table class="train-table"><thead><tr><th>선택</th><th>구분</th><th>품목</th><th>번호·사이즈</th><th>수량</th><th>출처 인원</th><th>상태</th></tr></thead><tbody id="trainV291ReserveRows"></tbody></table></div>
+ <div class="train-toolbar"><button class="btn btn-primary" type="button" id="trainV291ReserveApply">체크한 예비 총기·물품·사이즈 재배정</button></div>
+ <p class="train-help">재배정한 자산은 예비 현황 이력에 남지만 다시 선택되지 않습니다. 동일 총기번호, 동일 피복 품목이나 기존 군수품 중복은 저장 전에 검사합니다.</p></div>
+</div>
+
+<div id="trHandoffPanel" class="hidden"><div class="panel"><h3>성무훈련 종료 및 생도대 인계</h3><p class="train-help">종료 시 <b>현재 명단</b>만 대상으로 명단·총기·군수품·피복 사이즈표의 중복·충돌을 미리 검증합니다. 충돌이 있으면 전체 인계를 보류합니다. 자동 인계는 훈련 종료일 다음 날 오전 7시경 점검합니다.</p><div class="train-grid"><label>예비생도 기수 <input class="field" id="trCohort" placeholder="예: 79기"></label><label>훈련 종료일 <input class="field" id="trEndDate" type="date"></label></div><div class="train-toolbar"><button type="button" class="btn btn-primary" id="trSaveConfig">훈련 기간 설정 저장</button><button type="button" class="btn" id="trPreviewTransfer">인계 대상 점검</button><button type="button" class="btn" id="trEnableAuto">종료 후 자동 인계 활성화</button></div><div id="trTransferPreview" class="train-alert">기수와 훈련 종료일을 설정하면 인계 준비 상태를 확인할 수 있습니다.</div><div class="train-danger"><strong>관리자 수동 인계</strong><p>자동 인계를 기다리지 않고 처리합니다. 기존 다른 기수·동명이인의 명단을 덮어쓰지 않으며, 인계 완료 후 훈련 기록은 보관됩니다.</p><button type="button" id="trHandoffNow" class="btn btn-danger">점검 후 현재 기수 인계 실행</button></div><h3>최근 인계 기록</h3><div id="trTransferAudit" class="train-cards"></div></div></div>
+ </div>
+</div> <!-- /v289LegacyTrainingUI -->
+</section>
+
+<section id="allView" class="hidden"><div class="toolbar"><div class="search-wrap"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="7"/><path d="m16 16 5 5"/></svg><input id="search" type="search" class="field" placeholder="업무명, 내용, 담당자 등 검색" aria-label="업무 검색"></div><select id="statusFilter" class="field filter-select" aria-label="상태 필터"><option value="">모든 상태</option><option>미착수</option><option>진행 중</option><option>완료</option><option>보류</option></select><select id="catFilter" class="field filter-select" aria-label="분류 필터"></select><select id="sortFilter" class="field filter-select" aria-label="정렬"><option value="recent">최신 업무순</option><option value="due">마감일 빠른순</option><option value="oldest">오래된 업무순</option></select></div><div class="list-info"><span id="allCount"></span><button class="small-link" id="resetFilter">필터 초기화</button></div><div class="full-list" id="allEntries"></div></section>
+ <section id="statsView" class="hidden"><div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h2 class="panel-title">월간 업무 현황</h2><p class="panel-sub">업무일 기준으로 집계됩니다.</p></div><input class="month-picker" type="month" id="statMonth" aria-label="통계 월"></div><div id="monthlyStats" class="stats-grid"></div><div class="stat-section"><div class="panel"><h2 class="panel-title">분류별 업무</h2><p class="panel-sub">해당 월 기록된 업무의 종류</p><div id="categoryBars"></div></div><div class="panel"><h2 class="panel-title">진행 상태</h2><p class="panel-sub">해당 월 업무의 현재 상태</p><div id="statusBars"></div></div></div></section>
+
+
+<section id="repairsView" class="hidden" aria-label="수리 필요 통합 목록">
+  <div class="eq-tip"><b>총기 · 군수품 · 공용비품</b>의 수리 필요 정보를 각 원본 Google Sheets 시트에서 조회합니다. 별도 복제본은 만들지 않으며, <b>↻ 전체 현황 새로고침</b>으로 최신 상태를 가져옵니다. 공용비품은 보고 여부를 기록하는 열이 없어 별도로 구분합니다.</div>
+  <div id="repairStats" class="repair-stats"></div>
+  <div class="toolbar repair-toolbar">
+    <div class="search-wrap"><input id="repairSearch" class="field" type="search" placeholder="이름, 교번, 품목, 위치, 상세내용 검색" aria-label="수리 필요 목록 검색" style="padding-left:13px"></div>
+    <select id="repairType" class="field filter-select" aria-label="종류 필터"><option value="">전체 종류</option><option value="gun">총기</option><option value="supply">군수품</option><option value="equipment">공용비품</option></select>
+    <select id="repairStatus" class="field filter-select" aria-label="보고 상태 필터"><option value="">전체 상태</option><option value="수리필요(미보고)">수리필요(미보고)</option><option value="수리필요(보고 완료)">수리필요(보고 완료)</option><option value="고장(보고 여부 미관리)">고장(보고 여부 미관리)</option></select>
+    <button class="btn btn-primary" type="button" id="repairRefresh">↻ 전체 현황 새로고침</button>
+    <button class="btn" type="button" id="repairCsv">CSV 내보내기</button>
+  </div>
+  <div id="repairWarnings" class="repair-warnings hidden" role="alert"></div>
+  <section class="panel">
+    <div class="panel-head"><div><h2 class="panel-title">통합 수리 필요 현황</h2><p class="panel-sub" id="repairCount">메뉴를 열면 각 관리 시트의 최신 상태를 읽습니다.</p></div><span id="repairReadAt" class="repair-read-at"></span></div>
+    <div class="eq-scroll"><table class="repair-table"><thead><tr><th>구분</th><th>품목</th><th>인원 / 위치</th><th>기수 · 중대</th><th>상태</th><th>고장 대수</th><th>세부내용</th><th>원본</th></tr></thead><tbody id="repairRows"><tr><td colspan="8" class="repair-empty">수리 필요 현황을 불러올 수 있습니다.</td></tr></tbody></table></div>
+  </section>
+  <p class="repair-footnote">※ 총기·군수품은 <b>수리필요(보고 완료/미보고)</b> 기록만 표시합니다. 공용비품은 위치별 고장 대수로 표시하므로 개인별 수리 건수와 합산 단위가 다릅니다. 조회용 화면이며 수정은 원본 관리 메뉴에서 진행합니다.</p>
+</section>
+
+
+<section id="dormView" class="hidden">
+ <div class="dorm-info"><b>생활실 인원 현황</b><br>정예 본관·동관·서관·별관의 실제 호실 및 공실만 관리합니다. 비주거 시설은 제외합니다. 배정명단을 수정한 뒤 <b>배정명단 통합 · 인원 갱신</b>을 누르면 호실별 배정인원도 새로 계산합니다. 외출 인원은 생도전대 비고와 별도 대조합니다. 이름이 삭제되면 외출 집계도 자동으로 사라집니다. PDF 편성안 공식 <b>829명</b> 중 이름 후보 <b>816건</b>을 시트에 일괄 등록할 수 있습니다(기수·중대·이름 확인 783건 / 확인필요 33건). 미판독 인원은 시트에서 보완해야 합니다.</div>
+ <div class="dorm-statgrid" id="dormStats"></div>
+ <div class="dorm-group-title"><b>조직별 배정 인원</b><small>1~8중대: 배정명단 기준 전체 인원 (여생도 / 본관 이동). 본관 이동은 2·3·4·6·7·8중대 소속 비여생도가 정예 본관에 배정된 인원이며, 1·5중대는 해당 없음(—).</small></div>
+ <div class="dorm-role-grid" id="dormRoleGridV240"></div>
+ <div class="dorm-live-panel">
+  <div class="dorm-live-title"><b>생도전대 시트 22~31행 비고 대조 (기수.중대.이름 정확 일치)</b><span id="dormLiveStatusV240">연동 확인 중</span></div>
+  <p class="panel-sub">호실 배정 인원은 유지하고, <b>생도전대 시트 22~31행 비고에 이름이 있을 때만 외출로 집계</b>합니다. 비고에서 이름을 삭제하면 외출 수가 자동 감소합니다. 생활실 화면이 열려 있으면 약 90초마다 갱신됩니다. <b>기수·중대·이름이 불명확한 항목은 적용하지 않습니다.</b></p>
+  <div class="dorm-actions">
+   <button class="btn btn-primary dorm-edit-only" type="button" id="dormRosterImportV240">PDF 호실 + 배정자 명단 한번에 등록</button> <button class="btn btn-soft dorm-edit-only" type="button" id="dormUnifySheetsV248">배정명단 통합 · 인원 갱신</button><button class="btn btn-soft dorm-edit-only" type="button" id="dormHandoffToggleV247">새 편성안 PDF로 인수인계</button>
+   <a class="btn hidden" id="dormNamesSheetV243" target="_blank" rel="noopener" href="#">통합 생활실 시트 열기</a>
+   <span class="panel-sub" id="dormRosterCountV243">배정명단 등록 전</span>
+   <input class="field dorm-edit-only" id="dormSourceTabV240" aria-label="생도전대 시트명" placeholder="원본 시트명: 생도전대" style="max-width:170px">
+   <input class="field dorm-edit-only" id="dormSourceColV240" aria-label="비고 열" placeholder="비고 열: 비고 또는 K" style="max-width:175px">
+   <button class="btn btn-soft dorm-edit-only" type="button" id="dormSourceSaveV240">연동 설정 저장</button>
+   <a class="btn" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/16uG7eCkjSZJA6dHpBSr-D-wr_hgi5fB9IZzU2G0dCcU/edit">비고 원본 열기</a>
+  </div>
+ </div>
+ <div class="dorm-actions">
+  <select class="field" id="dormBuilding"><option value="">전체 관</option></select>
+  <select class="field" id="dormFloor"><option value="">전체 층</option></select>
+  <select class="field" id="dormCorridor"><option value="">전체 복도</option></select>
+  <select class="field" id="dormVacancy"><option value="">전체 상태</option><option value="empty">공실만</option><option value="partial">독방만</option><option value="unknown">미확인만</option></select>
+  <select class="field" id="dormOrgFilterV240"><option value="">전체 조직</option><option>1중대</option><option>2중대</option><option>3중대</option><option>4중대</option><option>5중대</option><option>6중대</option><option>7중대</option><option>8중대</option><option>전(대)대</option><option>동생명</option><option>여생도</option><option>미분류</option></select>
+  <input class="field" id="dormSearch" placeholder="호실·이름 검색" type="search" style="max-width:150px">
+  <button class="btn" id="dormReload" type="button">↻ 새로고침</button>
+  <a id="dormSheetLink" class="btn" target="_blank" rel="noopener" href="#">원본 시트 열기</a>
+ </div>
+ <div class="dorm-actions dorm-edit-only">
+  <button class="btn btn-primary" type="button" id="dormNew">+ 호실 등록</button>
+  <button class="btn btn-primary" type="button" id="dormImportPdfV235">75-3차 편성안 PDF 기준 일괄 등록</button>
+  <button class="btn btn-soft" type="button" id="dormOpenPaste">호실 목록 붙여넣기</button>
+  <button class="btn btn-soft dorm-edit-only" type="button" id="dormClassifyV238">기존 조직 분류 일괄 정리</button>
+  <button class="btn" type="button" id="dormExport">현황 CSV 다운로드</button>
+ </div>
+ <div class="dorm-baseline-bar">
+  <span class="baseline-title">생활실 기본값</span>
+  <span class="baseline-info" id="dormBaselineInfo">기본값 저장 여부를 확인하는 중…</span>
+  <button class="btn btn-soft dorm-edit-only" type="button" id="dormBaselineSave">기본값 설정하기</button>
+  <button class="btn dorm-edit-only" type="button" id="dormBaselineRestore">기본값 되돌리기</button>
+ </div>
+ <section class="panel hidden" id="dormEditBox"><h2 id="dormEditHeading">호실 등록</h2>
+  <div class="dorm-rowform">
+   <div><label>관</label><select id="dormFBuilding" class="field"><option value="">관 선택</option><option>정예 본관</option><option>정예 동관</option><option>정예 서관</option><option>별관</option></select></div>
+   <div><label>층</label><select id="dormFFloor" class="field"><option value="">층 선택</option><option>1층</option><option>2층</option><option>3층</option></select></div>
+   <div><label>복도</label><input id="dormFCorridor" class="field" maxlength="45" placeholder="예: 남쪽"></div>
+   <div><label>호실</label><input id="dormFRoom" class="field" maxlength="30" placeholder="예: 201호"></div>
+   <div><label>조직 구분</label><select id="dormFOrg" class="field"><option value="미분류">미분류 (직접 선택)</option><option>1중대</option><option>2중대</option><option>3중대</option><option>4중대</option><option>5중대</option><option>6중대</option><option>7중대</option><option>8중대</option><option>전(대)대</option><option>동생명</option><option>여생도</option></select></div>
+   <div><label>여생도 여부</label><label class="dorm-female-room"><input type="checkbox" id="dormFFemaleRoom"> 여생도방</label></div>
+
+  </div>
+  <p class="dorm-room-preview">새 호실은 <b>미확인</b>으로 시작합니다. 실제 공실이라면 목록에서 <b>공실 확정</b>을 눌러주세요. 소속·용도는 선택한 조직 구분으로 자동 설정됩니다. 일반 관은 0~2명, 별관은 0~4명까지 선택 가능합니다.</p>
+  <div class="dorm-actions" style="margin-top:12px"><button class="btn btn-primary" type="button" id="dormCreateSave">호실 저장</button><button class="btn" type="button" id="dormCreateCancel">취소</button></div>
+ </section>
+ <section class="panel hidden" id="dormPasteBox"><h2>호실 일괄 등록</h2>
+  <p class="panel-sub">편성안 PDF에서 변환한 목록 또는 표를 복사해서 붙여넣으세요. 기본 열은 <b>관 · 층 · 복도 · 호실 · 정원 · 배정인원 · 여생도인원</b>입니다. 기존 PDF 10열 자료도 그대로 지원하며, 맨 마지막에 선택적으로 <b>외출인원</b>을 넣을 수 있어요. 0명은 공실, 인원칸이 비어 있으면 미확인입니다. 기존 호실은 덮어쓰지 않습니다.</p>
+  <textarea id="dormPaste" class="field" rows="7" style="width:100%;margin:10px 0" placeholder="관\t층\t복도\t호실\t정원\t배정인원\t여생도인원\n정예 본관\t2층\t동쪽\t201-1\t2\t0\t0"></textarea>
+  <div class="dorm-actions"><button class="btn btn-primary" id="dormPasteSave" type="button">호실 일괄 등록</button><button class="btn" id="dormPasteCancel" type="button">취소</button></div>
+ </section>
+ <div class="dorm-building-cards" id="dormBuildingCards"></div>
+ <section class="panel"><div class="panel-head"><div><h2 class="panel-title">관 · 복도별 인원</h2><p class="panel-sub">행을 누르면 해당 복도 상세 보기 · 같은 행을 다시 누르면 전체 보기</p><p id="dormSummaryText" class="panel-sub">원본 시트와 동기화하여 계산합니다.</p></div></div>
+  <div class="eq-scroll"><table class="dorm-table"><thead><tr><th>관</th><th>층</th><th>복도</th><th>호실 수</th><th>확인</th><th>배정 인원</th><th>여생도</th><th>외출 인원</th><th>현재 남은 인원</th><th>공실</th><th>빈자리</th></tr></thead><tbody id="dormGroupRows"></tbody></table></div>
+ </section>
+ <section class="panel dorm-outing-detail" id="dormOutingPanelV249">
+  <div class="panel-head"><div>
+    <h2 class="panel-title">외출 인원 상세정보 <span id="dormOutingCountV249">0명</span></h2>
+    <p class="panel-sub">생도전대 비고와 확인된 배정명단의 <b>기수·중대·이름이 정확히 일치</b>하는 인원만 표시합니다. 관·층·복도·호실별로 확인할 수 있으며, 비고를 삭제하면 다음 조회에서 자동 제외됩니다.</p>
+  </div><div class="asset-actions">
+    <button type="button" class="btn" id="dormOutingCsvV249">표시 인원 CSV</button>
+  </div></div>
+  <div class="dorm-actions">
+    <input class="field" type="search" id="dormOutingSearchV249" placeholder="외출자 이름 · 기수 · 중대 · 호실 검색" aria-label="외출자 상세 검색" style="min-width:255px;flex:1">
+    <span class="panel-sub" id="dormOutingInfoV249" role="status">생활실 자료를 조회하면 외출자 명단이 표시됩니다.</span>
+  </div>
+  <div class="eq-scroll"><table class="dorm-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>관</th><th>층</th><th>복도</th><th>호실</th><th>조직</th><th>확인</th></tr></thead><tbody id="dormOutingRowsV249"><tr><td colspan="9">외출자 정보를 확인하는 중입니다.</td></tr></tbody></table></div>
+ </section>
+ <section class="panel"><div class="panel-head"><div><h2 class="panel-title">호실별 인원 관리</h2><p class="panel-sub">관별로 펼쳐 보고 조직구분·배정 인원·외출 인원을 수정하세요. <b>소속·용도는 조직구분 변경에 따라 자동 반영</b>됩니다. 일반 관 0~2명, 별관 0~4명이며 0명은 공실입니다. 여생도는 체크로만 구분합니다. 기존 PDF의 조직이 모호한 호실은 미분류이므로 확인해 주세요.</p></div></div>
+  <div id="dormRoomRows"><p class="panel-sub">생활실을 등록하면 관별로 분류해 표시합니다.</p></div>
+ </section>
+<div class="panel hidden" id="dormHandoffPanelV247">
+ <div class="panel-head"><div><h2 class="panel-title">새 생활실 편성안 PDF 인수인계</h2><p class="panel-sub">PDF 텍스트·좌표로 방과 명단을 추출한 뒤 검토합니다. 이름은 평소 호실 목록에 노출되지 않으며 생활실현황 시트 P열 이후에 저장됩니다.</p></div></div>
+ <div class="asset-actions" style="flex-wrap:wrap"><input id="dormHandoffFileV247" class="field" type="file" accept=".pdf,application/pdf" aria-label="생활실 편성안 PDF 선택"><button id="dormHandoffParseV247" class="btn btn-primary" type="button">PDF 추출 · 변경사항 미리보기</button></div>
+ <p class="panel-sub">권장: 호실 칸과 이름이 텍스트로 들어 있는 편성안. 스캔 이미지 PDF·색상만으로 표시한 기수·중대는 정확히 파악하기 어려워 별도 검토가 필요합니다. 배정·비품 점검 자료를 무조건 덮어쓰지 않습니다.</p>
+ <p id="dormHandoffProgressV247" class="panel-sub" role="status" aria-live="polite"></p>
+ <div id="dormHandoffReviewV247" class="hidden"><div class="asset-actions"><label>적용 방식 <select class="field" id="dormHandoffModeV247"><option value="new">신규 호실만 등록 (기존 호실·명단 유지)</option><option value="replace">선택한 기존 호실 배정·명단도 교체 (백업)</option></select></label><button class="btn btn-primary" type="button" id="dormHandoffApplyV247">검토한 호실 일괄 등록</button></div>
+ <p id="dormHandoffSummaryV247" class="panel-sub"></p><div class="eq-scroll"><table class="asset-table"><thead><tr><th>등록</th><th>관</th><th>층</th><th>복도</th><th>호실</th><th>조직</th><th>여생도방</th><th>배정 인원</th><th>판독된 이름(검토 전용)</th><th>결과</th></tr></thead><tbody id="dormHandoffRowsV247"></tbody></table></div></div>
+</div>
+
+</section>
+
+<section id="roomAssetView" class="hidden">
+ <div id="assetStatusV244" class="asset-tip" role="status" aria-live="polite">생활실 비품 관리를 준비 중입니다. 메뉴를 열면 연결 상태와 사용 방법이 여기에 표시됩니다.</div>
+ <div class="asset-tip"><b>생활실 비품 관리</b> · 호실별 <b>수량·상태·세부사항</b>을 기록합니다. 상태는 <b>정상 / 수리필요(보고 완료) / 수리필요(미보고)</b>로 통일했습니다. 원본 261호실 대장은 품목 참고자료이고, 일괄처리는 선택한 범위의 기존 기록을 덮어쓰므로 실제 점검 후 실행하세요.</div>
+ <div id="assetSetupV244" class="panel hidden"><h2>생활실 비품 관리 시작</h2><p class="panel-sub">기존 호실·업무·명단을 변경하지 않고 비품 품목표와 호실별 점검표를 새로 만듭니다.</p><button type="button" class="btn btn-primary" id="assetSetupBtnV244">기본 비품 13종 등록 · 사용 시작</button></div>
+ <div id="assetActiveV244" class="hidden">
+  <div class="asset-actions"><select id="assetBuildingV244" class="field" aria-label="관 선택"><option value="">전체 관</option><option>정예 본관</option><option>정예 동관</option><option>정예 서관</option><option>별관</option></select><select id="assetFloorV244" class="field" aria-label="층 선택"><option value="">전체 층</option><option>1층</option><option>2층</option><option>3층</option></select><select id="assetCorridorV244" class="field" aria-label="복도 선택"><option value="">전체 복도</option></select><select id="assetOrgV245" class="field" aria-label="중대 및 조직 선택"><option value="">전체 중대·조직</option><option>1중대</option><option>2중대</option><option>3중대</option><option>4중대</option><option>5중대</option><option>6중대</option><option>7중대</option><option>8중대</option><option>전(대)대</option><option>동생명</option><option>여생도</option><option>여생도복도</option><option>미분류</option></select><select id="assetGroupModeV245" class="field" aria-label="호실 묶음 보기"><option value="building-org">관별 → 중대·조직별</option><option value="org-building">중대·조직별 → 관별</option></select><input id="assetSearchV244" class="field" type="search" placeholder="호실 검색" aria-label="호실 검색"><button class="btn" id="assetReloadV244">↻ 새로고침</button><a class="btn" id="assetSheetV244" href="#" target="_blank" rel="noopener">비품 현황 시트 ↗</a></div>
+  <div id="assetSummaryV244" class="asset-metrics"></div>
+  <div class="panel"><div class="panel-head"><div><h2 class="panel-title">품목별 비품 현황</h2><p class="panel-sub">선택 범위에서 <b>시트에 등록된 수량만</b> 집계하며, 미점검 호실은 따로 표시합니다.</p></div><div class="asset-actions"><button class="btn btn-soft asset-owner" type="button" id="assetAddKindV244">+ 비품 종류 추가</button><button class="btn asset-owner" type="button" id="assetRestoreKindV247">삭제 품목 복구</button><button class="btn" type="button" id="assetCsvV244">집계 CSV</button><a class="btn" id="assetKindsV244" target="_blank" rel="noopener" href="#">품목 목록 시트</a></div></div><div class="eq-scroll"><table class="asset-table"><thead><tr><th>비품 종류</th><th>참고 수량/실</th><th>기록된 수량</th><th>정상</th><th>요수리</th><th>미점검 수량</th><th>점검 완료 호실</th><th>관리</th></tr></thead><tbody id="assetKindRowsV244"></tbody></table></div></div>
+  <div class="asset-bulk-options">
+    <div style="width:100%"><strong>선택 범위 비품 일괄처리</strong><p class="panel-sub">현재 관·층·복도·조직·검색 조건에 해당하는 호실만 변경됩니다. 다른 호실은 변경되지 않습니다.</p></div>
+    <div class="asset-bulk-form">
+      <label>대상 품목<select class="field" id="assetBulkKindV246" aria-label="일괄처리 대상 품목"><option value="ALL">전체 품목</option></select></label>
+      <label>적용 상태<select class="field" id="assetBulkStatusV246" aria-label="일괄처리 상태"><option value="정상">정상</option><option value="수리필요(보고 완료)">수리필요(보고 완료)</option><option value="수리필요(미보고)">수리필요(미보고)</option></select></label>
+      <label>호실당 해당 품목 수량<input class="field" id="assetBulkQtyV246" type="number" min="0" max="999" step="1" value="2"></label>
+      <label>일괄 세부사항 (선택)<input class="field" id="assetBulkDetailV246" type="text" maxlength="500" placeholder="미입력 시 기존 내용 유지"></label>
+    </div>
+    <div class="asset-bulk-controls">
+      <label><input type="checkbox" id="assetBulkFillMissingV246" checked>기록이 없는 호실·품목도 새로 등록</label>
+      <button type="button" class="btn btn-primary asset-owner" id="assetBulkApplyV246">선택 품목·상태 일괄 적용</button>
+      <button type="button" class="btn btn-soft asset-owner" id="assetBulkNormalV246">전체 품목 정상 2개</button>
+    </div>
+    <small id="assetBulkScopeV245" aria-live="polite"></small>
+  </div>
+  <div class="panel"><div class="panel-head"><div><h2 class="panel-title">관·중대·조직별 호실 점검 현황</h2><p class="panel-sub">관 또는 중대·조직을 펼쳐 호실의 <b>점검 / 수정</b>을 누르면 바로 아래에 비품 세부항목이 열립니다. 공실도 점검할 수 있습니다.</p></div><span class="panel-sub" id="assetRoomCountV244"></span></div><div id="assetRoomRowsV244"></div></div>
+  <div id="assetEditorParkingV245" class="hidden"><div class="panel hidden" id="assetRoomEditorV244"><div class="panel-head"><div><h2 class="panel-title" id="assetRoomTitleV244">호실 비품 점검</h2><p class="panel-sub">품목별 수량·상태·세부사항을 기록합니다. 2개 중 1개만 고장인 경우처럼 정상·요수리 수량을 각각 수정할 수 있습니다. 상태를 바꾸면 수량 전체에 해당 상태가 우선 적용됩니다.</p></div><div class="asset-actions"><button class="btn" id="assetCloseRoomV244">닫기</button><button class="btn btn-primary asset-owner" id="assetSaveRoomV244">변경한 품목 모두 저장</button></div></div><div class="eq-scroll"><table class="asset-table asset-editor"><thead><tr><th>품목</th><th>전체</th><th>정상</th><th>요수리</th><th>상태</th><th>세부사항</th><th>저장</th></tr></thead><tbody id="assetEditRowsV244"></tbody></table></div><p id="assetEditHelpV244" class="panel-sub" role="status"></p></div></div>
+ </div>
+</section>
+
+<section id="equipmentView" class="hidden">
+  <div class="eq-tip">세탁기·건조기 <b>정상 / 고장 대수</b>, 위치별 <b>사용 인원</b>을 관리합니다. 세탁기·건조기 <b>1대당 이용 인원</b>은 정상 작동 장비로 계산합니다. 공식 편성안은 829명이며 (女)는 여생도만 이용합니다. 수정하면 Google Sheets에 저장되며 변경이력도 남습니다.</div>
+  <div id="eqInit" class="eq-empty hidden"><h2 style="margin-top:0">공용비품 현황 첫 사용 설정</h2><p>2026. 7. 9. 보고서의 위치별 자료 24건을 최초 1회 등록합니다. 기존 업무일지는 변경하지 않습니다.</p><button class="btn btn-primary" id="eqSetupBtn">보고서 기준 현황 불러오기</button><p style="color:#8694a8;font-size:12px">조회 전용 계정은 군수계 관리 계정의 최초 설정이 필요합니다.</p></div>
+  <div id="eqActive" class="hidden">
+    <div class="eq-toolbar"><select id="eqBuildingFilter" class="field" aria-label="건물 필터"><option value="">전체 건물 / 구역</option></select><select id="eqUnitFilter" class="field" aria-label="중대 필터"><option value="">전체 중대 / 구분</option></select><input id="eqSearch" class="field" type="search" placeholder="위치 · 특이사항 검색" aria-label="비품 검색"><button class="btn" id="eqCsv">현황 CSV 저장</button><button class="btn btn-primary eq-edit-action" id="eqNew">+ 위치 추가</button></div>
+    <div class="eq-summary" id="eqStats"></div>
+    <div class="panel" id="eqUsagePanelV260" style="padding:20px;margin-bottom:16px">
+      <h2 class="panel-title">정예관 · 호실별 세탁기·건조기 1대당 이용 인원</h2>
+      <p class="panel-sub">복도 PDF로 확정한 호실→세탁·건조실 이용 구역은 코드에 고정했습니다. 이용 인원은 Google Sheets 「생활실현황」의 G열 입실 체크 수를 합산합니다. (女)는 해당 관 여생도만 이용하며, 정상 설비만 계산합니다. PDF를 매번 읽지 않습니다.</p>
+      <div id="eqUsageStatsV260" class="labor-kpis" style="margin-top:12px"></div>
+      <p id="eqUsageMetaV260" class="help" role="status">829명 공식 편성안과 실시간 배정명단을 대조하고 있습니다.</p>
+      <div id="eqZoneStatsV270" class="eq-scroll" style="margin-top:12px"></div>
+    </div>
+    <div class="panel"><div class="panel-head"><div><h2 class="panel-title">위치별 세탁기·건조기 현황</h2><p class="panel-sub" id="eqCount">보고서 기준 자료를 갱신하여 관리합니다.</p></div><button class="btn" id="eqReload">↻ 현황 새로고침</button></div>
+      <div class="eq-scroll"><table class="eq-table"><thead><tr><th>건물</th><th>중대</th><th>설치 위치</th><th>세탁 정상</th><th>세탁 고장</th><th>건조 정상</th><th>건조 고장</th><th>연계 구역 인원</th><th>세탁기 1대당</th><th>건조기 1대당</th><th>점검일</th><th>관리</th></tr></thead><tbody id="eqTableBody"></tbody></table></div>
+    </div>
+    <div class="panel"><h2 class="panel-title">건물별 합계</h2><p class="panel-sub">2026.7.9. 보고서와 동일하게 성기훈은 정예관·비전관과 별도로 집계됩니다.</p><div id="eqBuildingTotals" class="eq-scroll" style="margin-top:16px"></div></div>
+    <div class="panel"><h2 class="panel-title">최근 변경 내역</h2><p class="panel-sub">누가 언제 어느 위치의 현황을 변경했는지 확인합니다.</p><div id="eqHistory" class="eq-history" style="margin-top:14px"></div></div>
+  </div>
+</section>
+ 
+<section id="saberView" class="hidden">
+ <div class="panel">
+  <div class="panel-head"><div><h2 class="panel-title">예도 관리 · 직책별 현황</h2><p class="panel-sub">직책별 예도 상태를 확인하고 관리합니다.</p></div>
+   <div class="roster-panel-actions"><a href="#" id="saberOpenSheetV276" class="btn btn-soft" target="_blank" rel="noopener">↗ 원본 시트</a><button type="button" class="btn btn-soft hidden" id="saberAppendMissingV277">신규 직책 추가</button><button type="button" class="btn btn-soft hidden" id="saberSyncTitlesV277">직책명 시트 반영</button><button type="button" class="btn" id="saberReloadV276">↻ 새로고침</button></div></div>
+  <div id="saberSetupV276" class="hidden"><p class="help">최초 한 번 예도현황 시트를 생성해야 합니다. 기존 자료는 수정하거나 삭제하지 않습니다.</p><button type="button" class="btn btn-primary" id="saberSetupButtonV276">예도 관리 시작하기</button></div>
+  <div id="saberActiveV276" class="hidden">
+   <div id="saberStatsV276" class="saber-stats-v277"></div>
+   <div class="roster-bar">
+    <select class="field" id="saberUnitV276" aria-label="조직 선택"><option value="">전체 조직</option></select>
+    <select class="field" id="saberStatusV277" aria-label="상태별 보기"><option value="">전체 상태</option><option value="수리 필요">수리 필요만</option><option value="교체 필요">교체 필요만</option><option value="정상">정상만</option><option value="미확인">미선택만</option></select>
+    <input class="field roster-search" type="search" id="saberSearchV276" placeholder="조직·직책·세부사항 검색">
+   </div>
+   <div class="eq-scroll"><table class="eq-table saber-table-v277"><thead><tr><th>조직</th><th>직책</th><th>상태</th><th>세부사항</th></tr></thead><tbody id="saberRowsV276"></tbody></table></div>
+   <p id="saberInfoV276" class="help" role="status"></p>
+  </div>
+ </div>
+</section>
+
+<section id="rosterView" class="hidden">
+
+ <div class="roster-tip"><b>인원 기준: 기수 → 중대 → 이름</b> · 동일 이름이 있어도 기수와 중대를 함께 대조합니다. 원본 시트의 저장 열 순서는 그대로 유지합니다.<br><b>명단·교번·총기번호는 Google Sheets에 저장</b>됩니다. 이 정보는 개인식별 및 군 관련 민감자료가 될 수 있으므로 승인된 계정과 보안 정책 내에서만 사용하세요.  기존 시트의 명단을 통째로 가져오거나 한 명씩 수정할 수 있습니다. 기수가 졸업하면 별도 보관 탭에 먼저 옮긴 뒤 활동 명단에서 제거합니다. 실제 인명 정보는 승인된 Google 계정과 시트에만 기록하세요.</div>
+ <div id="rosterInit" class="eq-empty hidden"><h2 style="margin-top:0">명단(총기번호) 관리 최초 설정</h2><p>기존 업무일지와 공용비품 탭은 그대로 두고, <b>생도명단</b>, <b>졸업기수보관</b>, <b>명단변경이력</b> 탭을 새로 추가합니다.</p><button class="btn btn-primary roster-edit" id="rosterSetup">명단(총기번호) 관리 시작하기</button><p class="help">조회 전용 관리자라면 군수계 관리 계정에서 최초 설정을 진행해야 합니다.</p></div>
+ <div id="rosterActive" class="hidden">
+  <div id="rosterMigration" class="roster-tip hidden" role="alert"><strong>총기상태 열 업데이트가 필요합니다.</strong> 기존 이름·교번·총기번호·비고는 유지하고 상태 열만 추가합니다. <button class="btn btn-primary roster-edit" id="rosterMigrate">총기상태 열 추가</button></div>
+  <div class="roster-section-tabs" role="tablist" aria-label="생도명단 관리 메뉴">
+    <button class="btn roster-subtab active" type="button" id="rosterTabRegular" aria-selected="true">전체 명단·총기번호</button>
+    <button class="btn roster-subtab" type="button" id="rosterTabSpecial" aria-selected="false">위탁·휴학·퇴교 관리</button>
+   </div>
+   <div id="rosterRegularPane">
+    <div class="roster-bar">
+    <input class="field roster-search" id="rosterSearch" type="search" placeholder="이름 · 교번 · 총기번호 · 중대 검색" aria-label="명단 검색">
+    <select class="field" id="rosterCohort"><option value="">전체 기수</option></select>
+    <select class="field" id="rosterCompany"><option value="">전체 중대</option></select>
+    <label class="roster-only-repair"><input id="rosterRepairOnly" type="checkbox"> 수리 필요만 보기</label>
+    <a class="btn" id="rosterOpenSheet" href="#" target="_blank" rel="noopener noreferrer">↗ 명단 시트 바로 열기</a>
+    <button class="btn roster-edit" id="rosterAdd">+ 1명 등록</button>
+  </div>
+  <div class="roster-sortbar" role="group" aria-label="전체 명단 정렬 방식">
+   <span class="roster-sort-title">명단 정렬</span>
+   <button type="button" class="btn roster-sort-button" id="rosterSortCompany" aria-pressed="false">중대별 정렬 <small>1중대 75기 → 8중대 78기</small></button>
+   <button type="button" class="btn roster-sort-button roster-sort-active" id="rosterSortCohort" aria-pressed="true">기수별 정렬 <small>75기 1중대 → 78기 8중대</small></button>
+   <span class="roster-sort-note">50명씩 나누지 않고 검색 결과 전체를 표시합니다.</span>
+  </div>
+  <p class="help">위탁·휴학·퇴교는 상태 선택 후 <b>수정</b>을 누르면 관리 명단으로 이동합니다. 교번·총기번호는 이 표에서 직접 수정하지 않으며, 생도 <b>이름을 클릭</b>하면 기존 상세 수정창을 열 수 있습니다.</p>
+  <div class="roster-metrics" id="rosterMetrics"></div>
+  <div class="panel"><div class="panel-head"><div><h2 class="panel-title">전체 생도 명단</h2><p class="panel-sub" id="rosterCount">기수 및 중대별 관리</p></div><div class="roster-panel-actions"><button class="btn" id="rosterCsv">CSV 다운로드</button><button class="btn" id="rosterReload">↻ 새로고침</button></div></div>
+   <div class="roster-wrap"><table class="roster-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>교번</th><th>총기번호</th><th>총기상태 <small>(선택 즉시 저장)</small></th><th>상태 비고 <small>(입력 후 자동 저장)</small></th><th>상태 이동</th></tr></thead><tbody id="rosterRows"></tbody></table></div>
+   <div class="roster-total-footer" id="rosterPageInfo" aria-live="polite">전체 명단 표시</div>
+  </div>
+  <div class="roster-dual roster-edit">
+   <section class="panel"><h2 class="panel-title">기존 Google 명단 시트 가져오기</h2><p class="help">군수계 계정으로 볼 수 있는 원본 시트 주소를 붙여넣으세요. <b>기수 · 중대 · 이름 · 교번 · 총기번호 · 총기상태 · 비고</b> (편대 열은 선택, 헤더가 있으면 순서와 무관하게 인식) 헤더를 자동 인식합니다. 동일 기수/중대/편대/이름은 중복 등록하지 않습니다.</p><input class="field" id="rosterSource" type="url" placeholder="https://docs.google.com/spreadsheets/d/..."><input class="field" id="rosterDefaultCohort" maxlength="24" placeholder="기수 열이 없다면 기본 기수 입력 (예: 76기)"><div class="roster-panel-actions"><button class="btn btn-primary" id="rosterImportSheet">구글 시트에서 일괄 가져오기</button></div>
+   <p class="help">또는 명단 시트에서 복사한 표를 아래에 붙여넣어도 됩니다.</p><textarea id="rosterPaste" placeholder="기수&#9;중대&#9;이름&#9;교번&#9;총기번호&#9;총기상태&#9;비고&#10;76기&#9;1&#9;홍길동&#9;7600101&#9;A-001&#9;정상&#9;"></textarea><div class="roster-panel-actions"><button class="btn" id="rosterImportPaste">붙여넣은 명단 등록</button></div></section>
+   <section class="panel"><h2 class="panel-title">기수별 관리 및 졸업 처리</h2><div class="roster-normal-box"><strong>선택 기수 총기 일괄 정상 처리</strong><p class="help">실제 점검 후 선택한 기수 전체를 정상으로 변경합니다. 교번·총기번호·상태 비고는 유지됩니다.</p><select class="field" id="rosterNormalizeCohort"><option value="">정상 처리할 기수 선택</option></select><button class="btn btn-primary" type="button" id="rosterNormalize">선택 기수 전체 정상 처리</button></div><p class="help">선택한 기수 전체를 <b>졸업기수보관</b> 탭으로 옮기고, 현재 명단에서는 일괄 제외합니다. 기존 업무일지와 공용비품 기록은 변경하지 않습니다.</p><select class="field" id="rosterGraduateCohort"><option value="">졸업 처리할 기수 선택</option></select><div class="roster-danger"><strong>기수별 일괄 정리</strong><p>처리 전 자동 보관하지만, 실행 전 명단 시트를 별도로 백업해 두는 것을 권장합니다. 확인창에서 기수를 직접 입력해야 처리됩니다.</p><button class="btn btn-danger" id="rosterGraduate">선택 기수 전체 졸업 처리</button></div><h3 style="font-size:13px;margin:24px 0 8px">최근 변경 이력</h3><div id="rosterHistory" class="roster-history"></div></section>
+  </div>
+   </div><!-- rosterRegularPane -->
+   <div id="rosterSpecialPane" class="hidden">
+    <div class="panel roster-special-panel">
+     <div class="panel-head"><div><h2 class="panel-title">위탁·휴학·퇴교 관리</h2><p class="panel-sub">총기 명단에 있지만 최신 스마트당직 1~8중대 전체에서 이름이 발견되지 않는 사람만 후보로 표시합니다.</p></div>
+      <button class="btn" id="smartRefresh" type="button">↻ 다시 대조</button></div>
+     <p class="help">비교 범위: 각 중대 <b>B61:M91</b> · 이름 <b>C/F/I/L열 62~91행</b> · 92행 합계 제외. 동명이인 구분 A·B·C·D는 이름 대조용으로만 제거합니다. <b>명단에 없다는 이유로 상태를 자동 지정하지 않습니다.</b></p>
+     <div class="roster-special-source" id="smartSourceHint">스마트당직 원본을 연결하거나 기준명단을 가져오세요.</div>
+     <div class="roster-special-source-controls">
+      <p id="smartConnectionStateV257" class="help" aria-live="polite">저장된 스마트당직 연결 확인 중…</p>
+      <button type="button" class="btn btn-soft" id="smartGoSettingsV258">스마트당직 연결 설정 열기 ↗</button>
+      <p class="help">연결 주소는 <b>기타 → 설정 · 백업 → 스마트당직 연동</b>에서 일괄 관리합니다. 총기 및 군수품 관리가 동일한 연결을 사용합니다.</p>
+     </div>
+     <details class="roster-special-import roster-edit"><summary>엑셀에서 추출한 기준명단 붙여넣기 (오프라인 대조)</summary>
+      <p class="help">동봉된 <b>스마트당직_기준명단_837명.tsv</b> 텍스트를 복사해서 아래 칸에 붙여넣으세요. 이것은 저장 시점의 스냅샷이며 실시간 자동갱신은 되지 않습니다.</p>
+      <textarea id="smartSnapshotPaste" class="field" rows="5" placeholder="기수\t중대\t이름\t원본시트\t원본셀\t상태" style="width:100%"></textarea>
+      <button class="btn" id="smartImportSnapshot" type="button">붙여넣은 스마트당직 기준명단 적용</button>
+     </details>
+     <div id="smartComparisonSummary" class="roster-special-stats" aria-live="polite"></div>
+     <div class="roster-special-toolbar"><input type="search" id="smartAbsentFilter" class="field" placeholder="누락 이름·기수·중대 검색"><button class="btn" type="button" id="smartAbsentCSV">누락 후보 CSV</button></div>
+     <div class="roster-wrap"><table class="roster-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>교번</th><th>총기번호</th><th>관리 상태</th><th>비고 / 저장</th></tr></thead><tbody id="smartAbsentRows"><tr><td colspan="7">스마트당직 명단을 먼저 연결하세요.</td></tr></tbody></table></div>
+     <div id="smartAdditionalChecks" class="roster-special-notes"></div>
+     <h3 style="margin-top:22px">위탁·휴학·퇴교 관리 명단 <small>(활동 명단에서 제외된 인원)</small></h3>
+     <p class="help">복구를 누르면 보관된 기수·중대·이름·교번·총기번호와 원래 행 정보를 바탕으로 활동 명단에 되돌립니다. 퇴교자도 기록은 복구 전까지 보존됩니다.</p>
+     <div class="roster-wrap"><table class="roster-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>상태</th><th>비고</th><th>처리</th></tr></thead><tbody id="smartArchivedRows"><tr><td colspan="6">이동된 인원이 없습니다.</td></tr></tbody></table></div>
+     <h3 style="margin-top:22px">별도 총기번호 기록</h3>
+     <p class="help">활동 명단에서 위탁·휴학·퇴교 처리된 인원의 총기번호 이력입니다. <b>번호 삭제</b>는 별도 기록의 번호 값을 비우고 삭제 시각을 남깁니다.</p>
+     <div class="roster-wrap"><table class="roster-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>상태</th><th>총기번호</th><th>처리</th></tr></thead><tbody id="smartGunRows"><tr><td colspan="6">보관된 총기번호가 없습니다.</td></tr></tbody></table></div>
+     <details><summary>위탁·휴학 참고 시트 26행·31행 내용 확인</summary><div class="roster-special-notes" id="smartMasterRows">참고 시트 연결 후 표시됩니다.</div></details>
+    </div>
+   </div><!-- rosterSpecialPane -->
+ </div>
+</section>
+
+<section id="supplyView" class="hidden">
+ <div class="supply-special-tabs" role="group" aria-label="군수품 관리 화면">
+  <button type="button" class="btn btn-primary" id="supplyTabRegularV256">전체 군수품 명단</button>
+  <button type="button" class="btn" id="supplyTabSpecialV256">위탁·휴학·퇴교 관리 <span id="supplySpecialBadgeV256"></span></button>
+ </div>
+ <div id="supplyRegularPaneV256">
+ <div class="supply-hero"><strong>군수품 관리</strong> — 품목 추가 시 Google Sheets에 새 시트를 만들고 <b>기수 · 중대 · 이름 · 교번 · 상태 · 사이즈 · 수량 · 세부내용</b>을 기본으로 관리합니다. 총기관리에서 인원정보만 연동하며, 품목별 사이즈·수량은 개별 입력 또는 일괄 입력할 수 있습니다.</div>
+ <div id="supplySetup" class="panel"><h2 class="panel-title">군수품 관리 최초 설정</h2><p class="supply-help" id="supplySetupInfo">「명단(총기번호) 관리」의 명단을 기반으로 군수품 관리용 목차 시트를 추가합니다. 기존 업무·총기 기록은 유지합니다.</p><button class="btn btn-primary" id="supplySetupButton">군수품 관리 사용 시작</button></div>
+ <div id="supplyControls" class="panel hidden">
+  <div class="panel-head"><div><h2 class="panel-title">군수품 목록</h2><p class="panel-sub">품목을 추가할 때마다 구글 스프레드시트에 개별 시트가 생성됩니다.</p></div></div>
+  <div class="supply-actions"><select class="field" id="supplyItem" aria-label="군수품 품목 선택"></select><button type="button" class="btn btn-primary" id="supplyAddItem">+ 품목 추가 (시트 생성)</button><button type="button" class="btn btn-soft" id="supplyReload">↻ 불러오기</button></div>
+  <p class="supply-help" id="supplyFieldHint" role="status">품목별 사이즈·수량은 기본으로 제공하며 기존 자료는 유지합니다.</p>
+  <div id="supplyEmpty" class="supply-card"></div>
+ </div>
+ <div id="supplyActive" class="hidden">
+  <div class="panel"><div class="panel-head"><div><h2 id="supplySelectedName" class="panel-title">품목 상세 관리</h2><p class="panel-sub" id="supplyFieldInfo"></p></div><a class="btn btn-soft" id="supplySheetLink" href="#" target="_blank" rel="noopener">해당 시트 바로 열기 ↗</a></div>
+  <div class="supply-actions"><button class="btn" id="supplySync">인원 명단 동기화</button><button class="btn" id="supplyCsv">현재 목록 CSV</button></div>
+  <div id="supplyMetrics" class="roster-metrics"></div>
+  <div class="roster-sortbar"><strong class="roster-sort-title">정렬</strong><button class="btn roster-sort-button" id="supplySortCompany">중대별 정렬<small>1중대 75기 → 1중대 76기</small></button><button class="btn roster-sort-button roster-sort-active" id="supplySortCohort">기수별 정렬<small>75기 1중대 → 75기 2중대</small></button><span class="roster-sort-note">전체 명단을 한 화면에서 스크롤합니다.</span></div>
+  <div class="roster-bar"><input class="field roster-search" id="supplySearch" type="search" placeholder="이름·교번·상태·상세내용 검색"><select class="field" id="supplyCohort"><option value="">전체 기수</option></select><select class="field" id="supplyCompany"><option value="">전체 중대</option></select><label class="roster-only-repair"><input type="checkbox" id="supplyRepairOnly">수리 필요만</label></div>
+  <div class="supply-card"><strong>선택 기수 전체 정상 처리</strong><p class="supply-help">선택한 품목과 기수의 상태만 '정상'으로 바꿉니다. 사이즈·수량과 세부내용은 유지됩니다.</p><div class="supply-actions"><select class="field" id="supplyNormalCohort"><option value="">일괄 정상 처리 기수</option></select><button class="btn btn-soft" id="supplyNormalize">선택 기수 전체 정상 처리</button></div></div>
+  <div class="supply-batch" id="supplyBatchPanel">
+   <h3>사이즈 · 수량 일괄 입력</h3>
+   <p class="supply-batch-note"><b>여기에서 기수 또는 중대를 선택</b>하면 해당 인원만 한꺼번에 변경할 수 있습니다. 둘 다 선택하면 교집합이 적용됩니다. 검색 및 「수리 필요만」 필터를 별도로 사용한 경우 화면에 표시된 인원에게만 적용됩니다. 입력하지 않은 칸은 그대로 유지되며 저장 전 확인창이 표시됩니다.</p>
+   <div class="supply-batch-targetbar">
+    <label for="supplyBatchCohort">일괄 입력 대상 기수
+     <select class="field" id="supplyBatchCohort"><option value="">전체 기수</option></select>
+    </label>
+    <label for="supplyBatchCompany">일괄 입력 대상 중대
+     <select class="field" id="supplyBatchCompany"><option value="">전체 중대</option></select>
+    </label>
+   </div>
+   <div class="supply-batch-count is-warning" id="supplyBatchScope" role="status" aria-live="polite">기수 또는 중대를 선택하면 대상 인원수가 표시됩니다.</div>
+   <div class="supply-batch-grid">
+    <div class="supply-batch-box">
+     <h4>① 같은 값 한꺼번에 입력</h4>
+     <input class="field" id="supplyBatchSize" type="text" maxlength="100" placeholder="사이즈 (예: 260, 95, L)">
+     <input class="field" id="supplyBatchQty" type="text" inputmode="decimal" placeholder="수량 (예: 2)">
+     <p class="supply-batch-note">둘 중 한 가지만 입력해도 됩니다. 수량 0도 입력 가능합니다.</p>
+     <button type="button" class="btn btn-primary" id="supplyBatchSame">선택 인원에게 동일 값 적용</button>
+    </div>
+    <div class="supply-batch-box">
+     <h4>② 구글 시트에서 복사 · 붙여넣기</h4>
+     <select class="field" id="supplyPasteFormat"><option value="both">사이즈 + 수량 (2열, 순서대로)</option><option value="size">사이즈만 (1열, 순서대로)</option><option value="quantity">수량만 (1열, 순서대로)</option><option value="id_both">교번 + 사이즈 + 수량 (3열, 교번으로 매칭)</option></select>
+     <textarea id="supplyBatchPaste" placeholder="예: 시트의 사이즈·수량 두 열을 선택 → Ctrl+C → 여기에 Ctrl+V&#10;260&#9;2&#10;270&#9;1"></textarea>
+     <p class="supply-batch-note">순서대로 붙여넣을 때는 <b>현재 표시된 인원수와 행 수가 정확히 같아야</b> 합니다. 교번 포함 복사는 순서와 무관하게 일치하는 인원만 수정합니다.</p>
+     <button type="button" class="btn btn-primary" id="supplyBatchPasteSave">붙여넣은 값 검토 · 일괄 저장</button>
+    </div>
+   </div>
+  </div>
+  <p class="supply-help">상태는 선택 시 저장되고, 사이즈·수량·세부내용은 입력 후 다른 칸을 누르면 자동 저장됩니다. 행별 저장 버튼도 사용할 수 있습니다.</p>
+  <div class="roster-wrap"><table class="roster-table supply-table"><thead><tr id="supplyColumns"></tr></thead><tbody id="supplyRows"></tbody></table></div>
+  <div class="roster-total-footer" id="supplyCount"></div>
+ </div>
+ </div>
+ </div><!-- supplyRegularPaneV256 -->
+ <div id="supplySpecialPaneV256" class="hidden">
+  <div class="panel">
+   <div class="panel-head"><div><h2 class="panel-title">군수품 위탁·휴학·퇴교 관리</h2><p class="panel-sub">명단(총기번호) 관리의 이동·복구 상태와 연결되는 공통 인원 관리 화면</p></div><button type="button" class="btn" id="supplySpecialReloadV256">↻ 다시 불러오기</button></div>
+   <p class="help">총기관리에서 위탁·휴학·퇴교로 이동하면 활동 군수품 명단에서도 제외되고, 품목별 지급기록·사이즈·수량·세부내용은 보존됩니다. 여기서 이동한 인원도 총기관리에서 함께 제외됩니다.</p>
+   <div id="supplySpecialMetricsV256" class="roster-metrics"></div>
+   <div class="roster-bar">
+    <select class="field" id="supplySpecialItemV256" aria-label="보관 기록을 확인할 군수품 선택"><option value="">품목 전체 보기</option></select>
+    <select class="field" id="supplySpecialStatusV256"><option value="">전체 관리 상태</option><option value="위탁">위탁</option><option value="휴학">휴학</option><option value="퇴교">퇴교</option></select>
+    <input class="field roster-search" id="supplySpecialSearchV256" type="search" placeholder="기수·중대·이름 검색">
+   </div>
+   <p class="help" id="supplySpecialHintV256">품목을 선택하면 기존 군수품 지급 기록도 함께 조회할 수 있습니다.</p>
+   <div class="roster-wrap"><table class="roster-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>관리상태</th><th>비고</th><th>군수품 기록</th><th>처리</th></tr></thead><tbody id="supplySpecialRowsV256"><tr><td colspan="7">불러오는 중…</td></tr></tbody></table></div>
+   <p class="help">복구 시 총기 활동 명단과 모든 군수품 활동 명단에 함께 나타납니다. 품목별 기존 지급 내역은 복원 전후에 삭제되지 않습니다. 총기번호 자체의 삭제는 ‘명단(총기번호) 관리’에서만 가능합니다.</p>
+  </div>
+ </div><!-- supplySpecialPaneV256 -->
+</section>
+
+<section id="calendarView" class="hidden">
+ <div class="wx-calendar-layout">
+  <section class="panel"><div class="panel-head"><div><h2 class="panel-title">통합 캘린더 · 업무일지 & 학사일정</h2><p class="panel-sub">업무일에는 일지 분류 표시 · 마감일과 별도 일정도 함께 확인</p></div><div class="wx-head-actions"><button type="button" id="wxPrevMonth" class="btn">‹</button><b id="wxMonthLabel"></b><button type="button" id="wxNextMonth" class="btn">›</button><button type="button" id="wxThisMonth" class="btn btn-soft">오늘</button></div></div><p id="wxCalendarStatus" class="wx-calendar-status" role="status" aria-live="polite">구글 시트 일정 데이터를 불러오는 중...</p><div class="wx-cal-control">
+  <div class="wx-cal-switch" aria-label="캘린더 기간 보기"><button type="button" id="wxViewMonthV231" class="active">월간 보기</button><button type="button" id="wxViewWeekV231">주간 보기</button></div>
+  <div class="wx-cal-layers" aria-label="보이는 일정 종류"><label><input type="checkbox" id="wxLayerJournalV231" checked> 업무일지</label><label><input type="checkbox" id="wxLayerAcademicV231" checked> 학사일정</label><label><input type="checkbox" id="wxLayerDueV231" checked> 마감일</label><label><input type="checkbox" id="wxLayerOtherV231" checked> 특이사항</label></div>
+ </div>
+ <div class="wx-photo-hint" style="margin:0 0 9px">업무일지를 먼저 표시하고, 학사일정은 건수만 표시합니다. 날짜를 누르면 전체 내용을 오른쪽에서 확인할 수 있습니다.</div>
+ <div class="v293-legend" aria-label="업무 상태 표시"><span><i class="v293-state-dot v293-waiting"></i>미착수</span><span><i class="v293-state-dot v293-progress"></i>진행 중</span><span><i class="v293-state-dot v293-paused"></i>보류</span><span><i class="v293-state-dot v293-complete"></i>완료</span><span><i class="v293-state-dot v293-overdue"></i>기한 지남</span></div><div id="wxCalendarGrid" class="wx-calendar-grid"></div></section>
+<section class="v293-running-panel" id="wxOngoingPanelV293" aria-label="일반학기와 성무훈련 진행 중 업무"></section>
+  <section class="panel"><div class="panel-head"><div><h2 id="wxSelectedTitle" class="panel-title">선택 날짜</h2><p class="panel-sub">업무일지 요약 · 마감 업무 · 특이사항</p></div><div class="wx-head-actions"><button id="wxOpenDailyLog" type="button" class="btn btn-soft">선택 날짜 일지로 이동 ↗</button><button id="wxCalendarAdd" type="button" class="btn btn-primary hidden">+ 특이사항·일정</button><button id="wxBulkToggle" type="button" class="btn btn-soft hidden" aria-expanded="false" aria-controls="wxBulkPanel">+ 학사일정 일괄 입력</button></div></div><div id="wxCalendarDetails"></div>
+   <form id="wxEventForm" class="wx-event-form hidden"><div class="wx-form-grid"><input id="wxEventId" type="hidden"><div><label for="wxEventDate">날짜</label><input type="date" id="wxEventDate" class="field" required></div><div><label for="wxEventKind">유형</label><select id="wxEventKind" class="field"><option>특이사항</option><option>마감</option><option>일정</option><option>학사일정</option></select></div><div class="full"><label for="wxEventTitle">제목</label><input id="wxEventTitle" class="field" maxlength="140" required placeholder="예: 월간 물품 신청 마감"></div><div class="full"><label for="wxEventNote">세부내용</label><textarea class="field" id="wxEventNote" maxlength="5000" placeholder="특이사항, 준비물, 후속 조치 등"></textarea></div></div><div class="wx-form-actions"><button type="button" id="wxEventDelete" class="btn btn-danger hidden">삭제</button><button type="button" id="wxEventCancel" class="btn">닫기</button><button type="submit" id="wxEventSave" class="btn btn-primary">구글 시트에 저장</button></div></form>
+  </section>
+ </div>
+
+ <section class="panel wx-bulk-panel hidden" id="wxBulkPanel" aria-label="학사일정 일괄 입력">
+  <div class="panel-head"><div><h2 class="panel-title">학사일정 일괄 입력</h2><p class="panel-sub">명단 일괄 등록처럼 Excel·Google Sheets 셀을 복사해서 붙여넣으세요.</p></div><button class="btn" id="wxBulkClose" type="button">닫기</button></div>
+  <div class="wx-bulk-body">
+
+   <div class="wx-photo-panel" id="wxPhotoPanelV230">
+    <div class="wx-photo-head"><strong>📷 주간·월간·연간 계획표 사진 가져오기</strong><span class="wx-photo-hint">사진 → 문자 인식 → 검토 → 캘린더 저장</span></div>
+    <p class="wx-photo-hint">JPG·PNG 사진을 선택하면 Google Drive 문자 인식(OCR)으로 글자를 읽습니다. <b>주간·월간·연간 계획표 모두 지원</b>하지만, 표의 칸 위치가 정확히 인식되지 않을 수 있습니다. 아래에서 날짜·일정을 반드시 확인하고 저장하세요.</p>
+    <div class="wx-photo-grid">
+     <div><label for="wxPhotoKindV230">계획표 종류</label><select class="field" id="wxPhotoKindV230"><option value="week">1주일 계획표</option><option value="month">월간 계획표</option><option value="year">연간 일정표</option></select></div>
+     <div><label for="wxPhotoBaseMonthV230">기준 연월 (일자에 연·월이 없을 때)</label><input type="month" class="field" id="wxPhotoBaseMonthV230"></div>
+     <div><label for="wxPhotoWeekStartV231">주간 기준일 (주간표 요일만 표시된 경우)</label><input type="date" class="field" id="wxPhotoWeekStartV231"></div>
+      <div><label for="wxPhotoFileV230">계획표 사진</label><input type="file" class="field" id="wxPhotoFileV230" accept="image/jpeg,image/png,image/webp"></div>
+    </div>
+    <div class="wx-photo-grid" style="margin-top:10px"><div><label for="wxPhotoScopeV232">가져올 일정 범위</label><select class="field" id="wxPhotoScopeV232"><option value="core">주요 학사·교육·훈련·행사만 (권장)</option><option value="coreDuty">주요 일정 + 당직·근무 일정</option><option value="all">전체 일정 후보를 검토</option></select></div></div>
+    <p class="wx-photo-hint">당직 담당자 명단·전화번호·표 제목·반복 안내문은 일정에서 제외합니다. 모호한 내용은 자동 선택하지 않으며, 검토표에서 필요한 행만 체크할 수 있습니다.</p>
+    <div class="wx-photo-work">
+     <div><img id="wxPhotoThumbV230" alt="선택한 계획표 사진 미리보기" class="hidden"></div>
+     <div><label for="wxPhotoRawV230" style="font-size:12px;font-weight:800;display:block;margin-bottom:6px">인식된 원문 (수정 가능)</label><textarea class="field wx-photo-raw" id="wxPhotoRawV230" spellcheck="false" placeholder="사진을 문자 인식하면 추출한 문장이 표시됩니다. 날짜가 빠진 일정은 직접 날짜를 앞에 붙여 주세요."></textarea>
+     <p class="wx-photo-hint">권장 원문 형태: <code>10월 12일 군수교육</code> 또는 <code>2026-10-12 09:00 군수교육</code>. 여러 일정은 줄을 바꾸세요.</p></div>
+    </div>
+    <div class="wx-photo-actions"><button type="button" class="btn btn-soft" id="wxPhotoReadV230">사진 문자 인식</button><button type="button" class="btn btn-primary" id="wxPhotoToBulkV230">인식된 일정 검토하기</button><button type="button" class="btn btn-soft" id="wxPhotoToAnnualV232">연간 사진 원문 → 연간 목록 입력</button></div>
+    <p id="wxPhotoStatusV230" class="wx-photo-status" role="status" aria-live="polite">사진 파일을 선택하세요. 원본은 일정 저장 전에만 임시로 처리합니다.</p>
+     <div id="wxPhotoReviewV231" class="wx-photo-review hidden" aria-live="polite"></div>
+   </div>
+   <div class="wx-photo-panel" style="background:#fff" id="wxAnnualPastePanelV231"><strong style="font-size:13px">📋 연간 학사일정 목록 가져오기</strong>
+     <p class="wx-photo-hint">예: <code>2025/2/27(목): 가진급식</code>, <code>3/14(금)~3/28(금): 75기 관숙비행</code>. 날짜/일정명 목록 외에 <b>시트의 3~4열 표를 그대로 붙여넣어도</b> 돼. 기존 기록은 삭제하지 않고, 미리보기 확인 후 저장해.</p>
+     <div class="wx-photo-grid"><div><label for="wxAnnualYearV231">목록 시작 연도</label><input id="wxAnnualYearV231" class="field" type="number" min="2000" max="2100" value="2025"></div></div>
+     <textarea class="field wx-photo-raw" rows="5" id="wxAnnualRawV231" placeholder="- 2025/2/27(목): 가진급식&#10;- 3/14(금)~3/28(금): 관숙비행"></textarea>
+     <div class="wx-photo-actions"><button class="btn btn-soft" type="button" id="wxAnnualConvertV231">연간 목록을 아래 일괄 입력표로 변환</button></div>
+     <div class="wx-photo-status" id="wxAnnualResultV231" aria-live="polite"></div>
+   </div>
+   <p class="wx-bulk-help"><b>3열:</b> 날짜 → 일정명 → 세부내용(선택) &nbsp;|&nbsp; <b>4열:</b> 시작일 → 종료일 → 일정명 → 세부내용(선택). 두 날짜를 쓰면 기간 중 매일 표시합니다. 날짜는 <b>2026-10-10</b>, <b>2026.10.10</b>, <b>2026/10/10</b> 형식을 지원합니다.</p>
+   <div class="wx-bulk-example" aria-label="붙여넣기 양식 예시">날짜	일정명	세부내용
+2026-10-12	중간고사	시험 일정 확인
+2026-10-19	체육대회	장소와 시간 확인
+
+시작일	종료일	일정명	세부내용
+2026-11-02	2026-11-04	집중교육	기간 일정</div>
+   <label for="wxBulkPaste" style="font-size:12px;font-weight:800;display:block;margin-bottom:6px">학사일정 붙여넣기 (탭으로 구분된 셀)</label>
+   <textarea class="field wx-bulk-input" id="wxBulkPaste" rows="7" spellcheck="false" placeholder="2026-10-12	중간고사	시험 일정 확인
+2026-10-19	체육대회	준비물 확인"></textarea>
+   <div class="wx-bulk-actions"><button type="button" id="wxBulkPreviewBtn" class="btn btn-soft">붙여넣은 일정 미리보기</button><button type="button" id="wxBulkSaveBtn" class="btn btn-primary" disabled>확인한 일정 일괄 저장</button><button type="button" id="wxBulkClear" class="btn">입력 지우기</button><span id="wxBulkProgress" aria-live="polite" style="color:#617a95;font-size:12px"></span></div>
+   <div id="wxBulkPreview" class="wx-bulk-preview hidden" aria-live="polite"></div>
+  </div>
+ </section>
+</section>
+<section id="customView" class="hidden"><div class="panel"><div class="panel-head"><div><h2 id="wxPageLabel" class="panel-title">사용자 관리표</h2><p class="panel-sub">메뉴마다 별도의 Google Sheets 탭에 저장됩니다.</p></div><div class="wx-head-actions"><a id="wxPageLink" class="btn btn-soft" href="#" target="_blank" rel="noopener">원본 시트 열기 ↗</a><button type="button" class="btn btn-soft hidden" id="wxAddColumn">+ 열 추가</button><button type="button" class="btn btn-primary hidden" id="wxAddRow">+ 행 추가</button><button type="button" class="btn btn-danger hidden" id="wxArchivePage">메뉴 보관</button></div></div><p class="wx-page-help">각 행의 내용을 입력하고 <b>저장</b>을 누르세요. 메뉴를 보관해도 Google Sheets 원본은 보존됩니다.</p><div id="wxPageTable"></div></div></section>
+
+
+<section id="laborCalcView" class="hidden labor-planner-v263" aria-label="사역 수량 계산">
+ <div class="panel labor-planner-panel">
+  <div class="labor-planner-header">
+   <div><p class="labor-eyebrow">사역 / 식수 관리</p><h2 class="panel-title">사역 수량 계산</h2><p class="panel-sub">배정 비율과 학년·인원·분배 단위를 선택하면, 최신 생활실 배정과 스마트당직을 기준으로 계산합니다.</p></div>
+   <a id="laborLivingSourceLinkV262" class="labor-source-link" href="https://docs.google.com/spreadsheets/d/13-ziStWuEB8mRmat_Jciz2ih-dT1Adv6euSczZwY-b0/edit#gid=1415389609" target="_blank" rel="noopener noreferrer">생활실현황 원본 ↗</a>
+  </div>
+  <div class="labor-step-grid">
+   <div class="labor-step">
+    <div class="labor-step-head"><span class="labor-step-number">01</span><label for="laborDivisorV259">배정 인원</label></div>
+    <select id="laborDivisorV259" class="field"><option value="1">1인 1개</option><option value="2" selected>2인 1개</option><option value="3">3인 1개</option><option value="4">4인 1개</option><option value="5">5인 1개</option><option value="6">6인 1개</option></select>
+    <small>품목 1개를 몇 명에게 배분할까요?</small>
+   </div>
+   <div class="labor-step">
+    <div class="labor-step-head"><span class="labor-step-number">02</span><label for="laborGradeV261">학년 기준</label></div>
+    <select id="laborGradeV261" class="field"><option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option><option value="4">4학년</option><option value="all" selected>전학년</option><option value="12">1·2학년</option><option value="13">1·3학년</option><option value="14">1·4학년</option><option value="23">2·3학년</option><option value="24">2·4학년</option><option value="34">3·4학년</option><option value="123">1·2·3학년</option><option value="234">2·3·4학년</option></select>
+    <small>해당 학년의 인원만 포함</small>
+   </div>
+   <div class="labor-step">
+    <div class="labor-step-head"><span class="labor-step-number">03</span><label for="laborModeV259">인원 기준</label></div>
+    <select id="laborModeV259" class="field"><option value="current">현재 인원 (특출·청휴 등 제외)</option><option value="whole" selected>전체 인원 (국외·위탁·휴학 제외)</option><option value="total">총인원 (스마트당직 B8)</option></select>
+    <small>실제 남은 인원 / 전체 대상 / 공식 총원</small>
+   </div>
+   <div class="labor-step">
+    <div class="labor-step-head"><span class="labor-step-number">04</span><label for="laborDimV259">분배 기준</label></div>
+    <select id="laborDimV259" class="field"><option value="company">중대별 (소속 기준)</option><option value="building">관별 (거주 관 기준)</option><option value="floor">층별 (거주 층 기준)</option></select>
+    <small>총인원 선택 시 중대별로 자동 고정</small>
+   </div>
+  </div>
+  <div class="labor-action-line"><div class="labor-choice-summary"><span class="labor-choice-title">현재 선택</span><strong id="laborSelectionSummaryV263" aria-live="polite">2인 1개 · 전학년 · 전체 인원 · 중대별</strong></div><button class="btn btn-primary labor-main-action" id="laborRefreshV259" type="button">선택 기준으로 계산 ↻</button></div>
+  <p id="laborDimLockV262" class="labor-lock-note" role="status">현재·전체 인원은 중대별 / 관별 / 층별로 계산할 수 있습니다.</p>
+ </div>
+ <div class="panel labor-planner-panel labor-solo-card">
+  <div class="labor-section-head"><div><p class="labor-eyebrow">독방 검토</p><h2 class="panel-title">독방 사전 배정 · 수동 조정</h2><p class="panel-sub">자동 배정된 생도 이름을 누르면 그 생도의 짝을 같은 관에서 다시 선택할 수 있습니다. 짝 없는 생도는 미지정으로 표시됩니다.</p></div></div>
+  <div class="labor-auto-toolbar-v269"><p id="laborPairSummaryV259" class="labor-pair-summary">계산 후 독방 현황을 표시합니다.</p><button id="laborAutoAssignV269" class="labor-auto-btn-v269" type="button" title="수동 짝·미지정 기록을 모두 해제하고 현재 기준대로 즉시 자동 짝 배정" disabled>자동배정 설정 ↻</button></div>
+  <p class="labor-auto-help-v269">자동배정 설정을 누르면 기존 수동 변경을 모두 초기화하고, 같은 관 안에서 선택한 분배 기준에 따라 바로 짝을 다시 배정합니다.</p>
+  <div id="laborPairControlsV263" class="labor-pair-actions labor-pair-toggle-v264">
+   <p class="help"><strong>자동 배정된 짝부터 확인하세요.</strong> · 이름을 누르면 해당 생도의 짝 후보가, 미지정을 누르면 비어 있는 짝 후보가 아래에 열립니다. 체크하면 즉시 재배정됩니다.</p>
+   <p id="laborPairPickStatusV264" class="labor-pick-status" role="status">같은 관의 생도끼리만 짝을 지정할 수 있습니다.</p>
+
+   <select class="hidden" id="laborSoloA259" aria-hidden="true"><option value="">기존 입력 호환</option></select>
+   <select class="hidden" id="laborSoloB259" aria-hidden="true"><option value=""></option></select>
+   <button type="button" class="hidden" id="laborSavePairV259" aria-hidden="true">저장</button>
+  </div>
+  <div id="laborPairListV259" class="labor-solo-list"></div>
+ </div> <div class="panel labor-planner-panel labor-results-card">
+  <div class="labor-section-head"><div><p class="labor-eyebrow">최종 계산 결과</p><h2 class="panel-title">분배 수량</h2><p class="panel-sub">대상 인원과 필요 수량을 단위별로 확인하세요.</p></div><span class="labor-result-hint">소수는 남은 인원의 몫을 뜻합니다</span></div>
+  <div id="laborStatsV259" class="labor-kpis"></div>
+  <div class="labor-table-wrap labor-results-table"><table class="eq-table" style="min-width:600px"><thead><tr><th>분배 대상</th><th>대상 인원</th><th>필요 수량 (개)</th><th>완성 세트</th><th>남은 인원 / 그 인원의 몫</th></tr></thead><tbody id="laborTableV259"><tr><td colspan="5">기준을 선택한 뒤 계산 버튼을 눌러주세요.</td></tr></tbody></table></div>
+  <details id="laborReviewV297" class="labor-review-v297 hidden"><summary>미지정·대조 누락 명단 확인 <span id="laborReviewCountV297" class="labor-review-count-v297"></span></summary>
+    <p class="help">호실 미확인과 독방 짝 미지정은 서로 다른 문제입니다. 아래 항목을 누르면 해당 생도 명단과 사유를 확인할 수 있습니다.</p>
+    <div id="laborReviewButtonsV297" class="labor-review-tabs-v297"></div>
+    <div id="laborReviewListV297" class="labor-review-list-v297" aria-live="polite"></div>
+    <p id="laborReviewNoteV297" class="help"></p>
+  </details>
+  <p id="laborNoticeV259" class="labor-status-line" role="status">계산 대기 중 · 스마트당직 연결은 기타 → 설정에서 확인할 수 있습니다.</p>
+  <div class="labor-record-cta"><div><strong>계산 결과를 임시 저장하기</strong><p>지금 선택한 학년·인원·분배 기준과 구역별 계산 수량, 독방 짝 배정을 그대로 보관합니다. 품목명과 실제 수량은 <b>사역 내역</b>에서 나중에 작성하세요.</p></div><button type="button" id="laborDraftOpenV264" class="btn btn-primary" disabled>사역 내역으로 임시 저장 ↓</button></div>
+  <p class="help" role="status" id="laborRecordMessageV264"></p>
+  <details class="labor-method-notes"><summary>계산된 소수 수량은 어떻게 배분하나요?</summary><p>예: 2인 1개 기준으로 5명이면 2개는 4명에게 배분할 수 있고, 나머지 1명에게 필요한 양은 0.5개입니다. 표의 소수는 계산상 수량이며, 실제 물품을 나눌 수 없다면 반올림이 아닌 올림 지급 등 운영 기준을 정해 조정하세요.</p><p>현재·전체 인원은 스마트당직 상태를 확인하고 최신 생활실 호실로 위치를 분류합니다. 총인원은 호실 미배정자도 포함하므로 중대별로만 분배합니다.</p><p>생활실현황: A열 방 ID · E열 호실 · P:AQ 배정명단 / 스마트당직: B4:B7 학년별, B8 중대 총원</p></details>
+ </div>
+
+</section>
+
+<section id="laborRecordsView" class="hidden labor-history-v264">
+ <div class="panel labor-planner-panel"><div class="labor-section-head"><div><p class="labor-eyebrow">사역 / 식수 관리</p><h2 class="panel-title">사역 내역</h2><p class="panel-sub">계산 결과는 우선 임시 저장됩니다. 이곳에서 구역별 실제 수량과 세부사항을 작성하고, 작성 완료 시 업무일지와 캘린더에 반영됩니다.</p></div><button type="button" id="laborRecordsReloadV264" class="btn">새로고침 ↻</button></div>
+ <p class="labor-status-line" id="laborRecordsStatusV264">기록을 불러오는 중…</p>
+ <div class="labor-results-table"><table class="eq-table"><thead><tr><th>사역일자</th><th>품목</th><th>계산 기준</th><th>계산 수량</th><th>실제 수량</th><th>작성 상태 / 관리</th></tr></thead><tbody id="laborRecordsTableV264"><tr><td colspan="6">조회 중…</td></tr></tbody></table></div>
+ <div id="laborRecordDetailV264" class="labor-record-detail hidden"></div>
+ </div>
+</section>
+
+
+<section id="surveysView" class="hidden v284-section">
+ <div class="panel v284-panel">
+  <div class="panel-head"><div><h2 class="panel-title">Google Forms 조사</h2><p class="panel-sub">기존 업무 메뉴별 Google Form 생성 · 응답 자동 집계 · 조사 결과 조회 (최고 관리자 전용)</p></div><button class="btn" id="surveysRefreshV299" type="button">↻ 응답 갱신</button></div>
+  <div class="v299-form-grid">
+   <label>조사할 업무 항목<select id="surveysCategoryV299" class="field"><option value="">불러오는 중...</option></select></label>
+   <label>설문 제목<input class="field" id="surveysTitleV299" maxlength="90" placeholder="예: 피복 사이즈 현황 조사"></label>
+   <label class="v299-wide">설문 안내<textarea class="field" id="surveysDescV299" rows="2" maxlength="1000" placeholder="조사 목적이나 제출 기한 등을 입력하세요."></textarea></label>
+   <div class="v299-preview v299-wide" id="surveysTemplateV299">조사 항목을 선택하면 기본 질문이 나타납니다.</div>
+   <label class="v299-wide">추가 질문 (한 줄에 한 질문, 최대 12개)<textarea class="field" id="surveysExtraV299" rows="3" placeholder="예: 현재 보유 수량&#10;예: 교환을 원하는 이유"></textarea></label>
+  </div>
+  <div class="setting-actions"><button class="btn btn-primary" id="surveysCreateV299" type="button">+ Google Form 조사 만들기</button></div>
+  <div id="surveysStatusV299" role="status"></div>
+  <p class="help">응답은 별도의 Google Sheets 파일에 조사별로 모아 저장됩니다. 기존 명단·총기·군수품·피복 사이즈 자료는 자동 수정되지 않습니다. Google Form 응답 가능 계정은 공유 설정에서 반드시 확인하세요.</p>
+ </div>
+ <div class="panel v284-panel" style="margin-top:14px">
+  <div class="panel-head"><div><h2 class="panel-title">진행 중인 조사 · 결과</h2><p class="panel-sub">제출 후 자동 집계됩니다. 이 화면은 열려 있는 동안 약 20초 간격으로 최신 응답을 확인합니다.</p></div><span id="surveysCountV299" class="v299-count">0개 설문</span></div>
+  <a id="surveysBookV299" class="btn hidden" target="_blank" rel="noopener noreferrer">조사 응답 통합 시트 열기</a>
+  <div id="surveysFormsV299" class="v299-empty">설문을 조회하면 목록이 나타납니다.</div>
+  <div id="surveysResultsV299" aria-live="polite"></div>
+ </div>
+</section>
+<section id="settingsView" class="hidden"><div class="setting-grid"><div id="smartSettingsPanelV258" class="setting-box">
+      <h3>스마트당직 연동 설정</h3>
+      <p class="help">총기번호·군수품·위탁/휴학/퇴교 관리에서 공통으로 사용하는 연결입니다. 최초 저장 이후 재접속과 새 버전 배포에도 유지됩니다. <b>1~8중대별 시트 URL</b>을 입력하세요. 한 파일에 8개 중대 탭이 있다면 동일한 스프레드시트 URL도 가능합니다.</p>
+      <p id="smartSettingsStateV258" aria-live="polite">기존 연결 설정 불러오는 중…</p>
+      <div class="smart-unit-grid" id="smartUnitInputs">
+       <label>1중대 <input class="field" type="url" id="smartUnit1" placeholder="1중대 탭 URL"></label>
+       <label>2중대 <input class="field" type="url" id="smartUnit2" placeholder="2중대 탭 URL"></label>
+       <label>3중대 <input class="field" type="url" id="smartUnit3" placeholder="3중대 탭 URL"></label>
+       <label>4중대 <input class="field" type="url" id="smartUnit4" placeholder="4중대 탭 URL"></label>
+       <label>5중대 <input class="field" type="url" id="smartUnit5" placeholder="5중대 탭 URL"></label>
+       <label>6중대 <input class="field" type="url" id="smartUnit6" placeholder="6중대 탭 URL"></label>
+       <label>7중대 <input class="field" type="url" id="smartUnit7" placeholder="7중대 탭 URL"></label>
+       <label>8중대 <input class="field" type="url" id="smartUnit8" placeholder="8중대 탭 URL"></label>
+      </div>
+      <label class="help" style="display:block;margin-top:12px"><b>위탁·휴학 참고 시트</b> (31행 위탁, 26행 휴학)
+       <input class="field" type="url" id="smartSpecialRefUrl" placeholder="위탁·휴학 시트 URL (gid 포함)">
+      </label>
+      <div class="setting-actions"><button type="button" class="btn btn-primary" id="smartSourcesSave">연결 설정 저장 · 검증</button><button type="button" class="btn" id="smartSettingsReloadV258">저장된 주소 다시 불러오기</button></div>
+      <p class="help">관리자만 연결 주소를 변경할 수 있습니다. 저장할 때 8개 중대의 명단과 참고 시트 접근을 검사하고, <b>모두 검증되기 전에는 기존 연결을 변경하지 않습니다.</b> 위탁·휴학·퇴교 상태는 자동 지정하지 않습니다.</p>
+     </div>
+<div class="setting-box"><h3>클라우드 저장 · 백업</h3><p>기본 기록은 군수계 Google Sheets에 보관됩니다. 백업 파일은 예비 사본이며, 기존 오프라인 버전에서 내려받은 JSON도 이곳에서 복원할 수 있습니다.</p><div class="setting-actions"><button class="btn btn-primary" id="exportJson">전체 백업 (JSON)</button><button class="btn" id="exportCsv">업무 목록 (CSV)</button><button class="btn" id="importJson">백업 복원 (JSON)</button><input type="file" id="importFile" class="hidden" accept=".json,application/json"></div><div class="notice">백업 복원은 현재 앱의 기존 기록을 <b>모두 교체</b>합니다. 복원 전에 먼저 전체 백업을 다운로드하세요.</div></div><div class="setting-box"><h3>업무 분류 관리</h3><p>업무 등록창에서 사용하는 분류를 편집할 수 있습니다. 쉼표(,)로 구분해 입력하세요. 기존 기록의 분류는 유지됩니다.</p><textarea id="categoryEditor" aria-label="업무 분류"></textarea><div class="setting-actions"><button class="btn btn-primary" id="saveCategories">분류 저장</button></div></div><div class="setting-box"><h3>접근권한 · 인수인계</h3><p>군수계 전용 계정은 작성 및 수정, 별도로 열람 권한을 부여받은 구글 계정은 조회만 가능합니다. 기록은 PC가 아닌 군수계 계정의 Google Sheets에 저장되므로 새 PC에서 다시 로그인하면 동일한 기록을 볼 수 있습니다.</p><p><a href="#" id="openSheet" target="_blank" rel="noopener" class="btn btn-soft">Google Sheets 원본 열기 ↗</a></p><div class="notice danger-notice">군 조직의 승인 여부를 확인하세요. 군사기밀, 부대의 보호대상 업무 정보, 장비·재고 등 민감한 군수자료와 개인정보를 개인용 Google 계정에 입력하지 마세요.</div></div><div class="setting-box"><h3>예시 데이터 · 데이터 관리</h3><p>기능을 시험할 수 있도록 일반적인 예시 업무 3건을 추가할 수 있습니다. 샘플은 실제 업무 기록이 아닙니다.</p><div class="setting-actions"><button class="btn" id="addSamples">샘플 3건 추가</button><button class="btn btn-danger" id="clearData">모든 기록 초기화</button></div><p id="totalDataCount" style="margin-top:15px"></p></div><div id="accessManageV281" class="setting-box access-manage-v281 hidden">
+ <div class="panel-head"><div><h3>사용자 전체 편집 권한 관리</h3><p id="accessOwnerV281" class="help">최고 관리자 전용</p></div><button id="accessRefreshV281" type="button" class="btn">↻ 새로고침</button></div>
+ <p class="help">등록된 계정은 총기·군수품·예도·피복·생활실·업무일지 등의 등록·수정·삭제가 가능합니다. 권한을 부여하거나 회수하는 기능은 최고 관리자만 사용할 수 있습니다.</p>
+ <div class="access-grid-v281"><label>Google 계정 이메일<input id="accessEmailV281" class="field" type="email" maxlength="254" autocomplete="off" placeholder="editor@example.com"></label><button class="btn btn-primary" id="accessAddV281" type="button">전체 편집 권한 부여</button></div>
+ <p id="accessStatusV281" class="access-status-v281" role="status"></p>
+ <div id="accessListV281" class="access-list-v281"></div>
+ <div class="notice danger-notice">보안 유의: 전체 편집자는 원본 Google Sheets에서도 직접 수정할 수 있습니다. 관련 군수·인원 자료 공유는 승인된 조직 계정에만 부여하세요. 기존 제한 편집자와 조회자 권한은 그대로 유지합니다. 별도로 공유된 스마트당직·생활실 자료는 파일 소유자의 공유 설정이 추가로 필요할 수 있습니다.</div>
+</div></div></section>
+
+<section id="accessView" class="hidden v284-section">
+ <div class="panel v284-panel"><div class="panel-head"><div><h2 class="panel-title">편집 권한 부여 · 회수</h2><p class="panel-sub">최고 관리자만 접근 가능 · 직책별 허용 메뉴 및 중대 범위를 지정합니다.</p></div><button class="btn" id="v284AccessRefresh" type="button">↻ 새로고침</button></div>
+ <div class="v284-grid">
+  <label>근무 직책<select id="v284AccessJob" class="field"></select></label>
+  <label>Google 계정 이메일<input id="v284AccessEmail" class="field" type="email" placeholder="editor@example.com" autocomplete="off" maxlength="254"></label>
+ </div>
+ <p id="v284AccessHint" class="notice">중대 3편대장생도·군수보좌관생도를 선택하면 해당 중대의 명단·군수품·피복만 선택할 수 있습니다.</p>
+ <strong class="v284-caption">조회·수정 권한을 허용할 업무 메뉴</strong><div id="v284AccessCheckboxes" class="v284-check-grid"></div>
+ <div class="setting-actions"><button id="v284AccessGrant" class="btn btn-primary" type="button">선택 범위 권한 부여 / 변경</button></div>
+ <p id="v284AccessStatus" class="help" role="status"></p><div id="v284AccessUsers" class="v284-users"></div>
+ <div class="notice danger-notice">중요: 앱에서 중대별로 화면·서버 요청을 제한하더라도, 기존 방식처럼 Google Sheets 원본을 직접 편집 공유하면 원본의 다른 중대 행도 열람·수정할 수 있습니다. 실질적인 중대별 정보 격리가 필요하면 중대별 시트 분리와 별도 인증·저장 구조가 필요합니다. 기존 v2.81 전체 편집자에게 범위 제한을 적용하려면 먼저 기존 전체 편집 권한을 회수해야 합니다.</div>
+ </div>
+</section>
+<section id="staffView" class="hidden v284-section">
+ <div class="panel v284-panel"><div class="panel-head"><div><h2 class="panel-title">군수계 명단</h2><p class="panel-sub">근무 차수별 명단을 따로 보관합니다. 이전 차수 기록은 유지하며, 현재 차수를 지정하면 업무일지 제목에도 자동 표시됩니다.</p></div><button class="btn" id="v284StaffRefresh" type="button">↻ 새로고침</button></div>
+ <div id="v285StaffTermPanel" class="v284-staff-form">
+  <h3 style="margin:0 0 8px">현재 근무 차수 설정</h3>
+  <div class="v288-term-controls"><input class="field" id="v285StaffTerm" maxlength="30" placeholder="예: 75-3차, 다음 75-4차" aria-label="새 현재 근무 차수">
+   <select class="field" id="v288NewTermMode" aria-label="새 차수 명단 생성 방식"><option value="copy">이전 근무자 명단 복사</option><option value="empty">빈 명단으로 시작</option></select>
+   <button class="btn btn-primary" id="v285StaffTermApply" type="button">이 차수로 시작·전환</button></div>
+  <p id="v285StaffTermStatus" class="help">현재 차수를 설정하면 업무일지 상단에 자동 표시됩니다. 다른 차수를 시작해도 이전 차수 명단은 삭제되지 않습니다.</p>
+  <div class="v288-history-row"><label for="v288StaffHistoryTerms">명단 조회 차수</label><select class="field" id="v288StaffHistoryTerms"><option value="">차수 선택</option></select><span class="help" id="v288ArchiveHint"></span></div>
+ </div><div id="v284StaffForm" class="v284-staff-form">
+  <div class="v284-grid"><label>근무 직책<select class="field" id="v284StaffJob"></select></label><label>이름<input class="field" id="v284StaffName" maxlength="60" placeholder="이름 입력"></label></div>
+  <div class="v284-grid"><label>전화번호<input class="field" type="tel" id="v284StaffPhone" placeholder="010-0000-0000" maxlength="30"></label></div>
+  <div class="setting-actions"><button class="btn btn-primary" id="v284StaffSave" type="button">명단 저장</button><button class="btn" type="button" id="v284StaffCancel">입력 초기화</button></div>
+ </div>
+ <p id="v284StaffStatus" class="help" role="status"></p><div class="v284-table-scroll"><table class="v284-table"><thead><tr><th>직책</th><th>이름</th><th>전화번호</th><th>근무 차수</th><th>관리</th></tr></thead><tbody id="v284StaffRows"></tbody></table></div>
+ </div>
+</section>
+
+<section id="updatesView" class="hidden v284-section"><div class="panel v284-panel"><div class="panel-head"><div><h2 class="panel-title">업데이트 내역</h2><p class="panel-sub">V1부터 현재까지 주요 기능 추가·수정 사항입니다. 데이터의 개별 변경 기록은 ‘수정 사항 내역’에서 확인하세요.</p></div><button class="btn" id="v285UpdateRefresh" type="button">↻ 새로고침</button></div>
+<p id="v285UpdateStatus" class="help" role="status"></p><div id="v285UpdateRows" class="v285-updates-list"></div>
+<div id="v285UpdateForm" class="v284-staff-form hidden"><h3>새 버전 변경사항 기록 (관리자)</h3><div class="v284-grid"><label>버전<input class="field" id="v285UpdateVersion" maxlength="24" placeholder="예: V2.89"></label><label>제목<input class="field" id="v285UpdateTitle" maxlength="100" placeholder="변경 기능 요약"></label></div><label>상세 변경사항<textarea class="field" id="v285UpdateDetail" maxlength="1000" rows="3" placeholder="이번 버전에 추가·수정된 기능을 적어 주세요."></textarea></label><div class="setting-actions"><button class="btn btn-primary" id="v285UpdateSave" type="button">업데이트 내역 등록</button></div><p class="help">코드 자체 변경은 자동 감지할 수 없습니다. 새로운 버전 배포 시 버전명과 변경 내용을 등록해 주세요.</p></div>
+</div></section>
+<section id="uniformView" class="hidden">
+ <div class="uniform-shell-v278">
+  <div class="panel uniform-block-v278"><div class="panel-head"><div><h2 class="panel-title">피복 · 사이즈표</h2><p class="panel-sub">76·77·78기 원본 사이즈표 최초 일괄등록 · 기수/중대별 조회 · 개별 변경 이력</p></div><button class="btn" id="uniformReloadV278" type="button">↻ 갱신</button></div>
+   <div id="uniformStatsV278" class="uniform-stats-v278"></div><p id="uniformLoadLabelV278" class="uniform-muted-v278" role="status">피복 사이즈표를 열면 Google Sheets에서 불러옵니다.</p>
+   <h3 class="uniform-muted-v278" style="margin-bottom:4px">기수 선택</h3><div class="uniform-tabs-v278" id="uniformCohortTabsV278"></div>
+   <h3 class="uniform-muted-v278" style="margin-bottom:4px">중대 선택</h3><div class="uniform-tabs-v278" id="uniformCompanyTabsV278"></div>
+   <div class="uniform-toolbar-v278"><input class="field" style="max-width:320px" type="search" id="uniformSearchV278" placeholder="이름·사이즈 검색"><span id="uniformSelectionV278" class="uniform-muted-v278"></span></div>
+  </div>
+  <div id="uniformManageV278" class="panel uniform-block-v278 hidden"><h3>기수 최초 입력 · 삭제</h3><div class="uniform-bulk-actions-v278"><button type="button" class="btn btn-primary" id="uniformImportV278">선택 기수 최초 일괄등록</button><button type="button" class="btn btn-danger" id="uniformDeleteCohortV278">선택 기수 전체 삭제</button></div><p class="help">76·77·78기는 업로드한 중대별 원본 명단에서 등록합니다. 이미 해당 기수가 존재하면 중복 등록을 차단합니다. 삭제한 기록은 변경이력 시트에 남습니다.</p></div>
+  <div class="panel uniform-block-v278"><div class="panel-head"><div><h2 class="panel-title">기수 · 중대 · 이름 · 품목별 사이즈</h2><p class="panel-sub">가로·세로 스크롤을 하더라도 품목 제목과 기수·중대·이름이 상단·왼쪽에 고정됩니다. 사이즈 변경 후 칸을 벗어나면 자동 저장합니다.</p></div></div><div class="uniform-scroll-help-v279"><span>↔ 좌우로 이동하면 다른 피복 품목을 볼 수 있습니다</span><span>↕ 아래로 내려도 품목명과 생도 정보는 고정됩니다</span></div><div class="uniform-scroll-v278" role="region" aria-label="피복 품목별 사이즈표 - 가로·세로 스크롤 가능" tabindex="0"><table class="uniform-table-v278"><thead><tr id="uniformGroupHeaderV279" class="uniform-group-row-v279"></tr><tr id="uniformHeaderV278" class="uniform-items-row-v279"></tr></thead><tbody id="uniformRowsV278"></tbody></table></div></div>
+  <div class="panel uniform-block-v278 uniform-quantity-panel-v280">
+  <div class="panel-head"><div><h2 class="panel-title">기수별 · 중대별 품목 수량</h2><p class="panel-sub">총기 명단처럼 기수 우선 또는 중대 우선으로 정렬합니다. 각 그룹의 소계와 전체 합계를 별도로 표시합니다.</p></div></div>
+  <div class="uniform-quantity-toolbar-v280">
+   <div class="uniform-quantity-sort-v280" role="group" aria-label="집계 정렬 기준"><span class="uniform-muted-v278">정렬 순서</span>
+    <button type="button" class="btn roster-sort-button uniform-sort-button-v280 roster-sort-active" id="uniformQtySortCohortV280" aria-pressed="true">기수별 정렬<small>75기 1중대 → 78기 8중대</small></button>
+    <button type="button" class="btn roster-sort-button uniform-sort-button-v280" id="uniformQtySortCompanyV280" aria-pressed="false">중대별 정렬<small>1중대 75기 → 8중대 78기</small></button>
+   </div>
+   <div class="uniform-control-v278 uniform-quantity-item-v280"><label for="uniformItemFilterV278" class="uniform-muted-v278">조회 품목</label><select class="field" id="uniformItemFilterV278" aria-label="수량을 집계할 피복 품목"></select></div>
+  </div>
+  <p id="uniformQuantityMetaV280" class="uniform-quantity-meta-v280" role="status">품목을 선택하면 수량이 표시됩니다.</p>
+  <div id="uniformQuantityV278" class="uniform-summary-scroll-v278"></div>
+  <div id="uniformQuantityTotalV280" class="uniform-grand-total-v280" aria-label="품목 전체 합계"></div>
+ </div>
+  <div class="panel uniform-block-v278"><div class="panel-head"><div><h2 class="panel-title">스마트당직 비교 · 삭제 처리 예정</h2><p class="panel-sub">기수·중대·이름 세 항목을 대조합니다. 스마트당직에서 찾을 수 없는 경우에도 자동 삭제하지 않습니다.</p></div><button class="btn btn-soft" id="uniformCompareV278" type="button">↻ 스마트당직 다시 대조</button></div><p id="uniformCompareStatusV278" class="uniform-warn-v278" role="status">스마트당직 대조 대기 중입니다.</p><div id="uniformPendingV278" class="uniform-summary-scroll-v278"></div></div>
+ </div>
+</section>
+
+</main>
+</div>
+<nav class="mobile-nav" aria-label="모바일 메뉴"><button data-view="today" class="active"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3V10z"/></svg>일반학기</button><button data-view="train">성무훈련</button><button class="v294-mobile-training hidden" type="button" data-training-quick="trainJournal">훈련 일지</button><button class="v294-mobile-training hidden" type="button" data-training-quick="trainCalendar">훈련 달력</button><button class="v294-mobile-training hidden" type="button" data-training-quick="train">예비 명단</button><button data-view="all"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>전체업무</button><button data-view="stats"><svg viewBox="0 0 24 24"><path d="M5 21v-9M12 21V4M19 21v-9"/></svg>통계</button> <button data-view="dorm">생활실</button><button data-view="roomAsset">생활실 비품</button><button data-view="equipment"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/></svg>공용비품</button><button data-view="roster"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>명단/총기</button><button data-view="supply"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h16M4 20h16"/></svg>군수품</button><button data-view="saber">예도</button><button data-view="uniform">사이즈표</button><button data-view="repairs"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3zM12 9v5M12 18h.01"/></svg>수리목록</button><button data-view="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>캘린더</button><button data-view="surveys">구글폼 조사</button><button data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/></svg>설정</button></nav>
+<div class="modal-backdrop hidden" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><div><h2 id="modalTitle">업무 등록</h2><span class="modal-version">v2.6</span><p>필수 정보부터 입력하고 필요에 따라 내용을 추가하세요.</p></div><button class="icon-btn" id="closeModal" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></svg></button></div><form id="entryForm"><div class="modal-body"><input type="hidden" name="id" id="entryId"><div class="form-grid"><div class="form-item full"><label for="fTitle">업무명 <span class="required">*</span></label><input id="fTitle" name="title" required maxlength="150" placeholder="예: 소모품 신청 내역 확인"></div><div class="form-item"><label for="fDate">업무일 <span class="required">*</span></label><input id="fDate" name="date" required type="date"></div><div class="form-item"><label for="fTime">업무 시간 <span class="time24-badge">24시간제</span></label><input id="fTime" name="time" type="text" inputmode="numeric" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" title="00:00부터 23:59까지 24시간제로 입력하세요. (예: 09:00, 13:30)" placeholder="HH:mm (예: 13:00)" autocomplete="off" aria-describedby="time24Help"><small class="time24-help" id="time24Help">오전/오후 대신 00:00~23:59로 입력 · 예: 09:00, 13:00</small></div><div class="form-item"><label for="fCategory">업무 분류 <span class="required">*</span></label><select id="fCategory" name="category" required></select></div><div class="form-item"><label for="fStatus">진행 상태</label><select id="fStatus" name="status"><option>미착수</option><option>진행 중</option><option>완료</option><option>보류</option></select></div><div class="form-item"><label for="fPriority">중요도</label><select id="fPriority" name="priority"><option>보통</option><option>높음</option><option>긴급</option></select></div><div class="form-item"><label for="fDue">마감일</label><input id="fDue" name="due" type="date"></div><div class="form-item full"><label for="fOwner">담당자 (선택)</label><select id="fOwner" name="owner" aria-label="담당자 선택"></select><small class="owner-help">군수 담당 직책 또는 1~8중대의 담당 직책을 선택하세요.</small></div><div class="form-item full"><label for="fDetail">업무 내용</label><textarea id="fDetail" name="detail" maxlength="10000" placeholder="진행한 내용, 확인 사항, 처리 결과 등을 정리하세요."></textarea></div></div>
+<section class="handover-card" aria-labelledby="handoverTitle">
+  <div class="handover-head">
+    <div class="handover-icon" aria-hidden="true">↗</div>
+    <div class="handover-titles"><h3 id="handoverTitle">추후 조치 / 인수인계</h3><p>미완료 업무, 다음 담당자의 확인사항, 후속 조치를 기록하세요.</p></div>
+    <span class="handover-tag">인수인계</span>
+  </div>
+  <label class="handover-label" for="fFollow">인수인계 내용</label>
+  <textarea id="fFollow" name="follow" rows="6" maxlength="10000" placeholder="예) 다음 주까지 확인할 항목, 남아 있는 업무, 전달해야 할 사항"></textarea>
+  <div class="handover-counter"><span>이 내용은 저장 후 업무 상세에서도 확인할 수 있습니다.</span><span id="followCount">0 / 10,000자</span></div>
+</section>
+</div><div class="modal-foot"><span id="formHint" class="form-hint" role="status" aria-live="polite">저장 후에도 언제든 수정할 수 있습니다.</span><div class="right"><button class="btn" type="button" id="cancelModal">취소</button><button class="btn btn-primary" type="submit" id="submitBtn">업무 저장</button></div></div></form></div></div>
+
+
+<div class="modal-backdrop roster-modal hidden" id="rosterBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="rosterModalTitle">
+ <div class="modal-head"><div><h2 id="rosterModalTitle">명단 등록</h2><p>기수 · 중대 · 이름을 입력하고 저장하세요.</p></div><button class="icon-btn" id="rosterClose" aria-label="닫기">✕</button></div>
+ <form id="rosterForm"><div class="modal-body"><input type="hidden" id="rosterId" name="id">
+  <div class="roster-form-grid">
+   <div class="form-item"><label for="rosterFCohort">기수 *</label><input id="rosterFCohort" name="cohort" maxlength="24" required placeholder="예: 76기" list="rosterCohortList"></div>
+   <div class="form-item"><label for="rosterFCompany">중대 *</label><select id="rosterFCompany" name="company" required><option value="">중대 선택</option><option value="1">1중대</option><option value="2">2중대</option><option value="3">3중대</option><option value="4">4중대</option><option value="5">5중대</option><option value="6">6중대</option><option value="7">7중대</option><option value="8">8중대</option><option value="기타">기타</option></select></div>
+   <input id="rosterFFlight" name="flight" type="hidden" value="">
+   <div class="form-item"><label for="rosterFName">이름 *</label><input id="rosterFName" name="name" maxlength="60" required placeholder="성명"></div>
+   <div class="form-item"><label for="rosterFCadetNumber">교번 (선택)</label><input id="rosterFCadetNumber" name="cadetNumber" maxlength="60" placeholder="문자·숫자 그대로 저장"></div>
+   <div class="form-item"><label for="rosterFFirearmNumber">총기번호 (선택)</label><input id="rosterFFirearmNumber" name="firearmNumber" maxlength="100" placeholder="총기 식별번호"></div>
+   <div class="form-item"><label for="rosterFStatus">총기상태</label><select id="rosterFStatus" name="firearmStatus"><option value="">상태 선택</option><option value="정상">정상</option><option value="수리필요(보고 완료)">수리필요(보고 완료)</option><option value="수리필요(미보고)">수리필요(미보고)</option></select></div>
+   <div class="form-item full"><label for="rosterFMemo">총기상태 상세 비고</label><textarea id="rosterFMemo" name="memo" maxlength="1500" rows="4" placeholder="점검 내용, 수리 필요 사항 등을 입력하세요."></textarea></div>
+  </div><datalist id="rosterCohortList"></datalist></div>
+  <div class="modal-foot"><span id="rosterModalHint" class="form-hint">변경 사항은 Google Sheets에 저장됩니다.</span><div class="right"><button type="button" class="btn" id="rosterCancel">취소</button><button type="submit" class="btn btn-primary roster-edit" id="rosterSubmit">저장</button></div></div>
+ </form></div></div>
+<div class="modal-backdrop eq-modal hidden" id="eqBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="eqModalTitle">
+ <div class="modal-head"><div><h2 id="eqModalTitle">공용비품 현황 등록</h2><p>세탁기·건조기 정상/고장 대수와 사용 인원을 입력하세요.</p></div><button class="icon-btn" id="eqClose" aria-label="닫기">✕</button></div>
+ <form id="eqForm"><div class="modal-body"><input id="eqId" name="id" type="hidden">
+  <div class="eq-field-grid">
+    <div class="form-item"><label for="eqBuilding">건물 / 구역 *</label><input id="eqBuilding" name="building" required maxlength="60" list="eqBuildingList" placeholder="정예관"></div>
+    <div class="form-item"><label for="eqUnit">중대 / 구분 *</label><input id="eqUnit" name="unit" required maxlength="60" list="eqUnitList" placeholder="1"></div>
+    <datalist id="eqBuildingList"><option value="정예관"><option value="비전관"><option value="성기훈"></datalist>
+    <datalist id="eqUnitList"><option value="1"><option value="2"><option value="3"><option value="4"><option value="5"><option value="6"><option value="7"><option value="8"><option value="비전관"><option value="성기훈"></datalist>
+    <div class="form-item full"><label for="eqLocation">설치 위치 *</label><input id="eqLocation" name="location" required maxlength="100" placeholder="예: 1층남쪽, 2층북쪽(女)"></div>
+    <div class="eq-qty"><h4>세탁기</h4><div class="form-item"><label for="eqWasherOk">정상 대수</label><input id="eqWasherOk" name="washerOk" type="number" min="0" max="99999" required value="0" step="1"></div><div class="form-item"><label for="eqWasherBad">고장 대수</label><input id="eqWasherBad" name="washerBad" type="number" min="0" max="99999" required value="0" step="1"></div></div>
+    <div class="eq-qty"><h4>건조기</h4><div class="form-item"><label for="eqDryerOk">정상 대수</label><input id="eqDryerOk" name="dryerOk" type="number" min="0" max="99999" required value="0" step="1"></div><div class="form-item"><label for="eqDryerBad">고장 대수</label><input id="eqDryerBad" name="dryerBad" type="number" min="0" max="99999" required value="0" step="1"></div></div>
+    <div class="form-item"><label for="eqPopulation">보고서 기준 사용 인원 (과거 참고용)</label><input id="eqPopulation" name="population" type="number" min="0" max="99999" step="1" placeholder="자료 없으면 비워두기"></div>
+    <div class="form-item"><label for="eqChecked">점검 기준일 *</label><input id="eqChecked" name="checkedOn" type="date" required></div>
+    <div class="form-item full"><label for="eqMemo">특이사항 / 조치 기록</label><textarea id="eqMemo" name="memo" maxlength="3000" placeholder="고장 상태, 수리 의뢰, 설치·교체, 확인 사항 등"></textarea></div>
+  </div></div><div class="modal-foot"><span class="form-hint" id="eqHint">Google Sheets에 저장됩니다.</span><div class="right"><button type="button" class="btn" id="eqCancel">취소</button><button type="submit" class="btn btn-primary" id="eqSave">현황 저장</button></div></div></form>
+</div></div>
+
+<div class="modal-backdrop wx-menu-modal hidden" id="wxMenuBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-label="사용자 메뉴 추가"><div class="modal-head"><div><h2>새 관리 메뉴 만들기</h2><p>새 메뉴와 연결된 Google Sheets 탭을 생성합니다.</p></div><button type="button" class="icon-btn" id="wxMenuClose" aria-label="닫기">×</button></div><form id="wxMenuForm"><div class="modal-body"><div class="wx-menu-form"><div><label for="wxMenuName">메뉴 이름</label><input type="text" class="field" id="wxMenuName" maxlength="60" required placeholder="예: 월별 소모품 관리"></div><div><label for="wxMenuType">메뉴 유형</label><select class="field" id="wxMenuType"><option value="표">관리표</option><option value="메모">메모 목록</option></select></div><div id="wxMenuColumnsWrap"><label for="wxMenuColumns">관리표의 열 이름 (쉼표로 구분)</label><input class="field" id="wxMenuColumns" value="항목, 담당자, 상태, 비고" maxlength="500"><p class="panel-sub">만든 뒤에도 열을 추가할 수 있습니다.</p></div></div></div><div class="modal-foot"><button type="submit" class="btn btn-primary" id="wxMenuSubmit">메뉴 + 시트 생성</button></div></form></div></div>
+
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<div id="printArea" class="print-only" aria-hidden="true"></div>
+
+
+
+<div id="supplyDispositionBackdropV276" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="supplyDispositionTitleV276">
+ <div class="modal" style="max-width:810px"><div class="modal-head"><div><h2 id="supplyDispositionTitleV276">군수품 처리 여부 확인</h2><p>각 지급 품목의 물품 처리 여부를 확인하기 전에는 인원을 이동할 수 없습니다.</p></div></div>
+ <div class="modal-body"><p id="supplyDispositionInfoV276" class="help"></p><div id="supplyDispositionItemsV276"></div></div>
+ <div class="modal-foot"><span class="help">처리 확인 내역은 별도 시트에 보존됩니다.</span><div class="right"><button class="btn" type="button" id="supplyDispositionCancelV276">취소</button><button class="btn btn-primary" type="button" id="supplyDispositionApplyV276">모든 품목 확인 완료</button></div></div>
+ </div>
+</div>
+<script src="./assets/pages.js"></script>
+</body>
+</html>

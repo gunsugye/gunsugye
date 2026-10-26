@@ -1,0 +1,11 @@
+.pages-login{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;background:#edf2f7;font-family:system-ui,sans-serif;color:#172b43}
+.pages-login[hidden],.pages-session[hidden]{display:none}
+.pages-login-card{width:min(100%,440px);padding:40px 32px;background:white;border:1px solid #d9e2ed;border-radius:20px;box-shadow:0 18px 64px #13243a14}
+.pages-login h1{margin:10px 0 16px;font-size:26px;line-height:1.4}
+.pages-login p{line-height:1.7}.pages-eyebrow{font-weight:750;color:#446b96;font-size:13px}
+#pagesLoginStatus{min-height:48px;font-size:14px;white-space:pre-wrap;color:#52667e}
+#pagesGoogleButton{min-height:44px;margin-top:24px}
+.pages-login button,.pages-session button{border:1px solid #bccbdc;border-radius:7px;background:#fff;padding:8px 12px;color:#172b43;cursor:pointer}
+.pages-session{position:fixed;right:12px;bottom:12px;z-index:10000;display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid #d9e2ed;border-radius:10px;background:#fffffff2;box-shadow:0 3px 16px #13243a14;font:12px system-ui,sans-serif}
+@media(max-width:560px){.pages-session{max-width:calc(100vw - 24px)}#pagesAccount{max-width:180px;overflow:hidden;text-overflow:ellipsis}.pages-login-card{padding:28px 22px}}
+@media print{.pages-session,.pages-login{display:none!important}}

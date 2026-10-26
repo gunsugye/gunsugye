@@ -1,0 +1,10 @@
+name = "logbook-api"
+main = "worker.mjs"
+compatibility_date = "2026-10-26"
+
+[vars]
+# 경로 없이 origin만 입력. 프로젝트 Pages의 /저장소명 경로는 포함하지 않습니다.
+ALLOWED_ORIGINS = "https://gunsugye.github.io"
+GOOGLE_CLIENT_ID = "185198327273-8h476hqqigd6492hklf70fkqvj7cd48j.apps.googleusercontent.com"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIwohbKNoI4FW5Va_CsexMy3-i6xIRKiJrGx_oOSSWlgEGdkDLW-fvUnj5ZAm6SBEd/exec"
+# API_SHARED_SECRET은 wrangler secret put API_SHARED_SECRET 으로만 등록합니다.

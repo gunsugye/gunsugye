@@ -1,0 +1,96 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import { readFileSync } from 'node:fs';
+import { createHmac, createHash, randomUUID } from 'node:crypto';
+
+const gateway = readFileSync(new URL('../apps-script/Gateway.gs', import.meta.url), 'utf8');
+const legacy = readFileSync(new URL('../apps-script/Legacy.gs', import.meta.url), 'utf8');
+const secret = 'test-secret-with-more-than-thirty-two-characters';
+function fixture() {
+  const values = new Map([
+    ['LOGBOOK_OWNER_EMAIL', 'owner@gmail.com'], ['LOGBOOK_SHEET_ID', 'existing-spreadsheet'],
+    ['PAGES_API_SHARED_SECRET', secret],
+    ['LOGBOOK_FULL_EDITOR_EMAILS_V281', '["editor@gmail.com"]'],
+    ['LOGBOOK_LIMITED_EDITOR_EMAILS_V226', '["limited@gmail.com"]']
+  ]);
+  const props = { getProperty: key => values.get(key) ?? null, setProperty: (key, value) => values.set(key, value) };
+  const cache = new Map();
+  const context = vm.createContext({
+    console,
+    PropertiesService: { getScriptProperties: () => props },
+    CacheService: { getScriptCache: () => ({ get: key => cache.get(key), put: (key, value) => cache.set(key, value) }) },
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    Utilities: {
+      Charset: { UTF_8: 'utf8' }, DigestAlgorithm: { SHA_256: 'sha256' },
+      computeHmacSha256Signature: (payload, key) => createHmac('sha256', key).update(payload).digest(),
+      computeDigest: (_algorithm, value) => createHash('sha256').update(value).digest(),
+      base64EncodeWebSafe: bytes => Buffer.from(bytes).toString('base64url')
+    },
+    ContentService: { MimeType: { JSON: 'json' }, createTextOutput: text => ({ text, setMimeType() { return this; } }) },
+    // 소유자로 실행되어도 접속 계정에 소유자 권한이 전파되면 안 됩니다.
+    Session: { getEffectiveUser: () => ({ getEmail: () => 'owner@gmail.com' }) }
+  });
+  new vm.Script(gateway + '\n' + legacy).runInContext(context);
+  const signed = (email = 'owner@gmail.com', method = 'listFullEditorsV281', args = [], overrides = {}) => {
+    const payload = JSON.stringify({ version: 1, timestamp: Date.now(), nonce: randomUUID(), email, sub: 'google-sub-' + email, method, args, ...overrides });
+    return { postData: { contents: JSON.stringify({ payload, signature: createHmac('sha256', secret).update(payload).digest('base64url') }) } };
+  };
+  return { context, values, signed, rpc: (...args) => JSON.parse(context.doPost(...args).text) };
+}
+
+test('원본 업무 함수가 공개 전역에 노출되지 않는다', () => {
+  const { context } = fixture();
+  for (const method of ['getBootstrap', 'saveEntry', 'requireOwner_', 'config_', 'setupLogbook', 'grantFullEditorV281']) assert.equal(context[method], undefined);
+  assert.equal(typeof context.doPost, 'function');
+});
+test('서명된 소유자는 기존 계정 관리 조회를 할 수 있다', () => {
+  const { rpc, signed } = fixture();
+  const result = rpc(signed());
+  assert.equal(result.ok, true);
+  assert.equal(result.result.owner, 'owner@gmail.com');
+  assert.deepEqual(result.result.editors, ['editor@gmail.com']);
+});
+test('서명 누락·위조·만료·미래 요청과 잘못된 JSON을 차단한다', () => {
+  const { rpc, signed } = fixture();
+  const altered = signed();
+  const envelope = JSON.parse(altered.postData.contents);
+  envelope.payload = envelope.payload.replace('owner@gmail.com', 'someone@gmail.com');
+  altered.postData.contents = JSON.stringify(envelope);
+  for (const request of [undefined, { postData: { contents: '{}' } }, { postData: { contents: 'bad' } }, altered,
+    signed(undefined, undefined, undefined, { timestamp: Date.now() - 91000 }),
+    signed(undefined, undefined, undefined, { timestamp: Date.now() + 91000 })]) {
+    assert.equal(rpc(request).code, 'FORBIDDEN');
+  }
+});
+test('동일 서명 요청을 다시 전송하면 차단한다', () => {
+  const { rpc, signed } = fixture();
+  const request = signed();
+  assert.equal(rpc(request).ok, true);
+  assert.equal(rpc(request).code, 'FORBIDDEN');
+});
+test('미등록 계정은 차단하고 편집자를 최고 관리자로 취급하지 않는다', () => {
+  const { rpc, signed } = fixture();
+  assert.equal(rpc(signed('stranger@gmail.com')).code, 'FORBIDDEN');
+  const editor = rpc(signed('editor@gmail.com'));
+  assert.equal(editor.ok, false);
+  assert.match(editor.error, /최고 관리자/);
+});
+test('내부 함수와 프로토타입 이름을 API로 호출할 수 없다', () => {
+  const { rpc, signed } = fixture();
+  for (const method of ['config_', 'pagesEmail_', 'constructor', 'toString', '__proto__', 'setupLogbook']) assert.equal(rpc(signed('owner@gmail.com', method)).ok, false);
+});
+test('사용자별 알림 기록은 소유자 저장 공간 안에서도 분리된다', () => {
+  const { rpc, signed, values } = fixture();
+  const id = randomUUID();
+  assert.equal(rpc(signed('owner@gmail.com', 'dismissChangeV283', [id])).ok, true);
+  assert.equal(rpc(signed('editor@gmail.com', 'dismissChangeV283', [id])).ok, true);
+  const keys = [...values.keys()].filter(key => key.startsWith('PAGES_USER_'));
+  assert.equal(keys.length, 2);
+  assert.notEqual(keys[0], keys[1]);
+});
+test('비공개 업무 원본과 브라우저 JavaScript 문법을 검사한다', () => {
+  new vm.Script(legacy);
+  new vm.Script(readFileSync(new URL('../docs/assets/pages.js', import.meta.url), 'utf8'));
+  new vm.Script(readFileSync(new URL('../docs/assets/app.js', import.meta.url), 'utf8'));
+});

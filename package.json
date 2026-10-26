@@ -1,0 +1,11 @@
+{
+  "name": "logistics-logbook-pages",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node tests/run.mjs",
+    "package": "node scripts/package.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
