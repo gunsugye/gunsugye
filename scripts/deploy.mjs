@@ -55,9 +55,7 @@ async function main() {
   const api = async (path, method = 'GET', body) => {
     const args = ['api', `repos/${config.repository}${path}`, '--method', method, '-H', 'Accept: application/vnd.github+json', '-H', 'X-GitHub-Api-Version: 2022-11-28'];
     if (body !== undefined) args.push('--input', '-');
-    let response;
-    try { response = run(gh, args, { capture: true, ...(body === undefined ? {} : { input: JSON.stringify(body) }), label: `GitHub ${method} ${path} 실패. 인증과 저장소 권한을 확인하세요.` }); }
-    catch (error) { throw error; }
+    const response = run(gh, args, { capture: true, ...(body === undefined ? {} : { input: JSON.stringify(body) }), label: `GitHub ${method} ${path} 실패. 인증과 저장소 권한을 확인하세요.` });
     return JSON.parse(response);
   };
   const repo = await api('');

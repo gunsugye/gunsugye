@@ -15,6 +15,8 @@ GitHub Pages 화면 → Cloudflare Workers API → Apps Script → 기존 Google
 
 이미 운영 중인 사이트에 30일 로그인 유지와 당일/장기업무를 적용하려면 [UPDATE.md](UPDATE.md)를 따르세요.
 
+이 PC의 세 계정 연결을 마쳤다면 [자동 배포](AUTO-DEPLOY.md) 명령으로 수정한 기능을 한 번에 배포할 수 있습니다.
+
 | 경로 | 용도 |
 | --- | --- |
 | `docs/` | GitHub Pages에 배포하는 화면 |
