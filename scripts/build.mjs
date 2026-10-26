@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { updateJournalJs, updateJournalHtml } from './journal.mjs';
 import { normalizeNavigation, updateNavigationJs, updateNavigationHtml } from './navigation.mjs';
 import { updateCalendarJs, calendarCSS } from './calendar.mjs';
@@ -44,6 +45,12 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
 </section>
 <div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>`);
 html = html.replace('</body>', '<script src="./assets/pages.js"></script>\n</body>');
+// 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
+const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
+html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}"`);
+for (const [path, contents] of [['assets/app.css', css], ...['assets/pages.css','assets/pages.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])]) {
+  html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
+}
 write('docs/index.html', updateNavigationHtml(updateJournalHtml(html)));
 write('docs/assets/app.css', css);
 // app.js는 인증 성공 후에만 로드합니다. 원래 google.script.run 호출은 pages.js 어댑터로 연결합니다.

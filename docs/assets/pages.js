@@ -30,7 +30,8 @@ window.google=window.google||{};window.google.script={run:runner()};
 function loadApp(bootstrap){
  firstBootstrap=bootstrap;$('pagesAccount').textContent=bootstrap.userEmail||'로그인됨';$('pagesSession').hidden=false;
  if(appLoaded){location.reload();return;}
- const script=document.createElement('script');script.src='./assets/app.js';
+ const version=document.documentElement?.dataset?.appVersion||'';
+ const script=document.createElement('script');script.src='./assets/app.js'+(version?'?v='+encodeURIComponent(version):'');
  script.onerror=()=>{showLogin('화면 파일을 불러오지 못했습니다. 다시 시도하세요.');$('pagesRetry').hidden=false;};
  script.onload=()=>{$('pagesLogin').hidden=true;};appLoaded=true;document.body.appendChild(script);
 }

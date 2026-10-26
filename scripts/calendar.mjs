@@ -87,6 +87,7 @@ export function updateCalendarJs(js) {
 }
 
 export const calendarCSS = `
+.v298-grid{grid-template-columns:minmax(0,1fr)}
 .calendar-range-week{grid-column:1/-1;position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
 .calendar-range-week .range-day{border-radius:0;min-height:calc(85px + var(--range-lanes)*30px);padding:8px 6px;border-color:#e3e9f0;background:#fff}
 .calendar-range-week .range-day.selected{padding:7px 5px;background:#eff6ff;border:2px solid #4483dc}
