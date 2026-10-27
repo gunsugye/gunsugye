@@ -4183,6 +4183,15 @@ async function changeReadPageV309(page,ids){
 
 let dormPlanV315=null,dormPlanPdfV315=null,dormPlanDraftV315=null,dormPlanSelectedV315=null,dormPlanBusyV315=false,dormPlanRenderTaskV315=null,dormPlanRenderSequenceV315=0;
 const dormPlanKeyV315=r=>[r.building,r.floor,r.room].join('|');
+let dormPlanZoomV316=1;
+function dormPlanSizeV316(mode){
+ const canvas=$('dormPlanCanvasV315'),box=canvas.parentElement,scroll=box.parentElement;if(!canvas.width)return;
+ if(mode==='page')dormPlanZoomV316=Math.min(1,(scroll.clientHeight||innerHeight*.7)/(canvas.height*(scroll.clientWidth/canvas.width)));
+ else if(mode==='width')dormPlanZoomV316=1;
+ else if(typeof mode==='number')dormPlanZoomV316=Math.max(.35,Math.min(4,dormPlanZoomV316*mode));
+ const width=Math.max(240,scroll.clientWidth*dormPlanZoomV316);box.style.width=width+'px';box.style.setProperty('--plan-font',Math.max(6,width/110)+'px');
+ $('dormPlanZoomV316').textContent=Math.round(dormPlanZoomV316*100)+'%';
+}
 function dormPlanStatusV315(message){$('dormPlanStatusV315').textContent=message;}
 async function dormPlanLoadV315(){
  if(!canEdit)return;
@@ -4215,6 +4224,7 @@ async function dormPlanRenderV315(){
  const n=Number($('dormPlanPageV315').value),page=await dormPlanPdfV315.getPage(n),vp=page.getViewport({scale:1.6});
  if(sequence!==dormPlanRenderSequenceV315)return;
  const canvas=$('dormPlanCanvasV315');canvas.width=vp.width;canvas.height=vp.height;
+ dormPlanSizeV316();
  const task=page.render({canvasContext:canvas.getContext('2d'),viewport:vp});dormPlanRenderTaskV315=task;
  try{await task.promise;}catch(e){if(e.name==='RenderingCancelledException')return;throw e;}finally{if(dormPlanRenderTaskV315===task)dormPlanRenderTaskV315=null;}
  if(sequence!==dormPlanRenderSequenceV315)return;
@@ -4231,6 +4241,7 @@ function dormPlanEditV315(layout){
  const room=dormPlanRoomV315(layout);dormPlanSelectedV315={...room,...layout};
  $('dormPlanRoomTitleV315').textContent=[layout.building,layout.floor,layout.room].join(' · ');
  $('dormPlanMembersV315').innerHTML=(room.members||[]).map(dormPlanMemberRowV315).join('');
+ const parts=layout.room.split('-');$('dormPlanNumberV316').value=parts[0];$('dormPlanSuffixV316').value=parts[1]||'';
  $('dormPlanGroupV315').value=['1중대','2중대','3중대','4중대','5중대','6중대','7중대','8중대','전(대)대','동생명','여생도','미분류'].includes(room.group)?room.group:'미분류';
  $('dormPlanFemaleV315').checked=!!room.femaleRoom;
  $('dormPlanRoomReviewV315').textContent=dormPlanDraftV315?'PDF에서 추출한 후보입니다. 원본 도면과 대조 후 「검토 저장」하세요.':'기수·중대·이름을 함께 확인하세요. 다른 호실의 동명이인을 자동으로 가져오지 않습니다.';
@@ -4240,9 +4251,15 @@ async function dormPlanSaveRoomV315(){
  const selected=dormPlanSelectedV315;if(!selected)return;
  const members=Array.from($('dormPlanMembersV315').querySelectorAll('tr')).map(row=>({company:row.querySelector('[data-plan-company]').value.trim(),cohort:row.querySelector('[data-plan-cohort]').value.trim(),name:row.querySelector('[data-plan-name]').value.trim(),female:$('dormPlanFemaleV315').checked}));
  if(members.some(p=>! /^[1-8]$/.test(p.company)||! /^\d{2,3}$/.test(p.cohort)||!p.name))return alert('배정자마다 중대·기수·이름을 입력하세요.');
- const change={...selected,group:$('dormPlanGroupV315').value,femaleRoom:$('dormPlanFemaleV315').checked,members};
+ const number=$('dormPlanNumberV316').value.trim(),suffix=$('dormPlanSuffixV316').value;
+ if(!/^\d{3}$/.test(number))return alert('호실 번호는 세 자리 숫자로 입력하세요.');
+ const room=number+(suffix?'-'+suffix:''),previousRoom=selected.previousRoom||selected.room;
+ const layoutList=dormPlanDraftV315?.layout||dormPlanV315.layout;
+ if(layoutList.some(r=>r.building===selected.building&&r.floor===selected.floor&&r.room===room&&r.room!==selected.room))return alert('같은 관·층에 해당 호실이 이미 있습니다.');
+ const change={...selected,room,previousRoom,group:/^[1-8]$/.test(suffix)?suffix+'중대':$('dormPlanGroupV315').value,femaleRoom:$('dormPlanFemaleV315').checked,members};
  if(dormPlanDraftV315){
-  const index=dormPlanDraftV315.changes.findIndex(r=>dormPlanKeyV315(r)===dormPlanKeyV315(change));
+  const index=dormPlanDraftV315.changes.findIndex(r=>dormPlanKeyV315(r)===dormPlanKeyV315(selected));
+  const anchor=dormPlanDraftV315.layout.find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(selected));if(anchor)anchor.room=room;
   change.reviewed=true;if(index<0)dormPlanDraftV315.changes.push(change);else dormPlanDraftV315.changes[index]=change;
   $('dormPlanRoomDialogV315').close();await dormPlanRenderV315();dormPlanStatusV315('PDF 후보 '+dormPlanDraftV315.layout.length+'호 · 검토 완료 '+dormPlanDraftV315.changes.filter(x=>x.reviewed).length+'호. 갱신 적용 시 검토한 배정만 저장합니다.');return;
  }
@@ -4306,6 +4323,10 @@ async function dormPlanPublishV315(){
  catch(e){alert('PDF 갱신 실패: '+e.message);}finally{$('dormPlanPublishV315').disabled=false;}
 }
 function dormPlanInitV315(){
+ $('dormPlanMinusV316').onclick=()=>dormPlanSizeV316(1/1.2);$('dormPlanPlusV316').onclick=()=>dormPlanSizeV316(1.2);
+ $('dormPlanWidthV316').onclick=()=>dormPlanSizeV316('width');$('dormPlanFitV316').onclick=()=>dormPlanSizeV316('page');
+ window.addEventListener('resize',()=>dormPlanSizeV316());
+ $('dormPlanSuffixV316').onchange=()=>{const s=$('dormPlanSuffixV316').value;if(/^[1-8]$/.test(s))$('dormPlanGroupV315').value=s+'중대';};
  window.addEventListener('beforeunload',e=>{if(dormPlanDraftV315||$('dormPlanRoomDialogV315').open){e.preventDefault();e.returnValue='';}});
  $('dormPlanLoadV315').onclick=dormPlanLoadV315;$('dormPlanPageV315').onchange=()=>dormPlanRenderV315();$('dormPlanLiveV315').onchange=()=>dormPlanRenderV315();
  $('dormPlanFileV315').onchange=dormPlanUploadV315;$('dormPlanPublishV315').onclick=dormPlanPublishV315;

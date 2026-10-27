@@ -2,13 +2,13 @@ import test from 'node:test';import assert from 'node:assert/strict';import vm f
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
 function fixture(){
- const properties=new Map(),writes=[],backups=[],books=[];
+ const properties=new Map(),writes=[],backups=[],books=[],savedPlans=[];
  for(const id of ['main','linked']){
   const room={id:id+'-room',building:'정예 동관',floor:'3층',corridor:'복도',room:'343-3',group:'3중대',capacity:2,outsideCount:1,updatedAt:'old',slots:[{occupied:true},{occupied:true}]};
   const entries=[{cohort:'75',company:'3',name:'검증가',status:'확인'},{cohort:'76',company:'3',name:'검증나',status:'확인'}];
   const raw=Array(43).fill('');raw[0]=room.id;raw[4]=room.room;raw[9]='old';raw[15]='75';raw[17]='검증가';raw[22]='76';raw[24]='검증나';
   const ss={getId:()=>id},sh={getLastRow:()=>2,getMaxColumns:()=>43,getRange:(row,col,n=1,w=1)=>({getValues:()=>row===2&&n===1?[raw.slice(col-1,col-1+w)]:[],setValues:v=>{assert.equal(backups.length,2);writes.push({id,row,col,values:JSON.parse(JSON.stringify(v))});}}),copyTo:()=>({setName:name=>{backups.push({id,name});},getName:()=>id+' backup'})};ss.getSheetByName=()=>sh;
-  books.push({ss,sh,room,raw,entries});
+  ss.getSheetByName=()=>null;books.push({ss,sh,room,raw,entries});
  }
  let allowed=true;
  const c=vm.createContext({
@@ -22,7 +22,8 @@ function fixture(){
   dormEnsureUnifiedV248_:ss=>books.find(b=>b.ss===ss).sh,ensureRows_:()=>{},
   dormUnifiedSaveV248_:(sh,r,members)=>{assert.equal(backups.length,2);writes.push({id:books.find(b=>b.sh===sh).ss.getId(),members:JSON.parse(JSON.stringify(members)),row:r.row});},protectLimitedSheetV226_:()=>{},DriveApp:{createFile:()=>({getId:()=> 'plan-file'})}
  });vm.runInContext(code,c);
- return {c,books,writes,backups,properties,deny:()=>allowed=false};
+ c.DriveApp.createFile=(_name,data)=>{savedPlans.push(JSON.parse(data));return {getId:()=> 'plan-file'};};
+ return {c,books,writes,backups,properties,savedPlans,deny:()=>allowed=false};
 }
 test('도면 배정 저장은 호실 ID를 유지하며 두 연결 파일의 인원과 통합명단을 함께 갱신한다',()=>{
  const f=fixture(),plan=f.c.getDormPlanV315(),room=plan.rooms[0];
@@ -47,4 +48,17 @@ test('PDF 갱신은 미검토 배정을 변경하지 않고 문서 버전을 검
  const result=f.c.saveDormPlanV315({version:p.version,changes:[],pdf:{filename:'new.pdf',base64:'JVBERi0xLjQK',layout:[{building:'정예 동관',floor:'3층',room:'343-3',page:8,x:.1,y:.1,width:.1,height:.1,fullBox:true}]}});
  assert.equal(result.rooms,0);assert.equal(f.writes.length,0);assert.equal(f.properties.get('DORM_PLAN_FILE_V315'),'plan-file');
  const g=fixture();assert.throws(()=>g.c.saveDormPlanV315({version:'stale',changes:[]}));
+});
+test('호실 접미사 변경은 두 파일의 ID와 배정자 중대를 유지하고 도면 원본 좌표를 보존한다',()=>{
+ const f=fixture();f.c.DORM_PLAN_DEFAULT_V315_.layout=[{building:'정예 동관',floor:'3층',room:'343-3',sourceRoom:'343-4',page:8,x:.1,y:.1,width:.1,height:.1}];
+ const p=f.c.getDormPlanV315(),r=p.rooms[0];
+ f.c.saveDormPlanV315({version:p.version,changes:[{...r,previousRoom:r.room,room:'343-1'}]});
+ for(const b of f.books){const row=f.writes.find(w=>w.id===b.ss.getId()&&w.col===1).values[0];assert.equal(row[0],b.room.id);assert.equal(row[4],'343-1');assert.equal(row[14],'1중대');assert.equal(f.writes.find(w=>w.id===b.ss.getId()&&w.members).members[0].company,'3');}
+ assert.equal(f.savedPlans[0].layout[0].room,'343-1');assert.equal(f.savedPlans[0].layout[0].sourceRoom,'343-4');
+});
+test('이미 있는 호실 번호로 변경하거나 동일한 원본 호실을 두 번 변경하면 쓰기 전에 차단한다',()=>{
+ for(const collision of [true,false]){const f=fixture(),p=f.c.getDormPlanV315(),r=p.rooms[0];
+ if(collision)f.books[1].room={...f.books[1].room,room:'343-1'};
+ const changes=[{...r,previousRoom:r.room,room:'343-1'}];if(!collision)changes.push({...r,previousRoom:r.room,room:'343-2'});
+ assert.throws(()=>f.c.saveDormPlanV315({version:p.version,changes}));assert.equal(f.backups.length,0);assert.equal(f.writes.length,0);}
 });

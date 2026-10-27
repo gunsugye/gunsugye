@@ -43,25 +43,34 @@ function saveDormPlanV315(payload){
  requireOwner_();return lockAndRun_(()=>{
   if(!payload||!Array.isArray(payload.changes)||payload.changes.length>1000)throw Error('변경 호실 목록을 확인하세요.');
   const current=dormPlanDataV315_();if(payload.version!==current.version)throw Error('도면이 다른 화면에서 갱신되었습니다. 다시 불러오세요.');
-  const books=dormPlanBooksV315_(),pending=[],keys=new Set();
+  const books=dormPlanBooksV315_(),pending=[],keys=new Set(),sources=new Set(),renames=[];
   const incoming=new Map();
   for(const change of payload.changes){
    if(!['정예 본관','정예 동관','정예 서관','별관'].includes(change.building)||!['1층','2층','3층'].includes(change.floor)||!/^\d{3}(?:-[1-8동생명여])?$/.test(change.room))throw Error('관·층·호실을 확인하세요.');
    const key=dormPlanKeyV315_(change);if(keys.has(key))throw Error('변경 목록에 같은 호실이 중복됐습니다.');keys.add(key);
-   if(change.token!==dormPlanTokenV315_(books,change))throw Error('다른 화면에서 배정이 변경되었습니다. 다시 불러오세요: '+change.room);
+   const source={...change,room:change.previousRoom||change.room},sourceKey=dormPlanKeyV315_(source);
+   if(!/^\d{3}(?:-[1-8동생명여])?$/.test(source.room)||sources.has(sourceKey))throw Error('변경 전 호실이 중복되거나 올바르지 않습니다.');sources.add(sourceKey);
+   if(change.token!==dormPlanTokenV315_(books,source))throw Error('다른 화면에서 배정이 변경되었습니다. 다시 불러오세요: '+source.room);
+   if(source.room!==change.room){
+    if(!books.some(book=>dormPlanFindV315_(book,source)))throw Error('변경 전 호실이 없습니다. 다시 불러오세요.');
+    if(books.some(book=>dormPlanFindV315_(book,change)))throw Error('변경할 호실 번호가 이미 사용 중입니다: '+change.room);
+    renames.push({source,key,room:change.room});
+   }
    const members=dormPlanValidateMembersV315_(change.members,change.building==='별관'?4:2);
    members.forEach(p=>{const identity=[p.cohort,p.company,p.name].join('|');if(incoming.has(identity)&&incoming.get(identity)!==key)throw Error('같은 기수·중대·이름이 여러 변경 호실에 있습니다. 동명이인은 구분 정보를 확인하세요.');incoming.set(identity,key);});
    for(const book of books){
-    const old=dormPlanFindV315_(book,change),existing=old?book.unified.byId.get(old.id):null;
+    const old=dormPlanFindV315_(book,source),existing=old?book.unified.byId.get(old.id):null;
     if(old&&!existing)throw Error('통합명단 열이 준비되지 않았습니다. 먼저 배정명단 통합을 실행하세요.');
     const capacity=change.building==='별관'?4:2;
-    const normalized=dormCheckV234_({...old,...change,corridor:change.corridor||old?.corridor||'PDF 도면',capacity,verified:true,femaleRoom:!!change.femaleRoom,slots:Array.from({length:capacity},(_,i)=>({occupied:i<members.length,female:!!change.femaleRoom&&i<members.length})),outsideCount:Math.min(old?.outsideCount||0,members.length)},old);
+    const suffix=(change.room.match(/-([1-8])$/)||[])[1];
+    const normalized=dormCheckV234_({...old,...change,group:source.room!==change.room&&suffix?suffix+'중대':change.group,corridor:change.corridor||old?.corridor||'PDF 도면',capacity,verified:true,femaleRoom:!!change.femaleRoom,slots:Array.from({length:capacity},(_,i)=>({occupied:i<members.length,female:!!change.femaleRoom&&i<members.length})),outsideCount:Math.min(old?.outsideCount||0,members.length)},old);
     pending.push({book,old,existing,normalized,members,key});
    }
   }
+  if(renames.some(r=>sources.has(r.key)))throw Error('호실 번호를 서로 교환하거나 겹쳐 변경할 수 없습니다. 한 호실씩 저장하세요.');
   // 대상 밖에 이미 배정된 동일한 기수·중대·이름은 자동 이동하지 않습니다.
   for(const book of books)for(const r of book.unified.list){
-   if(keys.has(dormPlanKeyV315_(r)))continue;
+   if(sources.has(dormPlanKeyV315_(r)))continue;
    for(const p of r.entries.filter(x=>x.status!=='이전편성'))if(incoming.has([p.cohort,p.company,p.name].join('|')))throw Error('다른 호실에도 같은 기수·중대·이름이 배정되어 있습니다: '+r.room+' · 대상자를 확인하세요.');
   }
   let next=null;
@@ -75,14 +84,27 @@ function saveDormPlanV315(payload){
    if(new Set(layout.map(dormPlanKeyV315_)).size!==layout.length)throw Error('PDF에 중복 호실 좌표가 있습니다.');
    next={filename:text_(pdf.filename,150),base64:pdf.base64,layout,version:Utilities.getUuid()};
   }
+  if(renames.length){
+   if(!next)next={...current,layout:current.layout.map(r=>({...r})),version:Utilities.getUuid()};
+   next.layout=next.layout.map(r=>{const rename=renames.find(x=>dormPlanKeyV315_(x.source)===dormPlanKeyV315_(r));return rename?{...r,room:rename.room,sourceRoom:r.sourceRoom||r.room}:r;});
+   if(new Set(next.layout.map(dormPlanKeyV315_)).size!==next.layout.length)throw Error('변경 후 도면 호실이 중복됩니다.');
+  }
   if(!pending.length&&!next)throw Error('변경할 내용이 없습니다.');
   // 모든 대조를 마친 뒤 각 파일의 원본 시트를 백업합니다. 비품 기록과 호실 ID는 유지합니다.
   const backups=[];
   for(const book of books.filter(b=>pending.some(p=>p.book===b))){if(book.sh){const backup=book.sh.copyTo(book.ss);backup.setName('생활실_도면편집전_'+Date.now());protectLimitedSheetV226_(backup);backups.push(backup.getName());}}
+  for(const book of books.filter(b=>pending.some(p=>p.book===b&&p.old&&p.old.room!==p.normalized.room))){const legacy=book.ss.getSheetByName('생활실_배정명단');if(legacy){const backup=legacy.copyTo(book.ss);backup.setName('배정명단_호실변경전_'+Date.now());protectLimitedSheetV226_(backup);backups.push(backup.getName());}}
   for(const p of pending){
    const sh=dormEnsureUnifiedV248_(p.book.ss),row=p.existing?p.existing.row:sh.getLastRow()+1;
    ensureRows_(sh,row);sh.getRange(row,1,1,15).setValues([dormValuesV234_(p.normalized)]);
    dormUnifiedSaveV248_(sh,{row,room:p.normalized.room,capacity:p.normalized.capacity},p.members);
+   if(p.old&&p.old.room!==p.normalized.room){
+    const legacy=p.book.ss.getSheetByName('생활실_배정명단');
+    if(legacy&&legacy.getLastRow()>1){
+     const ids=legacy.getRange(2,1,legacy.getLastRow()-1,1).getDisplayValues();
+     ids.forEach((r,i)=>{if(String(r[0])===String(p.old.id))legacy.getRange(i+2,5).setValue(p.normalized.room);});
+    }
+   }
    // 통합 원본이 기준이며 이전 백업 명단을 다시 읽어 정정을 되돌리지 않습니다.
    PropertiesService.getScriptProperties().setProperty('DORM_MERGED_V248',p.book.ss.getId());
   }
