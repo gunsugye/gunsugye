@@ -2794,7 +2794,7 @@ function assetRenderV244(){
   return '<tr><td><strong>'+escapeH(t.name)+'</strong></td><td>'+t.recommended+escapeH(t.unit)+'</td><td>'+q+'</td><td class="asset-good-text">'+ok+'</td><td class="asset-bad-text">'+bad+'</td><td>'+(q-ok-bad)+'</td><td>'+verified+' / '+rooms.length+'호</td><td><button type="button" class="btn btn-soft asset-owner" data-asset-hide="'+escapeH(t.id)+'" title="점검 이력은 그대로 보존됩니다">목록 삭제</button></td></tr>';
  }).join(''):'<tr><td colspan="8">등록된 품목이 없습니다.</td></tr>';
  $('assetRoomCountV244').textContent=rooms.length+'개 호실';
- const bulkNote=$('assetBulkScopeV245');if(bulkNote)bulkNote.textContent='현재 조회 범위 '+rooms.length+'호 · 일괄처리 시 선택 품목에 지정한 수량·상태를 적용합니다 (기본 2개). 세부사항 미입력 시 기존 내용은 보존합니다.';
+ const bulkNote=$('assetBulkScopeV245');if(bulkNote)bulkNote.textContent='현재 조회 범위 '+rooms.length+'호 · 일괄처리 시 선택한 품목·자리에 상태를 적용합니다. 세부사항 미입력 시 기존 내용은 보존합니다.';
  // 렌더링 중 기존 편집 DOM이 제거되지 않게 먼저 안전한 위치로 옮김.
  const park=$('assetEditorParkingV245'),editor=$('assetRoomEditorV244');if(park&&editor&&editor.parentElement!==park)park.appendChild(editor);
  if(assetResetGroupsV245){assetOpenGroupsV245=null;assetResetGroupsV245=false;}else assetRememberOpenGroupsV245();
@@ -2909,7 +2909,7 @@ async function assetLoadV244(){
  show('등록된 생활실과 비품 목록을 불러오는 중입니다...');
  $('assetRoomCountV244').textContent='자료 불러오는 중...';
  try{
-  assetDataV244=await server('getDormInventoryV244');
+  assetDataV244=await server('getDormInventoryV244');$('assetResetV313').classList.toggle('hidden',!canManageUsersV281);
   if(!assetDataV244||!Array.isArray(assetDataV244.rooms)||!Array.isArray(assetDataV244.items))throw Error('서버에서 비품 자료를 가져오지 못했습니다. Code.gs를 같은 ZIP의 파일로 교체했는지 확인해 주세요.');
   $('assetSetupV244').classList.toggle('hidden',assetDataV244.initialized||!canEdit);
   $('assetActiveV244').classList.toggle('hidden',!assetDataV244.initialized);
@@ -2933,6 +2933,42 @@ async function assetLoadV244(){
   $('assetSetupV244').classList.add('hidden');$('assetActiveV244').classList.add('hidden');
  }
 }
+async function assetApplyBulkV313(){
+ if(assetSavingV244||!mustEdit()||!assetDataV244?.initialized)return;
+ if(assetDirtyV244.size)return alert('수정 중인 호실을 먼저 저장하거나 닫아 주세요.');
+ const rooms=assetRoomsFilteredV244(),itemId=$('assetBulkKindV246').value||'ALL';
+ const options={itemId,status:$('assetBulkStatusV246').value,position:$('assetBulkPositionV313').value,unavailable:$('assetBulkUnavailableV313').value,details:$('assetBulkDetailV246').value.trim(),includeMissing:$('assetBulkFillMissingV246').checked};
+ if(!rooms.length)return alert('조회 범위에 호실이 없습니다.');
+ if(!ASSET_STATUSES_V246.includes(options.status)||options.details.length>500)return alert('상태와 세부사항을 확인하세요.');
+ const targets=itemId==='ALL'?assetDataV244.items:assetDataV244.items.filter(x=>x.id===itemId);
+ const recs=assetRecMapV244(),snapshot=[];let slots=0;
+ rooms.forEach(room=>targets.forEach(item=>{const positions=item.positions||['common'];if(options.position!=='all'&&!positions.includes(options.position))return;
+  const key=room.id+'|'+item.id,rec=recs.get(key);if(rec)snapshot.push([key,rec.updatedAt||'']);if(rec||options.includeMissing)slots+=options.position==='all'?positions.length:1;
+ }));
+ if(!slots)return alert('선택 범위와 자리에 해당하는 비품이 없습니다.');
+ const place=$('assetBulkPositionV313').selectedOptions[0].textContent,unavailable=$('assetBulkUnavailableV313').selectedOptions[0].textContent;
+ if(!confirm('현재 조회 범위 '+rooms.length+'호 · '+slots+'개 자리/공용 비품에 적용합니다.\n품목: '+(itemId==='ALL'?'전체 품목':targets[0].name)+'\n자리: '+place+'\n상태: '+options.status+'\n사용불가: '+unavailable+'\n세부사항: '+(options.details?'입력한 내용으로 변경':'기존 내용 유지')+'\n\n선택하지 않은 자리와 조회 범위 밖의 호실은 유지됩니다. 적용할까요?'))return;
+ assetSavingV244=true;['assetBulkApplyV246','assetBulkNormalV246'].forEach(id=>$(id).disabled=true);
+ try{const result=await enqueue(()=>server('bulkSetDormInventoryScopeV246',rooms.map(x=>x.id),options,snapshot));await assetLoadV244();toast('일괄 입력 완료 · 수정 '+result.updated+'건 / 신규 '+result.created+'건');}
+ catch(e){alert('일괄 입력 실패: '+e.message);}
+ finally{assetSavingV244=false;['assetBulkApplyV246','assetBulkNormalV246'].forEach(id=>$(id).disabled=false);}
+}
+async function assetResetRecordsV313(){
+ if(assetSavingV244||!canManageUsersV281)return;
+ if(assetDirtyV244.size)return alert('입력 중인 변경사항을 저장하거나 닫은 뒤 실행하세요.');
+ const button=$('assetResetV313');button.disabled=true;
+ try{
+  const preview=await server('getDormInventoryResetV313');
+  if(!preview.records)return toast('초기화할 점검 기록이 없습니다.');
+  if(!confirm('생활실 비품 점검 기록 '+preview.records+'건을 모두 초기화할까요?\n상태·세부사항·사용불가 체크가 삭제됩니다.\n품목 목록과 생활실 목록은 유지하고 원본 점검 기록은 백업 시트로 보관합니다.'))return;
+  assetSavingV244=true;
+  const result=await enqueue(()=>server('clearDormInventoryRecordsV313',preview.token));
+  assetCurrentRoomV244='';assetDirtyV244.clear();await assetLoadV244();
+  alert('점검 기록 '+result.removed+'건 초기화 완료\n백업: '+(result.backup||'해당 없음'));
+ }catch(e){alert('초기화 실패: '+e.message);}
+ finally{assetSavingV244=false;button.disabled=false;}
+}
+
 function assetFilterChangeV245(e,resetCorridor){
  const field=e.currentTarget;
  if(assetDirtyV244.size){
@@ -2946,7 +2982,7 @@ function assetFilterChangeV245(e,resetCorridor){
  assetResetGroupsV245=true;assetRenderV244();
 }
 function assetInitV244(){
- $('assetBulkApplyV246').closest('.asset-bulk-options')?.classList.add('asset-legacy-bulk-v311');
+ $('assetResetV313').addEventListener('click',assetResetRecordsV313);
  ['assetBuildingV244','assetFloorV244','assetCorridorV244','assetOrgV245','assetGroupModeV245','assetSearchV244'].forEach(id=>{
   const field=$(id);field.dataset.assetLastValue=field.value;
   field.addEventListener(id==='assetSearchV244'?'input':'change',e=>assetFilterChangeV245(e,id==='assetBuildingV244'||id==='assetFloorV244'));
@@ -2987,44 +3023,10 @@ function assetInitV244(){
  $('assetEditRowsV244').addEventListener('click',e=>{const b=e.target.closest('[data-asset-save]');if(!b)return;const row=b.closest('[data-asset-item]');if(row&&assetDirtyV244.has(row.dataset.assetItem))assetSaveChangesV244();else toast('변경한 수량이 없습니다.');});
  $('assetSaveRoomV244').addEventListener('click',()=>assetSaveChangesV244());
  $('assetCloseRoomV244').addEventListener('click',assetCloseRoomV245);
- async function applyInventoryBulkV246(){
-  if(assetSavingV244||!mustEdit()||!assetDataV244?.initialized)return;
-  if(assetDirtyV244.size)return alert('열린 호실의 변경사항을 먼저 저장하거나 닫아 주세요.');
-  const rooms=assetRoomsFilteredV244(),ids=rooms.map(x=>x.id);
-  if(!ids.length)return alert('선택된 호실이 없습니다.');
-  const itemId=$('assetBulkKindV246').value||'ALL',status=$('assetBulkStatusV246').value;
-  const qtyRaw=$('assetBulkQtyV246').value,quantity=Number(qtyRaw),details=$('assetBulkDetailV246').value.trim();
-  const includeMissing=$('assetBulkFillMissingV246').checked;
-  if(qtyRaw.trim()===''||!Number.isInteger(quantity)||quantity<0||quantity>999)return alert('수량은 0~999 사이의 정수로 입력하세요.');
-  if(!ASSET_STATUSES_V246.includes(status))return alert('적용할 상태를 선택하세요.');
-  if(details.length>500)return alert('세부사항은 500자 이내로 입력하세요.');
-  const targets=itemId==='ALL'?assetDataV244.items:assetDataV244.items.filter(x=>x.id===itemId);
-  if(!targets.length)return alert('선택한 품목을 찾지 못했습니다. 새로고침 후 다시 시도하세요.');
-  const records=assetRecMapV244(),snapshot=[];let matched=0,missing=0;
-  rooms.forEach(room=>targets.forEach(item=>{
-   const key=room.id+'|'+item.id,rec=records.get(key);
-   if(rec){matched++;snapshot.push([key,String(rec.updatedAt||'')]);}else missing++;
-  }));
-  if(!matched&&!includeMissing)return alert('선택 범위에 기존 비품 기록이 없습니다. 미등록 비품 포함 옵션을 켜 주세요.');
-  const targetDesc=itemId==='ALL'?'전체 '+targets.length+'종':targets[0].name;
-  const noteAction=details?'새 세부사항으로 변경':'기존 세부사항 유지';
-  const confirmMsg='조회 범위 '+rooms.length+'호 · '+targetDesc+'에 아래 값을 적용합니다.\n\n'+
-   '상태: '+status+'\n수량: 호실당 해당 품목 '+quantity+'개\n세부사항: '+noteAction+'\n'+
-   '기존 기록 '+matched+'건 덮어쓰기\n미등록 기록 '+missing+'건 '+(includeMissing?'신규 생성':'제외')+'\n\n'+
-   '선택한 비품을 실제로 확인했나요? 현재 기록이 변경되므로 신중하게 실행해 주세요.';
-  if(!confirm(confirmMsg))return;
-  assetSavingV244=true;
-  ['assetBulkApplyV246','assetBulkNormalV246'].forEach(id=>$(id).disabled=true);
-  try{
-   const result=await enqueue(()=>server('bulkSetDormInventoryScopeV246',ids,itemId,status,quantity,details,includeMissing,snapshot));
-   await assetLoadV244();
-   alert('비품 일괄처리 완료\n수정 '+result.updated+'건 / 신규 등록 '+result.created+'건 / 건너뜀 '+result.skipped+'건\n대상 호실 '+result.rooms+'호');
-  }catch(e){alert('일괄처리 실패: '+String(e?.message||e)+'\n다른 사용자가 먼저 수정했다면 새로고침 후 재시도해 주세요.');}
-  finally{assetSavingV244=false;['assetBulkApplyV246','assetBulkNormalV246'].forEach(id=>$(id).disabled=false);}
- }
+ async function applyInventoryBulkV246(){await assetApplyBulkV313();}
  $('assetBulkApplyV246').addEventListener('click',applyInventoryBulkV246);
  $('assetBulkNormalV246').addEventListener('click',()=>{
-  $('assetBulkKindV246').value='ALL';$('assetBulkStatusV246').value='정상';$('assetBulkQtyV246').value='2';$('assetBulkDetailV246').value='';
+  $('assetBulkPositionV313').value='all';$('assetBulkUnavailableV313').value='keep';$('assetBulkKindV246').value='ALL';$('assetBulkStatusV246').value='정상';$('assetBulkQtyV246').value='2';$('assetBulkDetailV246').value='';
   applyInventoryBulkV246();
  });
  $('assetCsvV244').addEventListener('click',()=>{

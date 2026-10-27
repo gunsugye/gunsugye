@@ -3,7 +3,7 @@ function replaceFunction(source,name,replacement){
  if(!pattern.test(source))throw Error('비품 함수 위치 확인: '+name);
  return source.replace(pattern,()=>replacement);
 }
-export function roomAssetServer(source,server){
+export function roomAssetServer(source,server,bulk){
  source=replaceFunction(source,'saveDormInventoryRoomV244',server.match(/function saveDormInventoryRoomV244\([\s\S]*$/)[0]);
  source=source.replace('function assetV244Catalog_(sh){','function assetV244CatalogRawV311_(sh){');
  source+=`\n${server.slice(0,server.indexOf('function saveDormInventoryRoomV244'))}
@@ -20,14 +20,18 @@ function assetV244Catalog_(sh){return assetV244CatalogRawV311_(sh).filter(x=>Str
   const stored=assetSlotsReadV311_(r[9]);return {roomId:r[0],itemId:r[1],quantity:Number(r[2])||0,normal:Number(r[3])||0,repair:Number(r[4])||0,confirmed:r[5]==='Y',updatedAt:r[6]||'',status:assetV246LegacyStatus_(r),details:r[8]||'',slots:stored.slots,legacy:stored.legacy};
  });
 }`);
- source=source.replace('function bulkSetDormInventoryScopeV246(roomIds,itemId,status,quantity,details,includeMissing,expectedRecords){',`function bulkSetDormInventoryScopeV246(roomIds,itemId,status,quantity,details,includeMissing,expectedRecords){
- throw Error('자리별 상태를 보존하기 위해 호실 점검 화면에서 1번·2번 또는 공용품목을 수정해 주세요.');`);
+ const bulkBody=bulk.match(/function bulkSetDormInventoryScopeV246\([^)]*\)\{[\s\S]*?\n\}/)[0];
+ source=replaceFunction(source,'bulkSetDormInventoryScopeV246',bulkBody);
+ source+='\n'+bulk.replace(bulkBody,'');
  return source;
 }
 export function roomAssetHtml(html){
  return html.replace('<table class="asset-table asset-editor"><thead><tr><th>품목</th><th>전체</th><th>정상</th><th>요수리</th><th>상태</th><th>세부사항</th><th>저장</th></tr>', '<table class="asset-table asset-editor"><thead><tr><th>품목</th><th>자리별 · 공용 점검</th><th>저장</th></tr>')
  .replace('품목별 수량·상태·세부사항을 기록합니다. 2개 중 1개만 고장인 경우처럼 정상·요수리 수량을 각각 수정할 수 있습니다. 상태를 바꾸면 수량 전체에 해당 상태가 우선 적용됩니다.','1번·2번 자리를 각각 점검하고 냉장고·공기청정기는 공용으로 기록합니다. 사용불가는 상태와 별도로 체크합니다.')
- .replaceAll('기본 비품 13종','기본 비품 12종');
+ .replaceAll('기본 비품 13종','기본 비품 12종')
+ .replace('<label>호실당 해당 품목 수량<input class="field" id="assetBulkQtyV246" type="number" min="0" max="999" step="1" value="2"></label>', '<label>대상 자리<select class="field" id="assetBulkPositionV313"><option value="all">모든 자리 · 공용 포함</option><option value="1">1번만</option><option value="2">2번만</option><option value="common">공용품목만</option></select></label><label>사용불가<select class="field" id="assetBulkUnavailableV313"><option value="keep">현재 체크 유지</option><option value="yes">사용불가 체크</option><option value="no">체크 해제</option></select></label><input type="hidden" id="assetBulkQtyV246" value="2">')
+ .replace('전체 품목 정상 2개','전체 품목 정상 처리')
+ .replace('id="assetRestoreKindV247">삭제 품목 복구</button>','id="assetRestoreKindV247">삭제 품목 복구</button><button type="button" class="btn hidden" id="assetResetV313">점검 기록 전체 초기화</button>');
 }
 export function roomAssetJs(js,client){
  for(const name of ['assetEditorSnapshotV244','assetOpenRoomV244','assetRowFromFormV244','assetRefreshEditStateV244']){
@@ -37,9 +41,16 @@ export function roomAssetJs(js,client){
  }
  js=js.replace("if(rec.status==='정상')return", "if(rec.status==='교체 필요')return {label:rec.status,cls:'repair',unknown:0};\n if(rec.status==='정상')return")
  ;
- // 기존 일괄 수량 컨트롤은 자리별 기록을 덮어쓰지 않도록 감춥니다.
+ const start=js.indexOf(' async function applyInventoryBulkV246(){');
+ const end=js.indexOf(" $('assetBulkApplyV246').addEventListener",start);
+ if(start<0||end<0)throw Error('일괄 입력 핸들러 위치를 확인하세요.');
+ js=js.slice(0,start)+' async function applyInventoryBulkV246(){await assetApplyBulkV313();}\n'+js.slice(end);
  js=js.replace('function assetInitV244(){',`function assetInitV244(){
- $('assetBulkApplyV246').closest('.asset-bulk-options')?.classList.add('asset-legacy-bulk-v311');`);
+ $('assetResetV313').addEventListener('click',assetResetRecordsV313);`);
+ js=js.replace('assetDataV244=await server(\'getDormInventoryV244\');',"assetDataV244=await server('getDormInventoryV244');$('assetResetV313').classList.toggle('hidden',!canManageUsersV281);")
+ .replace('function assetFilterChangeV245(',client.slice(client.indexOf('async function assetApplyBulkV313'))+'\nfunction assetFilterChangeV245(')
+ .replace("$('assetBulkKindV246').value='ALL';$('assetBulkStatusV246').value='정상';", "$('assetBulkPositionV313').value='all';$('assetBulkUnavailableV313').value='keep';$('assetBulkKindV246').value='ALL';$('assetBulkStatusV246').value='정상';")
+ .replace('일괄처리 시 선택 품목에 지정한 수량·상태를 적용합니다 (기본 2개).','일괄처리 시 선택한 품목·자리에 상태를 적용합니다.');
  return js.replaceAll('비품 13종','비품 12종');
 }
 export const roomAssetCSS=`

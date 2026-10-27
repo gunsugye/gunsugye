@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const server=readFileSync(new URL('../scripts/room-assets-server.gs.txt',import.meta.url),'utf8');
-function fixture(){
+export function fixture(){
  const rows=[['room','desk','2','1','1','Y','old','수리 필요(미보고)','기존 합산 메모','']];let writes=0;
  const sh={getLastRow:()=>rows.length+1,getMaxColumns:()=>10,getRange:(row,col,n=1,width=1)=>({getDisplayValues:()=>rows.slice(row-2,row-2+n).map(r=>r.slice(col-1,col-1+width)),setValues:values=>{writes++;values.forEach((v,i)=>rows[row-2+i]=v);}})};
  const c=vm.createContext({requireOwner_:()=>{},lockAndRun_:fn=>fn(),spreadsheet_:()=>({getSheetByName:()=>sh}),assetV244Rooms_:()=>[{id:'room'}],assetV244Catalog_:()=>[{id:'desk',name:'책상'},{id:'fridge',name:'냉장고'}],ROOM_ASSET_V244:{CATALOG:'cat',RECORDS:'data'},ROOM_ASSET_STATUSES_V246:['정상','수리 필요(보고)','수리 필요(미보고)','교체 필요'],canonicalRepairStateV216_:v=>v,iso_:()=> 'new',safeCell_:v=>v,assetEnsureV246_:()=>{},ensureRows_:()=>{}});
- vm.runInContext(server,c);return {c,rows,writes:()=>writes};
+ vm.runInContext(server,c);return {c,rows,sh,writes:()=>writes};
 }
 const slots=()=>[{position:'1',status:'정상',details:'1번 메모',unavailable:false},{position:'2',status:'교체 필요',details:'2번 메모',unavailable:true}];
 test('자리별 상태·메모·사용불가를 저장하고 기존 합산 기록을 보존한다',()=>{

@@ -78,7 +78,7 @@ write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
 
-let legacy = roomAssetServer(repairServer(read('Code.gs.txt')+'\n'+read('scripts/departures-server.gs.txt')),read('scripts/room-assets-server.gs.txt'));
+let legacy = roomAssetServer(repairServer(read('Code.gs.txt')+'\n'+read('scripts/departures-server.gs.txt')),read('scripts/room-assets-server.gs.txt'),read('scripts/room-assets-bulk.gs.txt'));
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)

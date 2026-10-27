@@ -1,0 +1,57 @@
+function assetWriteBatchV313_(sh,pending){
+ assetEnsureV246_(sh);
+ const edits=pending.filter(x=>x.row).sort((a,b)=>a.row-b.row),adds=pending.filter(x=>!x.row);
+ for(let i=0;i<edits.length;){let j=i+1;while(j<edits.length&&j-i<500&&edits[j].row===edits[j-1].row+1)j++;
+  sh.getRange(edits[i].row,1,j-i,10).setValues(edits.slice(i,j).map(x=>x.values));i=j;}
+ if(adds.length){const start=sh.getLastRow()+1;ensureRows_(sh,start+adds.length-1);for(let i=0;i<adds.length;i+=500){const part=adds.slice(i,i+500);sh.getRange(start+i,1,part.length,10).setValues(part.map(x=>x.values));}}
+ return {updated:edits.length,created:adds.length};
+}
+function bulkSetDormInventoryScopeV246(roomIds,options,expectedRecords){
+ requireOwner_();return lockAndRun_(()=>{
+  if(!Array.isArray(roomIds)||!roomIds.length||roomIds.length>1000||new Set(roomIds).size!==roomIds.length)throw Error('대상 호실을 확인하세요.');
+  if(!options||typeof options!=='object'||!Array.isArray(expectedRecords)||expectedRecords.length>100000)throw Error('일괄 입력 정보를 확인하세요.');
+  const status=canonicalRepairStateV216_(options.status),position=String(options.position||'all'),mode=options.unavailable||'keep',detail=String(options.details||'').trim();
+  if(!ROOM_ASSET_STATUSES_V246.includes(status)||!['all','1','2','common'].includes(position)||!['keep','yes','no'].includes(mode)||detail.length>500||typeof options.includeMissing!=='boolean')throw Error('상태·자리·사용불가 입력을 확인하세요.');
+  const ss=spreadsheet_(),sh=ss.getSheetByName(ROOM_ASSET_V244.RECORDS),cat=ss.getSheetByName(ROOM_ASSET_V244.CATALOG);
+  if(!sh||!cat)throw Error('비품 관리 최초 설정이 필요합니다.');
+  const rooms=new Set(assetV244Rooms_(ss).map(x=>x.id));if(roomIds.some(id=>!rooms.has(id)))throw Error('현재 목록에 없는 호실이 있습니다.');
+  const all=assetV244Catalog_(cat),targets=options.itemId==='ALL'?all:all.filter(x=>x.id===options.itemId);if(!targets.length)throw Error('대상 품목이 없습니다.');
+  const expected=new Map();expectedRecords.forEach(pair=>{if(!Array.isArray(pair)||pair.length!==2||expected.has(pair[0]))throw Error('대조 정보가 중복되었거나 잘못되었습니다.');expected.set(pair[0],String(pair[1]||''));});
+  const rows=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,Math.min(10,sh.getMaxColumns())).getDisplayValues():[];
+  const index=new Map();rows.forEach((r,i)=>{if(!r[0]||!r[1])return;const key=r[0]+'|'+r[1];if(index.has(key))throw Error('중복 비품 기록이 있습니다.');index.set(key,{row:i+2,values:r});});
+  const pending=[],now=iso_();let skipped=0;
+  roomIds.forEach(roomId=>targets.forEach(item=>{
+   const positions=assetPositionsV311_(item.name);if(position!=='all'&&!positions.includes(position)){skipped++;return;}
+   const key=roomId+'|'+item.id,prev=index.get(key),before=prev?prev.values:[];
+   if((prev&&!expected.has(key))||String(before[6]||'')!==(expected.get(key)||''))throw Error('다른 화면에서 수정된 기록이 있습니다. 새로고침 후 실행하세요.');
+   if(!prev&&!options.includeMissing){skipped++;return;}
+   const stored=assetSlotsReadV311_(before[9]);
+   const slots=positions.map(p=>{const old=(stored.slots||[]).find(s=>s.position===p)||{position:p,status:'',details:'',unavailable:false};
+    return position==='all'||position===p?{position:p,status,details:detail||old.details,unavailable:mode==='keep'?old.unavailable:mode==='yes'}:{...old};});
+   const checked=assetValidateSlotsV311_(slots,positions),summary=assetSlotSummaryV311_(checked);
+   const legacy=stored.legacy||(!stored.slots&&prev?{quantity:before[2],normal:before[3],repair:before[4],status:before[7],details:before[8],updatedAt:before[6]}:null);
+   pending.push({row:prev?prev.row:0,values:[roomId,item.id,String(summary.quantity),String(summary.normal),String(summary.repair),summary.confirmed?'Y':'N',now,summary.status,safeCell_(summary.details),JSON.stringify({slots:checked,legacy})]});
+  }));
+  if(!pending.length)throw Error('선택 범위와 자리에 해당하는 비품이 없습니다.');
+  const result=assetWriteBatchV313_(sh,pending);return {ok:true,...result,skipped,rooms:roomIds.length};
+ });
+}
+function assetResetSnapshotV313_(sh){
+ const rows=sh&&sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,sh.getLastColumn()).getValues():[];
+ const token=Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(rows))).replace(/=+$/,'');
+ return {token,records:rows.filter(r=>r.some(x=>x!==''&&x!==null)).length};
+}
+function getDormInventoryResetV313(){
+ requireAdminV281_();return assetResetSnapshotV313_(spreadsheet_().getSheetByName(ROOM_ASSET_V244.RECORDS));
+}
+function clearDormInventoryRecordsV313(expectedToken){
+ requireAdminV281_();return lockAndRun_(()=>{
+  const ss=spreadsheet_(),sh=ss.getSheetByName(ROOM_ASSET_V244.RECORDS),snapshot=assetResetSnapshotV313_(sh);
+  if(snapshot.token!==String(expectedToken||''))throw Error('기록이 변경되었습니다. 최신 건수를 확인한 뒤 다시 실행하세요.');
+  if(!sh||!snapshot.records)return {ok:true,removed:0};
+  const backup=sh.copyTo(ss);backup.setName('생활실비품_초기화백업_'+Date.now());protectLimitedSheetV226_(backup);
+  sh.getRange(2,1,sh.getLastRow()-1,sh.getLastColumn()).clearContent();
+  writeAudit_(ss,'생활실 비품 점검 기록 초기화','',snapshot.records+'건 · 백업 '+backup.getName());
+  return {ok:true,removed:snapshot.records,backup:backup.getName()};
+ });
+}
