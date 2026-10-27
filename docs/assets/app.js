@@ -388,8 +388,8 @@ function showModal(id,readonly=false){if(!ready)return;if(!confirmCloseModal())r
   if(!ro)setTimeout(()=>$('fTitle').focus(),50)
 }
 // 시간은 HH:mm 문자열로만 저장하며 Google Sheets 데이터 구조는 변경하지 않습니다.
-function normalizeTime24(){
-  const el=$('fTime'); let value=el.value.trim();
+function normalizeTime24(field='fTime'){
+  const el=$(field); let value=el.value.trim();
   if(!value)return;
   if(/^\d{3,4}$/.test(value)){
     value=value.padStart(4,'0');
@@ -403,7 +403,7 @@ function closeModal(force=false){
   if(force!==true)return confirmCloseModal();
   $('modalBackdrop').classList.add('hidden');document.body.style.overflow='';initialFormSnapshot='';return true;
 }
-async function onSave(e){e.preventDefault();if(!mustEdit('journal'))return;normalizeTime24();const f=$('entryForm');if(!f.reportValidity())return;
+async function onSave(e){e.preventDefault();if(!mustEdit('journal'))return;normalizeTime24();normalizeTime24('fDueTime');const f=$('entryForm');if(!f.reportValidity())return;
   const id=$('entryId').value,old=id?data.entries.find(x=>x.id===id):null;
   const isTrainingNewV290=trainIsJournalModeV290();
   const selectedCategoryV290=$('fCategory').value;
@@ -4120,6 +4120,7 @@ $('departuresClear').addEventListener('click',()=>{$('departuresCandidates').que
 $('departuresApply').addEventListener('click',departuresApplyV305);
 $('departuresLegacy').addEventListener('click',()=>{switchView('roster');smartSwitchV253('special');});
 
+$('fDueTime').addEventListener('blur',()=>{normalizeTime24('fDueTime');updateFormHint();});
 $('deleteJournalEntry').addEventListener('click',async()=>{const button=$('deleteJournalEntry');if(modalSaving||button.disabled)return;button.disabled=true;try{await delEntry($('entryId').value);}finally{button.disabled=false;}});
 
 function navOpenCatalogV301(){

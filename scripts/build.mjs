@@ -3,7 +3,7 @@ import { gunzipSync } from 'node:zlib';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { updateJournalJs, updateJournalHtml } from './journal.mjs';
+import { updateJournalJs, updateJournalHtml, journalCSS } from './journal.mjs';
 import { normalizeNavigation, updateNavigationJs, updateNavigationHtml } from './navigation.mjs';
 import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
@@ -23,12 +23,12 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
 js = updateCalendarJs(updateNavigationJs(js));
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS;
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
-  .replace('v2.99 · Google Forms 조사', 'v3.05 · 인원 일괄 관리');
+  .replace('v2.99 · Google Forms 조사', 'v3.06 · 업무 일시 입력');
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
 html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
