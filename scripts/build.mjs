@@ -27,7 +27,7 @@ const css = unpack('v275CssGzip') + calendarCSS;
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
-  .replace('v2.99 · Google Forms 조사', 'v3.03 · 업무 시간·삭제');
+  .replace('v2.99 · Google Forms 조사', 'v3.04 · 캘린더 한눈에');
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
 html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">

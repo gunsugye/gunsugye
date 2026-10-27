@@ -4097,4 +4097,17 @@ $('navAddItemButtonV301').addEventListener('click',()=>navAddCatalogV301(false))
 $('navCatalogCloseV301').addEventListener('click',()=>$('navCatalogV301').close());
 
 $('trainCalendarGridV292').addEventListener('click',event=>{const entry=event.target.closest('[data-calendar-entry]');if(entry)showModal(entry.dataset.calendarEntry);});
+const calendarOverview=document.createElement('dialog');calendarOverview.className='calendar-overview-dialog';calendarOverview.setAttribute('aria-label','월간 캘린더 한눈에 보기');document.body.append(calendarOverview);
+let calendarOverviewAnchor=null,calendarOverviewPanel=null,calendarOverviewButton=null;
+function restoreCalendarOverview(){if(calendarOverviewAnchor){calendarOverviewAnchor.replaceWith(calendarOverviewPanel);calendarOverviewButton.textContent='한눈에 보기';calendarOverviewButton.setAttribute('aria-expanded','false');calendarOverviewAnchor=null;}}
+function closeCalendarOverview(){calendarOverview.close();restoreCalendarOverview();}
+calendarOverview.addEventListener('close',()=>{if(!calendarOverview.open)restoreCalendarOverview();});
+calendarOverview.addEventListener('cancel',event=>{event.preventDefault();closeCalendarOverview();});
+for(const id of ['v298GeneralCalendar','v298TrainingCalendar','wxCalendarGrid','trainCalendarGridV292']){
+ const grid=$(id),panel=grid?.closest('.panel');if(!panel)continue;
+ const button=document.createElement('button');button.type='button';button.className='btn calendar-overview-button';button.textContent='한눈에 보기';button.setAttribute('aria-expanded','false');
+ (panel.querySelector('.v298-controls,.panel-head .right,.panel-head,.v292-actions')||panel).append(button);
+ button.addEventListener('click',()=>{if(calendarOverview.open){closeCalendarOverview();return;}calendarOverviewAnchor=document.createComment('calendar');panel.before(calendarOverviewAnchor);calendarOverviewPanel=panel;calendarOverviewButton=button;calendarOverview.append(panel);button.textContent='원래 화면으로';button.setAttribute('aria-expanded','true');calendarOverview.showModal();});
+ grid.addEventListener('click',event=>{if(calendarOverview.open&&event.target.closest('[data-calendar-entry]'))closeCalendarOverview();},true);
+}
 })();

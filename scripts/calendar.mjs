@@ -83,7 +83,22 @@ export function updateCalendarJs(js) {
   js = js.replace("$('wxCalendarGrid').addEventListener('click',e=>{const b=", "$('wxCalendarGrid').addEventListener('click',e=>{const entry=e.target.closest('[data-calendar-entry]');if(entry){showModal(entry.dataset.calendarEntry);return;}const b=");
   // 훈련 캘린더도 동일한 업무 편집기를 엽니다.
   const index = js.lastIndexOf('})();');
-  js = js.slice(0, index) + "\n$('trainCalendarGridV292').addEventListener('click',event=>{const entry=event.target.closest('[data-calendar-entry]');if(entry)showModal(entry.dataset.calendarEntry);});\n" + js.slice(index);
+  js = js.slice(0, index) + `
+$('trainCalendarGridV292').addEventListener('click',event=>{const entry=event.target.closest('[data-calendar-entry]');if(entry)showModal(entry.dataset.calendarEntry);});
+const calendarOverview=document.createElement('dialog');calendarOverview.className='calendar-overview-dialog';calendarOverview.setAttribute('aria-label','월간 캘린더 한눈에 보기');document.body.append(calendarOverview);
+let calendarOverviewAnchor=null,calendarOverviewPanel=null,calendarOverviewButton=null;
+function restoreCalendarOverview(){if(calendarOverviewAnchor){calendarOverviewAnchor.replaceWith(calendarOverviewPanel);calendarOverviewButton.textContent='한눈에 보기';calendarOverviewButton.setAttribute('aria-expanded','false');calendarOverviewAnchor=null;}}
+function closeCalendarOverview(){calendarOverview.close();restoreCalendarOverview();}
+calendarOverview.addEventListener('close',()=>{if(!calendarOverview.open)restoreCalendarOverview();});
+calendarOverview.addEventListener('cancel',event=>{event.preventDefault();closeCalendarOverview();});
+for(const id of ['v298GeneralCalendar','v298TrainingCalendar','wxCalendarGrid','trainCalendarGridV292']){
+ const grid=$(id),panel=grid?.closest('.panel');if(!panel)continue;
+ const button=document.createElement('button');button.type='button';button.className='btn calendar-overview-button';button.textContent='한눈에 보기';button.setAttribute('aria-expanded','false');
+ (panel.querySelector('.v298-controls,.panel-head .right,.panel-head,.v292-actions')||panel).append(button);
+ button.addEventListener('click',()=>{if(calendarOverview.open){closeCalendarOverview();return;}calendarOverviewAnchor=document.createComment('calendar');panel.before(calendarOverviewAnchor);calendarOverviewPanel=panel;calendarOverviewButton=button;calendarOverview.append(panel);button.textContent='원래 화면으로';button.setAttribute('aria-expanded','true');calendarOverview.showModal();});
+ grid.addEventListener('click',event=>{if(calendarOverview.open&&event.target.closest('[data-calendar-entry]'))closeCalendarOverview();},true);
+}
+` + js.slice(index);
   return [calendarShift, calendarEscape, calendarSegments, calendarHTML].map(fn => `const ${fn.name} = ${fn.toString()};`).join('\n') + '\n' + js;
 }
 
@@ -92,11 +107,17 @@ export const calendarCSS = `
 .v298-priority-panel{order:-1}
 .v298-priority-list{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
 .calendar-range-week{grid-column:1/-1;position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
-.calendar-range-week .range-day{border-radius:0;min-height:calc(85px + var(--range-lanes)*30px);padding:8px 6px;border-color:#e3e9f0;background:#fff}
+.calendar-range-week .range-day{border-radius:0;min-height:calc(34px + var(--range-lanes)*26px);padding:5px 6px;border-color:#e3e9f0;background:#fff}
 .calendar-range-week .range-day.selected{padding:7px 5px;background:#eff6ff;border:2px solid #4483dc}
 .range-day.range-other-month{background:#f7f9fc}.range-other-month strong{opacity:.45}
-.range-day-details{display:flex;flex-direction:column;gap:3px;margin-top:calc(var(--range-lanes)*30px + 8px);font-size:10px;min-width:0}
-.calendar-range-layer{position:absolute;top:35px;left:0;right:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:26px;row-gap:4px;pointer-events:none;z-index:2}
+.range-day-details{display:flex;flex-direction:column;gap:2px;margin-top:calc(var(--range-lanes)*26px + 2px);font-size:10px;min-width:0}
+.calendar-range-layer{position:absolute;top:26px;left:0;right:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:23px;row-gap:3px;pointer-events:none;z-index:2}
+.calendar-overview-dialog{width:calc(100vw - 24px);max-width:none;max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:14px;overflow:auto;color:inherit;background:#fff;box-shadow:0 12px 60px #13263b55}
+.calendar-overview-dialog::backdrop{background:#162b4477}
+.calendar-overview-dialog>.panel{margin:0;padding:16px;border:0;box-shadow:none}
+.calendar-overview-dialog .calendar-range-week .range-day{min-height:max(calc(34px + var(--range-lanes)*26px),calc((100dvh - 200px)/6))}
+.calendar-overview-dialog .v298-calendar-link{display:none}
+.calendar-overview-button{white-space:nowrap}
 .calendar-range{pointer-events:auto;display:flex;align-items:center;gap:4px;min-width:0;margin:0 3px;padding:4px 8px;border:1px solid transparent;border-radius:6px;text-align:left;font:600 12px/1.3 system-ui,sans-serif;cursor:pointer;box-shadow:0 1px 2px #18324c12}
 .calendar-range:hover{filter:brightness(.96);outline:2px solid #5d7fae;outline-offset:-1px}.calendar-range:focus-visible{outline:3px solid #244e91;outline-offset:1px}
 .range-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.range-status{flex:none;font-size:13px}
