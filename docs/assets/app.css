@@ -1215,4 +1215,18 @@ body[data-readonly="true"] .roster-edit{display:none!important}
 .journal-datetime-grid .form-item{min-width:0}.journal-datetime-grid input{min-width:0;width:100%;box-sizing:border-box;min-height:44px}.journal-datetime-grid small{display:block;margin-top:5px;font-size:11px;color:#6b7e94}
 @media(max-width:480px){.journal-datetime-grid{padding:10px;gap:12px 10px}.journal-datetime-grid input{font-size:14px;padding:8px}.journal-datetime-grid .time24-badge{font-size:9px}}
 
-.asset-legacy-bulk-v311{display:none!important}.asset-seat-grid{display:grid;grid-template-columns:repeat(2,minmax(240px,1fr));gap:12px}.asset-seat-card{padding:12px;border:1px solid #d5deec;border-radius:8px;background:#fafcff}.asset-seat-card label{display:block;margin:8px 0}.asset-seat-card textarea,.asset-seat-card select{width:100%;box-sizing:border-box}.asset-seat-card .asset-unavailable{display:flex;align-items:center;gap:8px}.asset-legacy-note{color:#8a5a00;white-space:pre-wrap}.asset-editor{min-width:780px}
+.asset-legacy-bulk-v311{display:none!important}
+.asset-editor{min-width:680px;width:100%;table-layout:fixed}
+.asset-editor th:first-child{width:86px}.asset-editor th:last-child{width:60px}
+.asset-editor td{padding:7px 8px;vertical-align:middle}.asset-editor td:first-child strong{font-size:13px}
+.asset-editor .btn{padding:6px 10px;min-height:32px;font-size:12px}
+.asset-seat-grid{display:grid;grid-template-columns:1fr;gap:5px}
+.asset-seat-card{display:grid;grid-template-columns:30px 150px minmax(110px,1fr) 78px;align-items:center;gap:7px;padding:0;border:0;background:transparent;min-width:0}
+.asset-seat-card strong{font-size:12px;color:#50657c;white-space:nowrap}
+.asset-seat-card .field{width:100%;box-sizing:border-box;min-width:0;min-height:32px;height:32px;margin:0;padding:5px 7px;font-size:12px;border-radius:5px}
+.asset-seat-card textarea.field{resize:vertical;line-height:20px;max-height:160px;overflow:auto}
+.asset-seat-card textarea.field:focus{min-height:58px}
+.asset-seat-card .asset-unavailable{display:flex;align-items:center;gap:4px;margin:0;font-size:12px;white-space:nowrap;cursor:pointer}
+.asset-seat-card input[type=checkbox]{width:15px;height:15px;margin:0;accent-color:#d45050}
+.asset-seat-card:has(input:checked){background:#fff5f3;border-radius:4px}
+.asset-legacy-note{color:#8a5a00;font-size:11px;margin:0 0 5px}.asset-legacy-note summary{cursor:pointer}.asset-legacy-note p{white-space:pre-wrap;margin:5px 0}

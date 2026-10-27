@@ -8,12 +8,13 @@ function assetOpenRoomV244(id){
  const recs=assetRecMapV244(),readonly=canEdit?'':'disabled';
  $('assetEditRowsV244').innerHTML=assetDataV244.items.map(item=>{
   const r=recs.get(id+'|'+item.id),positions=item.positions||['common'];
-  const legacy=r&&!r.slots?'<p class="asset-legacy-note">기존 합산 기록: '+escapeH(r.status||'미점검')+' · 정상 '+r.normal+' / 요수리 '+r.repair+'개\n'+escapeH(r.details||'')+'\n자리별 상태는 확인 후 선택해 주세요.</p>':'';
+  const legacy=r&&!r.slots?'<details class="asset-legacy-note"><summary>기존 합산 기록 보기</summary><p>'+escapeH(r.status||'미점검')+' · 정상 '+r.normal+' / 요수리 '+r.repair+'개\n'+escapeH(r.details||'')+'\n자리별 상태는 확인 후 선택해 주세요.</p></details>':'';
   const cards=positions.map(position=>{
    const s=r?.slots?.find(x=>x.position===position)||{status:'',details:'',unavailable:false};
-   return '<div class="asset-seat-card" data-asset-position="'+position+'"><strong>'+ (position==='common'?'공용품목':position+'번 자리')+'</strong><label>상태<select class="field" data-seat-status '+readonly+'><option value="">선택 전 · 미점검</option>'+ASSET_STATUSES_V246.map(status=>'<option value="'+escapeH(status)+'" '+(s.status===status?'selected':'')+'>'+escapeH(status)+'</option>').join('')+'</select></label><label>세부사항<textarea class="field" data-seat-details maxlength="500" rows="2" placeholder="점검 내용·수리 조치 등" '+readonly+'>'+escapeH(s.details)+'</textarea></label><label class="asset-unavailable"><input type="checkbox" data-seat-unavailable '+(s.unavailable?'checked':'')+' '+readonly+'>사용불가</label></div>';
+   const label=escapeH(item.name+' '+(position==='common'?'공용':position+'번'));
+   return '<div class="asset-seat-card" data-asset-position="'+position+'"><strong>'+ (position==='common'?'공용':position+'번')+'</strong><select class="field" aria-label="'+label+' 상태" data-seat-status '+readonly+'><option value="">미점검</option>'+ASSET_STATUSES_V246.map(status=>'<option value="'+escapeH(status)+'" '+(s.status===status?'selected':'')+'>'+escapeH(status)+'</option>').join('')+'</select><textarea class="field" aria-label="'+label+' 세부사항" data-seat-details maxlength="500" rows="1" placeholder="세부사항" '+readonly+'>'+escapeH(s.details)+'</textarea><label class="asset-unavailable"><input type="checkbox" aria-label="'+label+' 사용불가" data-seat-unavailable '+(s.unavailable?'checked':'')+' '+readonly+'>사용불가</label></div>';
   }).join('');
-  return '<tr data-asset-item="'+escapeH(item.id)+'"><td><strong>'+escapeH(item.name)+'</strong><small class="asset-unit">'+(positions.length===2?'개인별 1번 · 2번':'방 공용')+'</small></td><td>'+legacy+'<div class="asset-seat-grid">'+cards+'</div></td><td><button type="button" class="btn btn-soft asset-owner" data-asset-save="'+escapeH(item.id)+'" '+readonly+'>저장</button></td></tr>';
+  return '<tr data-asset-item="'+escapeH(item.id)+'"><td><strong>'+escapeH(item.name)+'</strong></td><td>'+legacy+'<div class="asset-seat-grid">'+cards+'</div></td><td><button type="button" class="btn btn-soft asset-owner" data-asset-save="'+escapeH(item.id)+'" '+readonly+'>저장</button></td></tr>';
  }).join('');
  qsa('[data-asset-item]',$('assetEditRowsV244')).forEach(row=>row.dataset.assetInitial=assetEditorSnapshotV244(row));
  $('assetEditHelpV244').textContent='각 자리 또는 공용품목의 상태·세부사항·사용불가를 입력한 뒤 저장하세요. 미선택 자리는 미점검으로 남습니다.';
