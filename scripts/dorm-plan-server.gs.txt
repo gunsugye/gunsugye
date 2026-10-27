@@ -20,14 +20,14 @@ function dormPlanTokenV315_(books,room){
  if(books.every(book=>!dormPlanFindV315_(book,room)))return 'new';
  return dormPlanHashV315_(books.map(book=>{const r=dormPlanFindV315_(book,room);return [book.ss.getId(),r?book.rawById.get(String(r.id)):null];}));
 }
-function getDormPlanV315(){
+function getDormPlanV315(includePdf){
  requireOwner_();return lockAndRun_(()=>{const plan=dormPlanDataV315_(),books=dormPlanBooksV315_(),seen=new Set(),rooms=[];
  for(const book of books)for(const room of book.rows){
   const key=dormPlanKeyV315_(room);if(seen.has(key))continue;seen.add(key);
   const u=book.unified.byId.get(room.id);
   rooms.push({...room,token:dormPlanTokenV315_(books,room),members:(u?.entries||[]).filter(p=>p.status!=='이전편성').map(p=>({cohort:p.cohort,company:p.company,name:p.name,female:!!p.female,status:p.status}))});
  }
- return {filename:plan.filename,base64:plan.base64,layout:plan.layout,version:plan.version,rooms,canEdit:true};
+ return {filename:plan.filename,...(includePdf===true?{base64:plan.base64}:{}),layout:plan.layout,version:plan.version,rooms,canEdit:true};
  });
 }
 function dormPlanValidateMembersV315_(members,capacity){

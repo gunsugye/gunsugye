@@ -49,6 +49,9 @@ test('PDF 갱신은 미검토 배정을 변경하지 않고 문서 버전을 검
  assert.equal(result.rooms,0);assert.equal(f.writes.length,0);assert.equal(f.properties.get('DORM_PLAN_FILE_V315'),'plan-file');
  const g=fixture();assert.throws(()=>g.c.saveDormPlanV315({version:'stale',changes:[]}));
 });
+test('일반 배치도 조회에는 PDF 본문을 보내지 않으며 갱신 분석 시에만 요청한다',()=>{
+ const f=fixture(),light=f.c.getDormPlanV315();assert.equal(Object.hasOwn(light,'base64'),false);assert.equal(f.c.getDormPlanV315(true).base64,'JVBERi0xLjQK');assert.equal(light.rooms.length,1);
+});
 test('호실 접미사 변경은 두 파일의 ID와 배정자 중대를 유지하고 도면 원본 좌표를 보존한다',()=>{
  const f=fixture();f.c.DORM_PLAN_DEFAULT_V315_.layout=[{building:'정예 동관',floor:'3층',room:'343-3',sourceRoom:'343-4',page:8,x:.1,y:.1,width:.1,height:.1}];
  const p=f.c.getDormPlanV315(),r=p.rooms[0];

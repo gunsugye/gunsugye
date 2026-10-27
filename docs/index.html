@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-app-version="97fc7b5db8305fec" data-release-id="bdf5ee60c6fefcf2" data-navigation-pending lang="ko">
+<html data-app-version="c87f908a6f7a5532" data-release-id="dab25d548cb1eda1" data-navigation-pending lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -67,7 +67,7 @@ body.v294-training-mode #sidebarMenu,body.v294-training-mode #wxAddMenu,body.v29
 body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 @media(max-width:700px){.mobile-nav .v294-mobile-training{white-space:nowrap}.mobile-nav .v294-mobile-training.hidden{display:none!important}body.v294-training-mode .mobile-nav [data-view]:not([data-view="today"]):not([data-view="train"]){display:none!important}}
 </style>
-<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style><link rel="stylesheet" href="./assets/app.css?v=683ad65393012301">
+<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style><link rel="stylesheet" href="./assets/app.css?v=0ee795853f37729a">
 <link rel="stylesheet" href="./assets/pages.css?v=cbcbfe8085adf1d9">
 <script src="./config.js?v=32d1574ddff155dc"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -148,7 +148,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div class="v273-detail" id="v273Detail" role="status"></div>
   <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
 </div>
-<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.16 · 도면 배율 · 호실 번호 편집</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.17 · 빠른 생활실 간편 배치도</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
  <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
  <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
 <div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
@@ -268,9 +268,9 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 
 
 <section id="dormView" class="hidden"><section class="panel dorm-edit-only dorm-plan-panel" aria-label="생활실 편성안 도면">
- <div class="panel-head"><div><h2 class="panel-title">생활실 편성안 · 도면 편집</h2><p class="panel-sub">원본 구조에서 호실을 눌러 중대·기수·이름을 수정합니다. 현재 배정 표시를 끄면 PDF 원문을 확인할 수 있습니다.</p></div><button class="btn btn-primary" id="dormPlanLoadV315" type="button">도면 불러오기</button></div>
+ <div class="panel-head"><div><h2 class="panel-title">생활실 편성안 · 간편 배치도</h2><p class="panel-sub">PDF의 배치 순서에 따라 호실을 간결하게 정리합니다. 호실을 눌러 번호·중대·기수·이름을 수정하세요.</p></div><button class="btn btn-primary" id="dormPlanLoadV315" type="button">배치도 불러오기</button></div>
  <div class="dorm-plan-controls"><select class="field" id="dormPlanPageV315" aria-label="도면 페이지"></select><label><input id="dormPlanLiveV315" type="checkbox" checked>현재 배정 표시</label><label class="btn">새 PDF 선택<input id="dormPlanFileV315" type="file" accept="application/pdf,.pdf" hidden></label><button class="btn btn-primary" id="dormPlanPublishV315" type="button" hidden>검토한 내용 · PDF 갱신 적용</button></div>
- <div class="dorm-plan-controls" aria-label="도면 배율"><button class="btn" id="dormPlanMinusV316" type="button" aria-label="축소">−</button><output id="dormPlanZoomV316">100%</output><button class="btn" id="dormPlanPlusV316" type="button" aria-label="확대">＋</button><button class="btn" id="dormPlanWidthV316" type="button">가로 맞춤</button><button class="btn" id="dormPlanFitV316" type="button">한 페이지 보기</button><span class="panel-sub">확대 후 가로·세로로 이동할 수 있습니다.</span></div>
+ <div class="dorm-plan-controls" aria-label="호실 카드 크기"><button class="btn" id="dormPlanMinusV316" type="button" aria-label="축소">−</button><output id="dormPlanZoomV316">100%</output><button class="btn" id="dormPlanPlusV316" type="button" aria-label="확대">＋</button><button class="btn" id="dormPlanWidthV316" type="button">기본 크기</button><button class="btn" id="dormPlanFitV316" type="button" hidden>기본 크기</button><span class="panel-sub">화면 너비에 맞춰 호실 카드가 자동으로 정렬됩니다.</span></div>
  <p id="dormPlanStatusV315" class="panel-sub" role="status">도면 불러오기를 누르면 첨부하신 편성안과 최신 배정명단을 표시합니다.</p>
  <div class="dorm-plan-scroll"><div class="dorm-plan-canvas"><canvas id="dormPlanCanvasV315"></canvas><div id="dormPlanHotspotsV315"></div></div></div>
  </section>

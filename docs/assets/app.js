@@ -4185,11 +4185,9 @@ let dormPlanV315=null,dormPlanPdfV315=null,dormPlanDraftV315=null,dormPlanSelect
 const dormPlanKeyV315=r=>[r.building,r.floor,r.room].join('|');
 let dormPlanZoomV316=1;
 function dormPlanSizeV316(mode){
- const canvas=$('dormPlanCanvasV315'),box=canvas.parentElement,scroll=box.parentElement;if(!canvas.width)return;
- if(mode==='page')dormPlanZoomV316=Math.min(1,(scroll.clientHeight||innerHeight*.7)/(canvas.height*(scroll.clientWidth/canvas.width)));
- else if(mode==='width')dormPlanZoomV316=1;
- else if(typeof mode==='number')dormPlanZoomV316=Math.max(.35,Math.min(4,dormPlanZoomV316*mode));
- const width=Math.max(240,scroll.clientWidth*dormPlanZoomV316);box.style.width=width+'px';box.style.setProperty('--plan-font',Math.max(6,width/110)+'px');
+ if(mode==='page'||mode==='width')dormPlanZoomV316=1;
+ else if(typeof mode==='number')dormPlanZoomV316=Math.max(.8,Math.min(1.8,dormPlanZoomV316*mode));
+ const box=$('dormPlanCanvasV315').parentElement;box.style.width='100%';box.style.setProperty('--room-size',Math.round(112*dormPlanZoomV316)+'px');box.style.setProperty('--plan-font',Math.round(13*dormPlanZoomV316)+'px');
  $('dormPlanZoomV316').textContent=Math.round(dormPlanZoomV316*100)+'%';
 }
 function dormPlanStatusV315(message){$('dormPlanStatusV315').textContent=message;}
@@ -4199,13 +4197,12 @@ async function dormPlanLoadV315(){
  if(dormPlanDraftV315&&!confirm('검토 중인 PDF 변경사항을 버리고 다시 불러올까요?')){dormPlanBusyV315=false;return;}
  try{
   dormPlanStatusV315('편성안 도면과 최신 배정명단을 불러오는 중…');
-  const result=await server('getDormPlanV315');await loadPdfJsV273();
+  const result=await server('getDormPlanV315');
   dormPlanV315=result;dormPlanDraftV315=null;
-  const bytes=Uint8Array.from(atob(result.base64),c=>c.charCodeAt(0));
-  dormPlanPdfV315=await pdfjsLib.getDocument({data:bytes,isEvalSupported:false}).promise;
+
   dormPlanSetPagesV315();await dormPlanRenderV315();
   $('dormPlanPublishV315').hidden=true;
-  dormPlanStatusV315(result.filename+' · 호실을 누르면 중대·기수·이름을 편집합니다. 도면 밖 기존 호실은 아래 현황에서 유지됩니다.');
+  dormPlanStatusV315('간편 배치도 · 호실을 누르면 번호·중대·기수·이름을 편집합니다. PDF의 배치 순서를 기준으로 정리했습니다.');
  }catch(e){dormPlanStatusV315('도면 조회 실패: '+e.message);}finally{dormPlanBusyV315=false;}
 }
 function dormPlanSetPagesV315(){
@@ -4218,23 +4215,20 @@ function dormPlanRoomV315(layout){
  return (dormPlanDraftV315?.changes||[]).find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(layout))||dormPlanV315.rooms.find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(layout))||{...layout,members:[],group:(layout.room.match(/-([1-8])$/)||[])[1]+'중대',corridor:'PDF 도면',token:'new'};
 }
 async function dormPlanRenderV315(){
- if(!dormPlanPdfV315)return;
- const sequence=++dormPlanRenderSequenceV315;
- if(dormPlanRenderTaskV315){dormPlanRenderTaskV315.cancel();try{await dormPlanRenderTaskV315.promise;}catch(_){}}
- const n=Number($('dormPlanPageV315').value),page=await dormPlanPdfV315.getPage(n),vp=page.getViewport({scale:1.6});
- if(sequence!==dormPlanRenderSequenceV315)return;
- const canvas=$('dormPlanCanvasV315');canvas.width=vp.width;canvas.height=vp.height;
- dormPlanSizeV316();
- const task=page.render({canvasContext:canvas.getContext('2d'),viewport:vp});dormPlanRenderTaskV315=task;
- try{await task.promise;}catch(e){if(e.name==='RenderingCancelledException')return;throw e;}finally{if(dormPlanRenderTaskV315===task)dormPlanRenderTaskV315=null;}
- if(sequence!==dormPlanRenderSequenceV315)return;
- const layout=(dormPlanDraftV315?.layout||dormPlanV315.layout).filter(r=>r.page===n),live=$('dormPlanLiveV315').checked;
- $('dormPlanHotspotsV315').innerHTML=layout.map((r,index)=>{
-  const room=dormPlanRoomV315(r),members=room.members||[],full=live&&r.fullBox&&members.length;
-  const text=members.map(p=>[p.cohort,p.company,p.name].join('.')).join(' / ');
-  return '<button type="button" class="dorm-plan-room '+(full?'dorm-plan-room-live':'')+'" data-plan-room="'+index+'" style="left:'+r.x*100+'%;top:'+r.y*100+'%;width:'+r.width*100+'%;height:'+(full?r.height*100:Math.min(r.height,0.032)*100)+'%" aria-label="'+escapeH(r.room+' '+text)+'" title="'+escapeH(r.room+' · '+(text||'배정자 확인 필요'))+'"><b>'+escapeH(r.room)+'</b>'+(full?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'·'+(p.company||'?'))+'</small>'+escapeH(p.name||'미확인')+'</span>').join(''):'')+'</button>';
- }).join('');
+ if(!dormPlanV315)return;
+ const n=Number($('dormPlanPageV315').value),live=$('dormPlanLiveV315').checked;
+ const layout=(dormPlanDraftV315?.layout||dormPlanV315.layout).filter(r=>r.page===n);
+ const bands=[];
+ layout.map((r,index)=>({r,index})).sort((a,b)=>a.r.y-b.r.y||a.r.x-b.r.x).forEach(item=>{
+  let band=bands.find(b=>Math.abs(b.y-item.r.y)<.035);
+  if(!band){band={y:item.r.y,items:[]};bands.push(band);}band.items.push(item);
+ });
+ $('dormPlanHotspotsV315').innerHTML=bands.map((band,i)=>'<section class="dorm-plan-band"><h3>배치 '+(i+1)+'</h3><div class="dorm-plan-grid">'+band.items.sort((a,b)=>a.r.x-b.r.x).map(({r,index})=>{
+  const room=dormPlanRoomV315(r),members=room.members||[],text=members.map(p=>[p.cohort,p.company,p.name].join('.')).join(' / ');
+  return '<button type="button" class="dorm-plan-room" data-plan-room="'+index+'" aria-label="'+escapeH(r.room+' '+text)+'"><b>'+escapeH(r.room)+'</b>'+(live?(members.length?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'기 · '+(p.company||'?')+'중대')+'</small><span>'+escapeH(p.name||'미확인')+'</span></span>').join(''):'<span class="dorm-plan-empty">배정 확인 필요</span>'):'<span class="dorm-plan-empty">'+escapeH(room.group||'미분류')+'</span>')+'</button>';
+ }).join('')+'</div></section>').join('');
  $('dormPlanHotspotsV315').onclick=e=>{const b=e.target.closest('[data-plan-room]');if(b)dormPlanEditV315(layout[Number(b.dataset.planRoom)]);};
+ dormPlanSizeV316();
 }
 function dormPlanMemberRowV315(p,index){return '<tr><td>'+(index+1)+'</td><td><input class="field" aria-label="중대" data-plan-company maxlength="1" inputmode="numeric" value="'+escapeH(p.company||'')+'"></td><td><input class="field" aria-label="기수" data-plan-cohort maxlength="3" inputmode="numeric" value="'+escapeH(p.cohort||'')+'"></td><td><input class="field" aria-label="이름" data-plan-name maxlength="60" value="'+escapeH(p.name||'')+'"></td><td><button type="button" class="btn" data-plan-remove>제외</button></td></tr>';}
 function dormPlanEditV315(layout){
@@ -4281,6 +4275,7 @@ async function dormPlanUploadV315(){
  if(dormPlanDraftV315&&!confirm('검토 중인 PDF를 새 파일로 바꿀까요?'))return;
  try{
   dormPlanStatusV315('새 PDF의 도면과 호실 좌표를 분석하는 중…');await loadPdfJsV273();
+  if(!dormPlanV315.base64){const original=await server('getDormPlanV315',true);if(original.version!==dormPlanV315.version)throw Error('도면이 변경되었습니다. 다시 불러오세요.');dormPlanV315.base64=original.base64;}
   const bytes=new Uint8Array(await file.arrayBuffer());if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-')throw Error('PDF 파일을 선택하세요.');
   let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));const base64=btoa(binary),samePdf=base64===dormPlanV315.base64;
   const pdf=await pdfjsLib.getDocument({data:bytes.slice(),isEvalSupported:false}).promise;if(pdf.numPages>50)throw Error('PDF는 50쪽 이하만 지원합니다.');
