@@ -8,6 +8,7 @@ import { normalizeNavigation, updateNavigationJs, updateNavigationHtml } from '.
 import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
 import { requestPerformanceCode } from './performance.mjs';
+import { releaseDetails } from './release.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -24,13 +25,19 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
 js = updateCalendarJs(updateNavigationJs(js));
+const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
+if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
+const hook=js.lastIndexOf('})();');
+js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({dirty:!!(${leaveGuard[1]}||departuresBusyV305||settingsDirtyV258)});\n`+js.slice(hook);
 const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
-  .replace('v2.99 · Google Forms 조사', 'v3.07 · 시트 조회 개선');
+  .replace('v2.99 · Google Forms 조사', 'v'+releaseDetails.version+' · '+releaseDetails.title);
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
+// 첫 렌더링 전에 로그인 덮개만 숨깁니다. 실제 접근 권한은 API에서 확인합니다.
+html=html.replace('</head>',`<script>try{const s=JSON.parse(localStorage.getItem('logbook.session.v1')||'null');if(s&&typeof s.token==='string'&&s.token.startsWith('session.')&&s.expiresAt>Date.now())document.documentElement.setAttribute('data-session-restoring','true');}catch(_){}</script></head>`);
 html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
  <div class="pages-login-card">
@@ -48,16 +55,23 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
  </div>
 </section>
 <div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>`);
-html = html.replace('</body>', '<script src="./assets/pages.js"></script>\n</body>');
+html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" hidden>업데이트 안내</button>
+<aside class="pages-update-notice" id="pagesUpdateNotice" role="region" aria-label="새 업데이트 안내" hidden>
+ <div class="pages-update-head"><strong>새 업데이트 사항이 있습니다</strong><button id="pagesUpdateClose" type="button" aria-label="업데이트 알림 닫기">×</button></div>
+ <p id="pagesUpdateVersion"></p><ul id="pagesUpdateNotes"></ul><p id="pagesUpdateHelp" role="status" aria-live="polite"></p><button id="pagesUpdateApply" type="button">확인</button>
+</aside><script src="./assets/updates.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}"`);
-for (const [path, contents] of [['assets/app.css', css], ...['assets/pages.css','assets/pages.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])]) {
+const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
+const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets]))};
+write('docs/release.json',JSON.stringify(release,null,2)+'\n');
+html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}" data-release-id="${release.id}"`);
+for (const [path, contents] of assets) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
 write('docs/index.html', updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html))));
 write('docs/assets/app.css', css);
-// app.js는 인증 성공 후에만 로드합니다. 원래 google.script.run 호출은 pages.js 어댑터로 연결합니다.
+// 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
 
 let legacy = read('Code.gs.txt')+'\n'+read('scripts/departures-server.gs.txt');

@@ -4162,4 +4162,6 @@ for(const id of ['v298GeneralCalendar','v298TrainingCalendar','wxCalendarGrid','
  button.addEventListener('click',()=>{if(calendarOverview.open){closeCalendarOverview();return;}calendarOverviewAnchor=document.createComment('calendar');panel.before(calendarOverviewAnchor);calendarOverviewPanel=panel;calendarOverviewButton=button;calendarOverview.append(panel);button.textContent='원래 화면으로';button.setAttribute('aria-expanded','true');calendarOverview.showModal();});
  grid.addEventListener('click',event=>{if(calendarOverview.open&&event.target.closest('[data-calendar-entry]'))closeCalendarOverview();},true);
 }
+
+window.logbookReloadState=()=>({dirty:!!(isFormDirty()||modalSaving||eqDirty()||eqSaving||rosterIsDirty()||rosterHasQuickChanges()||rosterSaving||rosterQuickSaving.size||supplyDirty()||navDirtyV220||navSavingV220||wxCalDirty()||wxBulkDirtyV229()||wxCustomDirty()||wxCalSaving||wxBulkSavingV229||wxRowSaving||pendingNote||syncPending||assetDirtyV244.size||assetSavingV244||departuresBusyV305||settingsDirtyV258)});
 })();

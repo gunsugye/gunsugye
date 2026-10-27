@@ -12,14 +12,14 @@ test('Pages 경로에 맞는 상대 URL을 사용하고 압축 부트스트랩�
   assert.ok(!html.includes('v275JsGzip'));
   assert.ok(!html.includes('google.script.run'));
   assert.ok(!html.includes('src="/assets/'));
-  for (const path of ['docs/assets/pages.js', 'docs/assets/app.js', 'docs/config.js']) new vm.Script(read(path));
+  for (const path of ['docs/assets/pages.js', 'docs/assets/updates.js', 'docs/assets/app.js', 'docs/config.js']) new vm.Script(read(path));
 });
 
 test('로그인 후 읽는 화면과 CSS·로그인 스크립트는 내용 해시로 이전 캐시를 피한다', () => {
   const html = read('docs/index.html');
   const hash = text => createHash('sha256').update(text).digest('hex').slice(0, 16);
   assert.ok(html.includes(`data-app-version="${hash(read('docs/assets/app.js'))}"`));
-  for (const path of ['assets/app.css','assets/pages.css','assets/pages.js','config.js']) assert.ok(html.includes(`./${path}?v=${hash(read('docs/'+path))}`));
+  for (const path of ['assets/app.css','assets/pages.css','assets/pages.js','assets/updates.js','config.js']) assert.ok(html.includes(`./${path}?v=${hash(read('docs/'+path))}`));
   assert.ok(read('docs/assets/pages.js').includes("document.documentElement?.dataset?.appVersion"));
 });
 test('설정이 없으면 로그인 안내를 보여주고 업무 화면을 실행하지 않는다', () => {

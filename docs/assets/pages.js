@@ -5,7 +5,7 @@ const config=window.LOGBOOK_CONFIG||{}, key='logbook.session.v1', $=id=>document
 let token='',expiresAt=0,appLoaded=false,authenticating=false,firstBootstrap=null;
 const activeReads=new Map(),readMethods=new Set(['getBootstrap','getRosterData','getEquipmentData','getSupplyCatalog','getSupplyItemData','getUniformV278','getRepairDashboardV219','getSmartDutyExceptionV253','getDepartureDashboardV305']);
 const status=message=>{$('pagesLoginStatus').textContent=message;};
-function forget(){token='';expiresAt=0;activeReads.clear();try{localStorage.removeItem(key);}catch(_){}}
+function forget(){token='';expiresAt=0;activeReads.clear();document.documentElement?.removeAttribute?.('data-session-restoring');try{localStorage.removeItem(key);}catch(_){}}
 function showLogin(message){forget();$('pagesLogin').hidden=false;$('pagesSession').hidden=true;if(appLoaded){$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;}status(message);}
 async function request(path,method,args=[]){
  const loginEmail=path==='/session'?String($('pagesEmail').value||'').trim().toLowerCase():undefined;
@@ -34,12 +34,14 @@ function runner(success,failure,userObject){return new Proxy({},{get(_target,nam
 }});}
 window.google=window.google||{};window.google.script={run:runner()};
 function loadApp(bootstrap){
- firstBootstrap=bootstrap;$('pagesAccount').textContent=bootstrap.userEmail||'로그인됨';$('pagesSession').hidden=false;
+ firstBootstrap=bootstrap;
+ const account=value=>{$('pagesAccount').textContent=value.userEmail||'로그인됨';$('pagesSession').hidden=false;document.documentElement?.removeAttribute?.('data-session-restoring');};
+ if(bootstrap&&typeof bootstrap.then==='function')bootstrap.then(account,error=>{if(!token){showLogin(error.message||'로그인을 다시 확인하세요.');return;}document.documentElement?.removeAttribute?.('data-session-restoring');$('pagesLogin').hidden=false;$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;status(error.message||'연결을 다시 확인하세요.');});else account(bootstrap);
  if(appLoaded){location.reload();return;}
  const version=document.documentElement?.dataset?.appVersion||'';
  const script=document.createElement('script');script.src='./assets/app.js'+(version?'?v='+encodeURIComponent(version):'');
  script.onerror=()=>{showLogin('화면 파일을 불러오지 못했습니다. 다시 시도하세요.');$('pagesRetry').hidden=false;};
- script.onload=()=>{$('pagesLogin').hidden=true;};appLoaded=true;document.body.appendChild(script);
+ script.onload=()=>{if(token){$('pagesLogin').hidden=true;window.LOGBOOK_UPDATES?.start();}};appLoaded=true;document.body.appendChild(script);
 }
 $('pagesLogout').addEventListener('click',async()=>{
  if(!confirm('저장 중인 작업이 있다면 먼저 완료하세요. 로그아웃하시겠습니까?'))return;
@@ -68,7 +70,7 @@ function initGoogle(attempt=0){
 }
 async function init(){
  if(!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(config.googleClientId||'')||!/^https:\/\//.test(config.apiUrl||'')){status('관리자 설정이 필요합니다. docs/config.js에 Google 클라이언트 ID와 API 주소를 입력하세요.');return;}
- try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.token?.startsWith('session.')&&saved.expiresAt>Date.now()){token=saved.token;expiresAt=saved.expiresAt;status('저장된 로그인으로 업무일지를 불러옵니다.');loadApp(await call('getBootstrap'));return;}}
+ try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.token?.startsWith('session.')&&saved.expiresAt>Date.now()){token=saved.token;expiresAt=saved.expiresAt;$('pagesLogin').hidden=true;status('저장된 로그인으로 업무일지를 불러옵니다.');loadApp(call('getBootstrap'));return;}}
  catch(error){if(token){status(error.message);$('pagesRetry').hidden=false;return;}}
  forget();status('등록된 Google 계정으로 로그인하세요. 같은 브라우저에서 30일간 유지됩니다.');initGoogle();
 }

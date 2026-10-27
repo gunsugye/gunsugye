@@ -24,4 +24,6 @@ GitHub는 `gunsugye` 저장소 쓰기 권한과 Actions 파일 갱신 권한이 
 
 Cloudflare 환경 변수는 `keep_vars`로 보존합니다. GitHub에는 `scripts/package.mjs`가 묶은 공개 파일만 업로드하며, 업무 원본과 Legacy는 Apps Script에만 업로드합니다. GitHub에 푸시한다고 Apps Script까지 자동 갱신되는 구성은 아니며, 이 PC의 위 명령이 세 서비스를 순서대로 갱신합니다.
 
+기능을 업데이트할 때 `scripts/release.mjs`의 버전·제목·변경 내용을 함께 수정합니다. 빌드가 화면과 로그인 코드·CSS·설정의 내용으로 배포 ID와 `docs/release.json`을 생성합니다. 접속 중인 화면은 이 공개 파일을 주기적으로 확인해 새 배포를 알립니다. 같은 코드의 재빌드는 새 알림을 만들지 않습니다.
+
 참고: [clasp 공식 안내](https://github.com/google/clasp), [Wrangler 공식 명령](https://developers.cloudflare.com/workers/wrangler/commands/workers/), [GitHub CLI 인증](https://cli.github.com/manual/gh_auth_login).

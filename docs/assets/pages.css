@@ -1,5 +1,12 @@
 .pages-login{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;background:#edf2f7;font-family:system-ui,sans-serif;color:#172b43}
 .pages-login[hidden],.pages-session[hidden]{display:none}
+#deleteJournalEntry[hidden]{display:none!important}
+html[data-session-restoring="true"] .pages-login{display:none}
+.pages-update-notice{position:fixed;right:20px;top:104px;z-index:10001;width:min(390px,calc(100vw - 32px));max-height:calc(100dvh - 150px);overflow:auto;box-sizing:border-box;padding:18px;background:#fff;border:1px solid #cadcf5;border-radius:16px;box-shadow:0 14px 44px #14305638;color:#1d3859;font:14px/1.65 system-ui,sans-serif}
+.pages-update-notice[hidden],#pagesUpdateLauncher[hidden]{display:none!important}.pages-update-head{display:flex;gap:12px;align-items:center;justify-content:space-between}.pages-update-head strong{font-size:16px;color:#165cc0}.pages-update-head button{border:0;background:transparent;font-size:23px;color:#62758a;cursor:pointer}
+.pages-update-notice ul{padding-left:20px}.pages-update-notice li{margin:6px 0}#pagesUpdateVersion,#pagesUpdateHelp{font-size:12px;color:#62758a}#pagesUpdateApply{min-height:40px;padding:8px 16px;border:0;border-radius:8px;background:#276fe9;color:#fff;cursor:pointer}#pagesUpdateLauncher{border:1px solid #c9daf5;border-radius:8px;background:#edf4ff;padding:6px 10px;color:#185cc0;cursor:pointer;white-space:nowrap}
+@media(max-width:650px){.pages-update-notice{right:10px;top:80px;width:calc(100vw - 20px)}}
+@media print{.pages-update-notice,#pagesUpdateLauncher{display:none!important}}
 .pages-login{overflow-y:auto;box-sizing:border-box}
 .pages-login-card{width:min(100%,540px);box-sizing:border-box;padding:40px;background:white;border:1px solid #d9e2ed;border-radius:20px;box-shadow:0 18px 64px #13243a14}
 .pages-login h1{margin:10px 0 16px;font-size:32px;line-height:1.4}

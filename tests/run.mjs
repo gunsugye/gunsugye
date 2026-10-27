@@ -7,6 +7,7 @@ await import('./navigation.test.mjs');
 await import('./calendar.test.mjs');
 await import('./departures.test.mjs');
 await import('./performance.test.mjs');
+await import('./updates.test.mjs');
 if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
   await import('./apps-script.test.mjs');
 } else {

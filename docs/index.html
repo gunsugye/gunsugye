@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-app-version="275da6312332185f" lang="ko">
+<html data-app-version="b07ecd4bcbf7456c" data-release-id="fea2a5a5bf70050d" lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -68,10 +68,10 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 @media(max-width:700px){.mobile-nav .v294-mobile-training{white-space:nowrap}.mobile-nav .v294-mobile-training.hidden{display:none!important}body.v294-training-mode .mobile-nav [data-view]:not([data-view="today"]):not([data-view="train"]){display:none!important}}
 </style>
 <link rel="stylesheet" href="./assets/app.css?v=a77079ebce12023b">
-<link rel="stylesheet" href="./assets/pages.css?v=f598b7ec7fca1f3b">
+<link rel="stylesheet" href="./assets/pages.css?v=2f92957429c63c61">
 <script src="./config.js?v=32d1574ddff155dc"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-</head>
+<script>try{const s=JSON.parse(localStorage.getItem('logbook.session.v1')||'null');if(s&&typeof s.token==='string'&&s.token.startsWith('session.')&&s.expiresAt>Date.now())document.documentElement.setAttribute('data-session-restoring','true');}catch(_){}</script></head>
 <body>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
  <div class="pages-login-card">
@@ -148,7 +148,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div class="v273-detail" id="v273Detail" role="status"></div>
   <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
 </div>
-<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.07 · 시트 조회 개선</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.08 · 업데이트 알림 · 빠른 재접속</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
  <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
  <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
 <div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
@@ -884,6 +884,10 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
  <div class="modal-foot"><span class="help">처리 확인 내역은 별도 시트에 보존됩니다.</span><div class="right"><button class="btn" type="button" id="supplyDispositionCancelV276">취소</button><button class="btn btn-primary" type="button" id="supplyDispositionApplyV276">모든 품목 확인 완료</button></div></div>
  </div>
 </div>
-<script src="./assets/pages.js?v=2a32b8b69aac2125"></script>
+<button type="button" id="pagesUpdateLauncher" hidden>업데이트 안내</button>
+<aside class="pages-update-notice" id="pagesUpdateNotice" role="region" aria-label="새 업데이트 안내" hidden>
+ <div class="pages-update-head"><strong>새 업데이트 사항이 있습니다</strong><button id="pagesUpdateClose" type="button" aria-label="업데이트 알림 닫기">×</button></div>
+ <p id="pagesUpdateVersion"></p><ul id="pagesUpdateNotes"></ul><p id="pagesUpdateHelp" role="status" aria-live="polite"></p><button id="pagesUpdateApply" type="button">확인</button>
+</aside><script src="./assets/updates.js?v=efc1a336dff63c49"></script><script src="./assets/pages.js?v=2a93ed4a1b6fac37"></script>
 <dialog id="navCatalogV301" class="nav-catalog"><h2>메뉴 추가</h2><p>상위 메뉴를 추가하거나, 기존 상위 메뉴 안에 기능을 넣으세요.</p><label for="navAddGroupV301">상위 메뉴</label><select id="navAddGroupV301"></select><button id="navAddGroupButtonV301" type="button">상위 메뉴 추가</button><hr><label for="navAddParentV301">추가할 위치</label><select id="navAddParentV301"></select><label for="navAddItemV301">하위 메뉴</label><select id="navAddItemV301"></select><button id="navAddItemButtonV301" type="button">하위 메뉴 추가</button><button id="navCatalogCloseV301" type="button">닫기</button><p>추가 후 ‘변경사항 저장’을 누르면 적용됩니다.</p></dialog></body>
 </html>
