@@ -21,7 +21,7 @@ function fixture() {
     console,
     PropertiesService: { getScriptProperties: () => props },
     CacheService: { getScriptCache: () => ({ get: key => cache.get(key), put: (key, value) => cache.set(key, value) }) },
-    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    LockService: { getScriptLock: () => ({ waitLock() {}, tryLock:()=>true, releaseLock() {} }) },
     Utilities: {
       Charset: { UTF_8: 'utf8' }, DigestAlgorithm: { SHA_256: 'sha256' },
       getUuid: randomUUID,
@@ -115,6 +115,17 @@ test('사용자별 알림 기록은 소유자 저장 공간 안에서도 분리�
   const keys = [...values.keys()].filter(key => key.startsWith('PAGES_USER_'));
   assert.equal(keys.length, 2);
   assert.notEqual(keys[0], keys[1]);
+});
+
+test('범위 계정도 자신의 수정사항을 확인 처리하며 허용되지 않은 메뉴의 이력은 닫지 않는다',()=>{
+ const {context,values,rpc,signed}=fixture(),own=randomUUID(),other=randomUUID();
+ values.set('LOGBOOK_ACCESS_PROFILES_V284',JSON.stringify({'scoped@gmail.com':{job:'군수참모생도',views:['today']}}));
+ const rows=[['기록ID','수정시각','수행계정','상위항목','하위항목','작업','수정 대상','상세','대상ID'],[own,'2026-10-27','','일지','all','수정','업무','',''],[other,'2026-10-27','','보급','supply','수정','물품','','']];
+ const sh={getMaxColumns:()=>9,getLastRow:()=>rows.length,getRange:(r,c,h,w)=>({getDisplayValues:()=>rows.slice(r-1,r-1+h).map(row=>row.slice(c-1,c-1+w))})};
+ context.SpreadsheetApp={openById:()=>({getSheetByName:()=>sh})};
+ const hidden=rpc(signed('scoped@gmail.com','dismissChangePageV286',['supply',[other]]));assert.equal(hidden.ok,true,hidden.error);assert.equal(hidden.result.hidden,0);
+ const seen=rpc(signed('scoped@gmail.com','dismissChangePageV286',['all',[own]]));assert.equal(seen.ok,true);assert.equal(seen.result.hidden,1);
+ const stored=[...values.entries()].find(([key])=>key.startsWith('PAGES_USER_'));assert.deepEqual(JSON.parse(stored[1]),[own]);
 });
 test('비공개 업무 원본과 브라우저 JavaScript 문법을 검사한다', () => {
   new vm.Script(legacy);

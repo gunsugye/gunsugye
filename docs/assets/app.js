@@ -618,7 +618,7 @@ function navInitV220(){
  $('navResetButton').addEventListener('click',()=>{if(!navEditModeV220)return;if(!confirm('상위·하위 메뉴를 기본 배치로 되돌릴까요? (저장해야 확정됩니다)'))return;navTreeV233=navDefaultV233();navRenderV233();navUpdateDirtyV220();});
 }
 function init(){
-  document.title='군수계 업무일지 v2.99';$('todayLabel').textContent=prettyDate(localISO());$('selectedDate').value=selectedDay;$('statMonth').value=localISO().slice(0,7);eqInit();rosterInit();settingsInitV258();initEditorUIV281();v284Init();supplyInit();saberInitV276();uniformInitV278();repairInit();navInitV220();v294SyncModeMenu(view);wxInit();dormInitV234();assetInitV244();surveysInitV299();
+  document.title='군수계 업무일지';$('todayLabel').textContent=prettyDate(localISO());$('selectedDate').value=selectedDay;$('statMonth').value=localISO().slice(0,7);eqInit();rosterInit();settingsInitV258();initEditorUIV281();v284Init();supplyInit();saberInitV276();uniformInitV278();repairInit();navInitV220();v294SyncModeMenu(view);wxInit();dormInitV234();assetInitV244();surveysInitV299();
   document.body.dataset.readonly='true';updateSaveIndicator();refreshCats();renderToday();
   qsa('.mobile-nav [data-view]').forEach(b=>b.addEventListener('click',()=>{if(switchView(b.dataset.view)!==false)flushNote()}));
   $('reloadCloud').addEventListener('click',()=>{if(!navConfirmDiscardV220()||!rosterConfirmQuickAbandon()||!supplyConfirmLeave())return;flushNote();loadCloud();});$('diagnoseCloudV272').addEventListener('click',inspectConnectionV272);$('newEntryBtn').addEventListener('click',()=>showModal());
@@ -3687,11 +3687,11 @@ function v284PositionChanges(){
   panel.addEventListener('click',e=>{
    if(!panel.classList.contains('v284-floating-change'))return;
    const close=e.target.closest('[data-change-dismiss-page]');if(close){e.preventDefault();changeDismissPageV286(close.dataset.changeDismissPage);return;}
-   const open=e.target.closest('[data-change-open-page]');if(open){e.preventDefault();const rec=changeStateV283.unread.find(x=>x.page===open.dataset.changeOpenPage);if(rec)changeOpenV283(rec.id);}
+   const open=e.target.closest('[data-change-open-page]');if(open){e.preventDefault();const rec=changeStateV283.unread.find(x=>x.page===open.dataset.changeOpenPage);if(rec)changeOpenV283(rec.id,true);}
   });
  }
  // v2.85: 일반 관리자·중대 담당자 모두 어떤 메뉴에서든 우측 하단 팝업으로 표시
- if(panel.parentNode!==document.body)document.body.appendChild(panel);
+ const dock=$('notificationDockV309');if(dock&&panel.parentNode!==dock)dock.appendChild(panel);
  panel.classList.add('v284-floating-change','v285-fixed-popup');
  const restore=$('changePopupRestoreV285');
  if(restore&&restore.parentNode!==document.body)document.body.appendChild(restore);
@@ -3839,19 +3839,20 @@ function changeRightRenderV283(){
 }
 async function changeHistoryLoadV283(){
  if(!ready||changeStateV283.busy)return;changeStateV283.busy=true;
- try{const r=await server('getChangesV283',350);changeStateV283.items=r.items||[];changeStateV283.unread=r.unread||[];changeRightRenderV283();}
+ try{const r=await server('getChangesV283',350);changeStateV283.items=r.items||[];changeStateV283.unread=(r.unread||[]).filter(x=>!changeReadV309.has(x.id));changeRightRenderV283();}
  catch(e){const el=$('changeCountV283');if(el)el.textContent='수정사항 조회 실패';console.warn('수정사항 조회:',e.message);}
  finally{changeStateV283.busy=false;}
 }
-function changeOpenV283(id){
- const r=changeStateV283.items.find(x=>x.id===id);if(!r)return;
- const page=viewNames[r.page]?r.page:'changes';if(switchView(page)===false)return;
+function changeOpenV283(id,wholePage=false){
+ const r=changeStateV283.items.find(x=>x.id===id);if(!r)return false;
+ const page=viewNames[r.page]?r.page:'changes';
+ const ids=changeStateV283.unread.filter(x=>wholePage?x.page===r.page:x.id===id).map(x=>x.id);
+ if(switchView(page)===false)return false;
+ changeReadPageV309(r.page,ids);
  const searchMap={roster:'rosterSearch',saber:'saberSearchV276',supply:'supplySearch',uniform:'uniformSearchV278',dorm:'dormSearch'};
- if(page==='all'){
-  const el=$('search');el.value=r.title;renderAll();return;
- }
+ if(page==='all'){const el=$('search');el.value=r.title;renderAll();return true;}
  const el=$(searchMap[page]);if(el){el.value=r.title;el.dispatchEvent(new Event('input',{bubbles:true}));}
- // 리스트 전체를 열어 해당 항목까지 이동하기 전, 검색으로 수동 식별 가능하도록 제목을 유지합니다.
+ return true;
 }
 async function changeDismissV283(id){
  const target=changeStateV283.unread.find(x=>x.id===id);if(!target)return;
@@ -3866,7 +3867,7 @@ function changeUiInitV283(){
  const root=$('todayView'),history=$('changesView');
  [root,history].forEach(parent=>parent.addEventListener('click',e=>{
   const closePage=e.target.closest('[data-change-dismiss-page]');if(closePage){e.preventDefault();changeDismissPageV286(closePage.dataset.changeDismissPage);return;}
-  const openPage=e.target.closest('[data-change-open-page]');if(openPage){e.preventDefault();const rec=changeStateV283.unread.find(x=>x.page===openPage.dataset.changeOpenPage);if(rec)changeOpenV283(rec.id);return;}
+  const openPage=e.target.closest('[data-change-open-page]');if(openPage){e.preventDefault();const rec=changeStateV283.unread.find(x=>x.page===openPage.dataset.changeOpenPage);if(rec)changeOpenV283(rec.id,true);return;}
   const dismiss=e.target.closest('[data-change-dismiss]');if(dismiss){e.preventDefault();changeDismissV283(dismiss.dataset.changeDismiss);return;}
   const open=e.target.closest('[data-change-open]');if(open){e.preventDefault();changeOpenV283(open.dataset.changeOpen);return;}
   if(e.target.closest('[data-change-show-all]'))switchView('changes');
@@ -4161,6 +4162,16 @@ for(const id of ['v298GeneralCalendar','v298TrainingCalendar','wxCalendarGrid','
  (panel.querySelector('.v298-controls,.panel-head .right,.panel-head,.v292-actions')||panel).append(button);
  button.addEventListener('click',()=>{if(calendarOverview.open){closeCalendarOverview();return;}calendarOverviewAnchor=document.createComment('calendar');panel.before(calendarOverviewAnchor);calendarOverviewPanel=panel;calendarOverviewButton=button;calendarOverview.append(panel);button.textContent='원래 화면으로';button.setAttribute('aria-expanded','true');calendarOverview.showModal();});
  grid.addEventListener('click',event=>{if(calendarOverview.open&&event.target.closest('[data-calendar-entry]'))closeCalendarOverview();},true);
+}
+
+const changeReadV309=new Set();
+async function changeReadPageV309(page,ids){
+ const selected=ids.filter(id=>!changeReadV309.has(id));if(!selected.length)return;
+ const before=changeStateV283.unread.filter(x=>selected.includes(x.id));
+ selected.forEach(id=>changeReadV309.add(id));
+ changeStateV283.unread=changeStateV283.unread.filter(x=>!changeReadV309.has(x.id));changeRightRenderV283();
+ try{await server('dismissChangePageV286',page,selected);}
+ catch(e){selected.forEach(id=>changeReadV309.delete(id));const present=new Set(changeStateV283.unread.map(x=>x.id));changeStateV283.unread.push(...before.filter(x=>!present.has(x.id)));changeRightRenderV283();toast('확인 상태를 저장하지 못했습니다. 다시 확인해 주세요. '+e.message);}
 }
 
 window.logbookReloadState=()=>({dirty:!!(isFormDirty()||modalSaving||eqDirty()||eqSaving||rosterIsDirty()||rosterHasQuickChanges()||rosterSaving||rosterQuickSaving.size||supplyDirty()||navDirtyV220||navSavingV220||wxCalDirty()||wxBulkDirtyV229()||wxCustomDirty()||wxCalSaving||wxBulkSavingV229||wxRowSaving||pendingNote||syncPending||assetDirtyV244.size||assetSavingV244||departuresBusyV305||settingsDirtyV258)});

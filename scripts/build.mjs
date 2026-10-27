@@ -9,6 +9,7 @@ import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
 import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
+import { updateNotificationsJs } from './notifications.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -24,7 +25,7 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
     'const maxWait=90000;')
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
-js = updateCalendarJs(updateNavigationJs(js));
+js = updateNotificationsJs(updateCalendarJs(updateNavigationJs(js)));
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
@@ -33,6 +34,7 @@ const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
+html=html.replace(/<title>[\s\S]*?<\/title>/,'<title>군수계 업무일지</title>');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
   .replace('v2.99 · Google Forms 조사', 'v'+releaseDetails.version+' · '+releaseDetails.title);
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
@@ -56,10 +58,10 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
 </section>
 <div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>`);
 html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" hidden>업데이트 안내</button>
-<aside class="pages-update-notice" id="pagesUpdateNotice" role="region" aria-label="새 업데이트 안내" hidden>
- <div class="pages-update-head"><strong>새 업데이트 사항이 있습니다</strong><button id="pagesUpdateClose" type="button" aria-label="업데이트 알림 닫기">×</button></div>
+<div id="notificationDockV309" class="notification-dock"><aside class="pages-update-notice" id="pagesUpdateNotice" role="region" aria-label="새 업데이트 안내" hidden>
+ <div class="pages-update-head"><strong>업데이트</strong><button id="pagesUpdateClose" type="button" aria-label="업데이트 알림 닫기">×</button></div><p>새 업데이트 사항이 있습니다</p>
  <p id="pagesUpdateVersion"></p><ul id="pagesUpdateNotes"></ul><p id="pagesUpdateHelp" role="status" aria-live="polite"></p><button id="pagesUpdateApply" type="button">확인</button>
-</aside><script src="./assets/updates.js"></script><script src="./assets/pages.js"></script>\n</body>`);
+</aside></div><script src="./assets/updates.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
