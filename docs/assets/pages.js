@@ -3,8 +3,9 @@
 'use strict';
 const config=window.LOGBOOK_CONFIG||{}, key='logbook.session.v1', $=id=>document.getElementById(id);
 let token='',expiresAt=0,appLoaded=false,authenticating=false,firstBootstrap=null;
+const activeReads=new Map(),readMethods=new Set(['getBootstrap','getRosterData','getEquipmentData','getSupplyCatalog','getSupplyItemData','getUniformV278','getRepairDashboardV219','getSmartDutyExceptionV253','getDepartureDashboardV305']);
 const status=message=>{$('pagesLoginStatus').textContent=message;};
-function forget(){token='';expiresAt=0;try{localStorage.removeItem(key);}catch(_){}}
+function forget(){token='';expiresAt=0;activeReads.clear();try{localStorage.removeItem(key);}catch(_){}}
 function showLogin(message){forget();$('pagesLogin').hidden=false;$('pagesSession').hidden=true;if(appLoaded){$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;}status(message);}
 async function request(path,method,args=[]){
  const loginEmail=path==='/session'?String($('pagesEmail').value||'').trim().toLowerCase():undefined;
@@ -17,7 +18,12 @@ async function request(path,method,args=[]){
 async function call(method,args=[]){
  if(!token||Date.now()>=expiresAt){showLogin('로그인 유지 기간이 만료되었습니다. 다시 로그인하세요.');throw Error('Google 로그인이 필요합니다.');}
  if(firstBootstrap&&(method==='getBootstrap'||(method==='readCompressedV282'&&args[0]==='getBootstrap'))){const result=firstBootstrap;firstBootstrap=null;return result;}
- return request('/rpc',method,args);
+ const read=readMethods.has(method)||(method==='readCompressedV282'&&readMethods.has(args[0]));
+ if(!read){activeReads.clear();try{return await request('/rpc',method,args);}finally{activeReads.clear();}}
+ const readKey=JSON.stringify([method,args]);
+ if(activeReads.has(readKey))return activeReads.get(readKey);
+ const pending=request('/rpc',method,args);activeReads.set(readKey,pending);
+ try{return await pending;}finally{if(activeReads.get(readKey)===pending)activeReads.delete(readKey);}
 }
 function runner(success,failure,userObject){return new Proxy({},{get(_target,name){
  if(name==='withSuccessHandler')return fn=>runner(fn,failure,userObject);

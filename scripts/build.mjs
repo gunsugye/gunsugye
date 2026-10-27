@@ -7,6 +7,7 @@ import { updateJournalJs, updateJournalHtml, journalCSS } from './journal.mjs';
 import { normalizeNavigation, updateNavigationJs, updateNavigationHtml } from './navigation.mjs';
 import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
+import { requestPerformanceCode } from './performance.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -28,7 +29,7 @@ const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS;
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
-  .replace('v2.99 · Google Forms 조사', 'v3.06 · 업무 일시 입력');
+  .replace('v2.99 · Google Forms 조사', 'v3.07 · 시트 조회 개선');
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
 html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
@@ -86,9 +87,11 @@ function pagesUserProperties_() {
 }
 `;
 const suffix = `
+${requestPerformanceCode}
 const pagesMethods_ = {${uniqueMethods.join(',')}};
 return {
  call: function(name, args) {
+  pagesReadRequestV307_=(pagesReadMethodsV307_.has(name)||(name==='readCompressedV282'&&pagesReadMethodsV307_.has(args[0])))?{}:false;
   const cfg = config_();
   let viewers;
   try { viewers = JSON.parse(PropertiesService.getScriptProperties().getProperty('PAGES_VIEWER_EMAILS') || '[]'); }

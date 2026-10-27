@@ -14,7 +14,8 @@ function fixture() {
     ['LOGBOOK_FULL_EDITOR_EMAILS_V281', '["editor@gmail.com"]'],
     ['LOGBOOK_LIMITED_EDITOR_EMAILS_V226', '["limited@gmail.com"]']
   ]);
-  const props = { getProperty: key => values.get(key) ?? null, setProperty: (key, value) => values.set(key, value), deleteProperty: key => values.delete(key), getProperties: () => Object.fromEntries(values) };
+  const reads=[];
+  const props = { getProperty: key => {reads.push(key);return values.get(key) ?? null;}, setProperty: (key, value) => values.set(key, value), deleteProperty: key => values.delete(key), getProperties: () => Object.fromEntries(values) };
   const cache = new Map();
   const context = vm.createContext({
     console,
@@ -37,8 +38,21 @@ function fixture() {
     const payload = JSON.stringify({ version: 1, timestamp: Date.now(), nonce: randomUUID(), email, sub: 'google-sub-' + email, method, args, ...overrides });
     return { postData: { contents: JSON.stringify({ payload, signature: createHmac('sha256', secret).update(payload).digest('base64url') }) } };
   };
-  return { context, values, signed, rpc: (...args) => JSON.parse(context.doPost(...args).text) };
+  return { context, values, reads, signed, rpc: (...args) => JSON.parse(context.doPost(...args).text) };
 }
+
+test('실제 부트스트랩은 시트 열기와 계정 설정을 요청당 1회 수행하고 다음 요청은 권한 변경을 확인한다',()=>{
+ const {context,values,reads,signed,rpc}=fixture();let opens=0;
+ const sheet={getLastRow:()=>1};const book={getSheetByName:name=>name==='사용자메뉴_목록'?null:sheet};
+ context.SpreadsheetApp={openById:()=>{opens++;return book;}};
+ assert.equal(rpc(signed('owner@gmail.com','getBootstrap')).ok,true);
+ assert.equal(opens,1);assert.equal(reads.filter(k=>k==='LOGBOOK_SHEET_ID').length,1);
+ assert.equal(rpc(signed('owner@gmail.com','getBootstrap')).ok,true);
+ assert.equal(opens,2);assert.equal(reads.filter(k=>k==='LOGBOOK_SHEET_ID').length,2);
+ values.set('LOGBOOK_OWNER_EMAIL','new-owner@gmail.com');
+ const denied=rpc(signed('owner@gmail.com','getBootstrap'));
+ assert.equal(denied.ok,false);assert.equal(opens,2);
+});
 
 test('원본 업무 함수가 공개 전역에 노출되지 않는다', () => {
   const { context } = fixture();
