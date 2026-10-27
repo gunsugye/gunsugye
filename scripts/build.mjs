@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { updateJournalJs, updateJournalHtml } from './journal.mjs';
 import { normalizeNavigation, updateNavigationJs, updateNavigationHtml } from './navigation.mjs';
 import { updateCalendarJs, calendarCSS } from './calendar.mjs';
+import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -16,18 +17,18 @@ const unpack = id => {
   if (!match) throw new Error(`압축 원본을 찾을 수 없습니다: ${id}`);
   return gunzipSync(Buffer.from(match[1].replace(/\s/g, ''), 'base64')).toString('utf8');
 };
-let js = updateJournalJs(unpack('v275JsGzip')
+let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
   .replace(/const maxWait=method==='getBootstrap'\?23000:method==='pingConnectionV273'\?12000:30000;/,
     'const maxWait=90000;')
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
 js = updateCalendarJs(updateNavigationJs(js));
-const css = unpack('v275CssGzip') + calendarCSS;
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
-  .replace('v2.99 · Google Forms 조사', 'v3.04 · 캘린더 한눈에');
+  .replace('v2.99 · Google Forms 조사', 'v3.05 · 인원 일괄 관리');
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
 html = html.replace(/<body([^>]*)>/, `<body$1>
 <section id="pagesLogin" class="pages-login" aria-labelledby="pagesLoginTitle">
@@ -53,12 +54,12 @@ html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}"`);
 for (const [path, contents] of [['assets/app.css', css], ...['assets/pages.css','assets/pages.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])]) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
-write('docs/index.html', updateNavigationHtml(updateJournalHtml(html)));
+write('docs/index.html', updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html))));
 write('docs/assets/app.css', css);
 // app.js는 인증 성공 후에만 로드합니다. 원래 google.script.run 호출은 pages.js 어댑터로 연결합니다.
 write('docs/assets/app.js', js);
 
-let legacy = read('Code.gs.txt');
+let legacy = read('Code.gs.txt')+'\n'+read('scripts/departures-server.gs.txt');
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)

@@ -28,10 +28,14 @@ export function normalizeNavigation(value, defaults, available) {
     }
   }
   const labels = {};
+  if(valid&&!value.departuresAddedV305&&allowed.has('departures')&&!used.has('departures')){
+    const def=defaults.find(g=>g.id==='departures');
+    if(def){let group=groups.find(g=>g.id===def.id);if(!group){group={id:def.id,title:def.title,items:[]};groups.unshift(group);}group.items.push('departures');used.add('departures');}
+  }
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = label.trim().slice(0, 50);
   }
-  return { schemaVersion: 2, groups, labels };
+  return { schemaVersion: 2, groups, labels, departuresAddedV305:true };
 }
 
 export function updateNavigationJs(js) {

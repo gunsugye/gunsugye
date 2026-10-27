@@ -1,0 +1,96 @@
+/** 총기·군수품·피복 미등재 인원 통합 관리. 조회는 쓰지 않고 처리 전 원본을 다시 대조합니다. */
+function departurePermissionV305_(){
+ const cfg=config_();
+ if(!cfg.canManageUsers&&!fullEditorsV281_().includes(cfg.email))throw Error('일괄 관리는 최고 관리자 또는 전체 편집자만 사용할 수 있습니다.');
+ return cfg;
+}
+function departureTokenV305_(value){
+ return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(value))).replace(/=+$/,'');
+}
+function departureStateV305_(ss){
+ const source=smartReferenceV253_(ss);
+ if(!source.items||source.items.length<100)throw Error('스마트당직 기준 명단이 부족합니다. 8개 중대 연결과 명단을 확인하세요.');
+ const refNames=new Set(source.items.map(r=>uniformNameV278_(r.name))),refKeys=new Set(source.items.map(uniformKeyV278_));
+ const roster=rosterRows_(rosterRequired_(ss)),uniforms=uniformRowsV278_(uniformTabV278_(ss,false));
+ const archived=specialArchiveItemsV255_(ss),byKey=new Map(),candidates=[],review=[];
+ for(const p of roster){const key=uniformKeyV278_(p);if(!byKey.has(key))byKey.set(key,[]);byKey.get(key).push(p);}
+ const absentUniforms=new Map();
+ for(const p of uniforms){
+  if(refKeys.has(uniformKeyV278_(p)))continue;
+  if(refNames.has(uniformNameV278_(p.name))){review.push({cohort:p.cohort,company:p.company,name:p.name,reason:'스마트당직 동명 인원 또는 소속 불일치'});continue;}
+  const key=uniformKeyV278_(p);if(!absentUniforms.has(key))absentUniforms.set(key,[]);absentUniforms.get(key).push(p);
+ }
+ for(const p of roster){
+  if(refKeys.has(uniformKeyV278_(p)))continue;
+  if(refNames.has(uniformNameV278_(p.name))){review.push({cohort:p.cohort,company:p.company,name:p.name,reason:'스마트당직 동명 인원 또는 소속 불일치'});continue;}
+  const key=uniformKeyV278_(p);
+  if(byKey.get(key).length!==1){review.push({cohort:p.cohort,company:p.company,name:p.name,reason:'활동 명단의 기수·중대·이름 중복'});absentUniforms.delete(key);continue;}
+  if((absentUniforms.get(key)||[]).length>1){review.push({cohort:p.cohort,company:p.company,name:p.name,reason:'피복 명단 중복 · 대상 확인 필요'});absentUniforms.delete(key);continue;}
+  candidates.push({id:'r_'+p.id,roster:p,uniforms:absentUniforms.get(key)||[],name:p.name,cohort:p.cohort,company:p.company});absentUniforms.delete(key);
+ }
+ for(const [key,rows] of absentUniforms){
+  if(rows.length!==1){review.push({cohort:rows[0].cohort,company:rows[0].company,name:rows[0].name,reason:'피복 명단의 기수·중대·이름 중복'});continue;}
+  const p=rows[0],prior=archived.filter(x=>uniformKeyV278_(x)===key);
+  candidates.push({id:'u_'+p.id,roster:null,uniforms:rows,name:p.name,cohort:p.cohort,company:p.company,priorStatus:prior.length===1?prior[0].status:''});
+ }
+ const byRoster=new Map(candidates.filter(p=>p.roster).map(p=>[p.roster.id,p]));
+ for(const c of candidates)c.supplies=[];
+ if(byRoster.size)for(const item of supplyRegistryItems_(ss)){
+  const one=supplyOne_(ss,item.id);
+  for(const row of supplyRows_(one.sh,one.headers)){
+   const target=byRoster.get(row.id);if(!target)continue;
+   const extra=Object.fromEntries(Object.entries(row.extra||{}).filter(([k,v])=>String(v||'').trim()));
+   if(!row.status&&!row.detail&&!Object.keys(extra).length)continue;
+   target.supplies.push({id:item.id,name:item.name,status:row.status,detail:row.detail,extra,updatedAt:row.updatedAt});
+  }
+ }
+ for(const c of candidates)c.token=departureTokenV305_({roster:c.roster,uniforms:c.uniforms.map(({row,...u})=>u),supplies:c.supplies});
+ return {source:source.mode,referenceCount:source.items.length,candidates,review,archived};
+}
+function departureHistoryV305_(ss){
+ const sh=ss.getSheetByName('인원일괄처리이력');if(!sh||sh.getLastRow()<2)return [];
+ const n=Math.min(80,sh.getLastRow()-1);
+ return sh.getRange(sh.getLastRow()-n+1,1,n,9).getDisplayValues().reverse().map(r=>({at:r[0],name:r[3],status:r[4],gun:r[5],supply:r[6],uniform:r[7],result:r[8]}));
+}
+function getDepartureDashboardV305(){
+ departurePermissionV305_();const ss=spreadsheet_();
+ let state;
+ try{state=departureStateV305_(ss);}catch(e){return {ready:false,error:String(e.message||e),candidates:[],review:[],archived:specialArchiveItemsV255_(ss),history:departureHistoryV305_(ss)};}
+ return {...state,ready:true,history:departureHistoryV305_(ss),readAt:iso_()};
+}
+function processDepartureV305(input){
+ departurePermissionV305_();
+ if(!input||!SMART_V253.STATUSES.includes(input.status))throw Error('퇴교·휴학·위탁 중 관리 상태를 선택하세요.');
+ if(!['별도 보관','반납 완료','인계 완료','미지급 확인'].includes(input.gunAction))throw Error('총기 처리 결과를 선택하세요.');
+ return lockAndRun_(()=>{
+  const ss=spreadsheet_(),state=departureStateV305_(ss),c=state.candidates.find(x=>x.id===String(input.id));
+  if(!c||c.token!==String(input.token||''))throw Error('스마트당직 또는 물품 자료가 변경되었습니다. 새로고침 후 확인하세요.');
+  supplyValidateProcessingV276_(c.supplies,input.dispositions);
+  if(c.uniforms.length&&!['보관','반납 완료','인계 완료','미지급 확인'].includes(input.uniformAction))throw Error('피복 처리 결과를 선택하세요.');
+  if(!c.roster&&c.priorStatus&&c.priorStatus!==input.status)throw Error('기존 보관 상태와 다릅니다. 기존 상태 관리에서 먼저 변경하세요.');
+  const note=text_(input.note,400),now=iso_(),email=config_().email;
+  const log=specialSheetV255_(ss,'인원일괄처리이력',['처리시각','수행계정','대상ID','이름','관리상태','총기처리','군수품처리','피복처리','처리결과'],true);
+  const backup=c.uniforms.length?specialSheetV255_(ss,'피복_상태이동보관',['보관시각','수행계정','대상ID','피복ID','기수','중대','이름','관리상태','처리결과','원본JSON'],true):null;
+  // 모든 선택값·명단·원본 열을 확인하고 피복 원본을 먼저 보관합니다.
+  if(backup)for(const u of c.uniforms)backup.appendRow([now,email,c.id,u.id,u.cohort,u.company,safeCell_(u.name),input.status,input.uniformAction,JSON.stringify(u)]);
+  log.appendRow([now,email,c.id,safeCell_(c.name),input.status,input.gunAction,JSON.stringify(input.dispositions||{}),c.uniforms.length?input.uniformAction:'기록 없음','진행 중']);
+  const logRow=log.getLastRow(),warnings=[];let moved=false;
+  try{
+   if(c.roster){
+    const r=moveRosterSpecialLockedV305_(c.roster.id,input.status,note,c.roster.updatedAt,input.dispositions||{});moved=true;
+    warnings.push(...(r.supplySync?.warnings||[]));if(r.dispositionWarning)warnings.push(r.dispositionWarning);
+   }
+   const sh=uniformTabV278_(ss,false);
+   for(const u of c.uniforms.slice().sort((a,b)=>b.row-a.row)){
+    uniformLogV278_(ss,'통합 상태 이동',u,input.status+' / '+input.uniformAction+' / 원본은 피복_상태이동보관');
+    sh.deleteRow(u.row);
+   }
+   log.getRange(logRow,9).setValue(warnings.length?'완료 · 확인 필요: '+warnings.join(' | '):'완료');
+   return {ok:true,id:c.id,name:c.name,warnings};
+  }catch(e){
+   const partial=moved||!!(c.roster&&specialArchiveFindV255_(ss,c.roster.id));
+   log.getRange(logRow,9).setValue((partial?'일부 처리됨 · ':'처리 중단 · ')+String(e.message||e));
+   return {ok:false,id:c.id,name:c.name,partial,error:String(e.message||e)};
+  }
+ });
+}
