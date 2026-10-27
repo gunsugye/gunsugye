@@ -220,7 +220,7 @@ async function loadCloud(){if(syncPending||pendingNote){toast('저장 중입니�
     $('cloudBanner').textContent='● '+(result.role||'조회 전용')+' | 접속 계정: '+cloudEmail+' | '+(v284Company?v284Company+'중대 · ':'')+(v284Scoped?'허용된 항목만 조회·수정 가능':'기록 '+data.entries.length+'건 · '+(canEdit?'전체 항목 편집 가능':canEditJournal?'업무일지·캘린더만 수정 가능':'조회만 가능'));
     $('accessManageV281').classList.toggle('hidden',!canManageUsersV281);
     $('openSheet').href=sheetUrl||'#';$('categoryEditor').readOnly=!canEdit;
-    refresh();v284PositionChanges();$('changeHistoryLinkV283').classList.toggle('hidden',v284Scoped&&!v284IsAllowed('changes'));if(v284Scoped){switchView(view);$('journalModeBar').classList.add('hidden');$('openSheet').classList.add('hidden');}else{$('journalModeBar').classList.remove('hidden');$('openSheet').classList.remove('hidden');}eqLoaded=false;rosterLoaded=false;if(view==='dorm')dormReloadV234();if(view==='laborCalc')laborLoadV259();if(view==='laborRecords')laborRecordsLoadV264();if(view==='roomAsset')assetLoadV244();if(view==='equipment')loadEquipment();if(view==='roster')loadRoster();supplyLoaded=false;if(view==='supply')supplyLoadCatalog();if(view==='uniform'){uniformStateV278.loaded=false;uniformLoadV278(true);}repairLoaded=false;if(view==='repairs')loadRepairDashboard();wxLoaded=false;wxLoadError='';if(view==='calendar')wxLoadAll();if(window.__cloudBootV273)window.__cloudBootV273.ready();changeHistoryLoadV283();toast('Google Sheets에서 최신 기록을 불러왔습니다.');
+    refresh();v284PositionChanges();$('changeHistoryLinkV283').classList.toggle('hidden',v284Scoped&&!v284IsAllowed('changes'));if(v284Scoped){switchView(view);$('journalModeBar').classList.add('hidden');$('openSheet').classList.add('hidden');}else{$('journalModeBar').classList.remove('hidden');$('openSheet').classList.remove('hidden');}eqLoaded=false;rosterLoaded=false;if(view==='dorm')dormReloadV234();if(view==='laborCalc')laborLoadV259();if(view==='laborRecords')laborRecordsLoadV264();if(view==='roomAsset')assetLoadV244();if(view==='equipment')loadEquipment();if(view==='roster')loadRoster();supplyLoaded=false;if(view==='supply')supplyLoadCatalog();if(view==='uniform'){uniformStateV278.loaded=false;uniformLoadV278(true);}repairLoaded=false;if(view==='repairs')loadRepairDashboard();wxLoaded=false;wxLoadError='';wxLoadAll();if(window.__cloudBootV273)window.__cloudBootV273.ready();changeHistoryLoadV283();toast('Google Sheets에서 최신 기록을 불러왔습니다.');
   }catch(err){syncError=true;if(window.__cloudBootV273)window.__cloudBootV273.error(err.message||String(err));$('cloudBanner').classList.add('failed');$('cloudBanner').textContent='연결 실패: '+err.message+' | Google Sheets 공유 권한과 앱 배포 옵션을 확인하세요.';
     $('openSheet').href='#';}finally{updateSaveIndicator();}}
 
@@ -505,6 +505,7 @@ function navGroupButtonV233(group){
  b.textContent=(navExpandedV233.has(group.id)?'▾ ':'▸ ')+group.title;
  b.addEventListener('click',()=>{if(navExpandedV233.has(group.id))navExpandedV233.delete(group.id);else navExpandedV233.add(group.id);navRenderV233();});return b;
 }
+let wxNavigationReadyV314=false;
 function navRenderV233(){
  if(!navTreeV233)return;
  const nav=$('sidebarMenu'),frag=document.createDocumentFragment();
@@ -542,7 +543,7 @@ function navRenderV233(){
   if((navTreeV233.hiddenGroups||[]).includes(group.id))el.classList.add('tree-item-hidden-v266');
   el.appendChild(list);if(!v284Scoped||list.querySelector('.tree-nav-item'))frag.appendChild(el);
  });
- nav.replaceChildren(frag);v284AddUtilityNav();const activeItemsV301=new Set(navTreeV233.groups.flatMap(g=>g.items));qsa('.mobile-nav [data-view]').forEach(button=>button.classList.toggle('nav-removed-v301',!activeItemsV301.has(button.dataset.view)));
+ nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();const activeItemsV301=new Set(navTreeV233.groups.flatMap(g=>g.items));qsa('.mobile-nav [data-view]').forEach(button=>button.classList.toggle('nav-removed-v301',!activeItemsV301.has(button.dataset.view)));
 }
 function navEditToggleV220(edit){if(!canEdit)return;
  navEditModeV220=!!edit;$('navEditButton').disabled=!!edit;$('navEditButton').textContent='☷ 메뉴 편집';$('navEditActions').classList.toggle('hidden',!edit);
@@ -557,7 +558,7 @@ async function navSaveV220(){if(!canEdit||!ready||navSavingV220)return;
  try{
   const saved=await server('saveNavTreeV233',navTreeV233);
   navTreeV233=navNormalizeV233(saved);navSavedTreeV233=navDeepCopyV233(navTreeV233);
-  navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴 이름·배치·삭제가 저장되었습니다.');
+  navEditToggleV220(false);navUpdateDirtyV220();window.LOGBOOK_NAVIGATION?.commit();toast('메뉴 이름·배치·삭제가 저장되었습니다.');
  }catch(e){alert('메뉴 저장 실패: '+e.message);}
  finally{navSavingV220=false;$('navSaveButton').disabled=false;}
 }
@@ -1830,7 +1831,10 @@ function wxMakeNavRow(page){
   mob.addEventListener('click',()=>{if(switchView(viewId)!==false)flushNote();});
   viewNames[viewId]=['CUSTOM WORKSPACE',page.title,page.type==='메모'?'독립된 메모 시트에 기록을 남깁니다.':'독립된 구글 시트로 관리하는 사용자 표입니다.'];
 }
-async function wxLoadAll(){
+let wxLoadPromiseV314=null;
+async function wxLoadAll(){if(wxLoadPromiseV314)return wxLoadPromiseV314;wxLoadPromiseV314=wxLoadAllInnerV314();try{return await wxLoadPromiseV314;}finally{wxLoadPromiseV314=null;}}
+async function wxLoadAllInnerV314(){
+ wxNavigationReadyV314=false;
   if(!ready)return;
   try{
     const response=await server('getWorkspaceExtraV221');wxPages=response.pages||[];wxEvents=response.events||[];wxLoaded=true;wxLoadError='';
@@ -1840,10 +1844,10 @@ async function wxLoadAll(){
     Object.keys(viewNames).filter(x=>x.startsWith('c_')).forEach(x=>delete viewNames[x]);
     wxPages.forEach(wxMakeNavRow);
     $('wxAddMenu').classList.toggle('hidden',!canEdit);
-    if(!navEditModeV220||!navDirtyV220){navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();navRenderV233();}
+    if(!navEditModeV220||!navDirtyV220){navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();wxNavigationReadyV314=true;navRenderV233();}
     if(view==='calendar')wxCalendarRender();
     if(view.startsWith('c_'))await wxLoadPage(view);
-  }catch(e){wxLoaded=false;wxLoadError=String(e.message||e);if(view==='calendar')wxCalendarRender();toast('캘린더 조회 실패: '+e.message);}
+  }catch(e){window.LOGBOOK_NAVIGATION?.commit(false);wxLoaded=false;wxLoadError=String(e.message||e);if(view==='calendar')wxCalendarRender();toast('캘린더 조회 실패: '+e.message);}
 }
 function wxNewMenuDialog(){if(!mustEdit())return;$('wxMenuBackdrop').classList.remove('hidden');$('wxMenuForm').reset();$('wxMenuColumnsWrap').classList.remove('hidden');$('wxMenuName').focus();}
 async function wxNewMenuSave(e){

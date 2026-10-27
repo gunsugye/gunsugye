@@ -39,17 +39,17 @@ test('생성된 배포 정보와 첫 화면 버전이 같고 새로고침 전에
 
 test('저장 세션 재접속은 서버 응답 전 화면부터 열며 검증 요청을 중복 전송하지 않는다',async()=>{
  const elements=new Map(),scripts=[],get=id=>{if(!elements.has(id))elements.set(id,{hidden:id==='pagesSession',value:'',textContent:'',addEventListener(){}});return elements.get(id);};
- let resolveFetch,requests=0;
+ let resolveFetch,requests=0,menuRequests=0;
  const context=vm.createContext({window:{LOGBOOK_CONFIG:{googleClientId:'client.apps.googleusercontent.com',apiUrl:'https://api.example'}},
   document:{documentElement:{dataset:{appVersion:'abc'},removeAttribute(){}},getElementById:get,createElement:()=>({}),body:{appendChild:s=>scripts.push(s)}},
   localStorage:{getItem:()=>JSON.stringify({token:'session.valid.signature',expiresAt:Date.now()+60000}),removeItem(){}},
-  fetch:()=>{requests++;return new Promise(r=>resolveFetch=r);},AbortSignal,Date,Proxy,console,setTimeout,clearTimeout,location:{reload(){}}
+  fetch:(_url,options)=>{if(JSON.parse(options.body).method==='getWorkspaceExtraV221'){menuRequests++;return Promise.resolve({ok:true,status:200,json:async()=>({ok:true,result:{pages:[]}})});}requests++;return new Promise(r=>resolveFetch=r);},AbortSignal,Date,Proxy,console,setTimeout,clearTimeout,location:{reload(){}}
  });
  new vm.Script(read('docs/assets/pages.js')).runInContext(context);
  assert.equal(get('pagesLogin').hidden,true);assert.equal(scripts.length,1);assert.equal(get('pagesSession').hidden,true);
  const result=new Promise((resolve,reject)=>context.window.google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).readCompressedV282('getBootstrap'));
  assert.equal(requests,1);resolveFetch({ok:true,status:200,json:async()=>({ok:true,result:{userEmail:'verified@example.com',entries:[]}})});
- assert.equal((await result).userEmail,'verified@example.com');assert.equal(get('pagesAccount').textContent,'verified@example.com');assert.equal(requests,1);
+ assert.equal((await result).userEmail,'verified@example.com');assert.equal(get('pagesAccount').textContent,'verified@example.com');assert.equal(requests,1);assert.equal(menuRequests,1);
 });
 
 test('저장된 세션을 서버가 거절하면 로그인 화면으로 복귀한다',async()=>{

@@ -64,6 +64,6 @@ test('재방문 시 저장된 세션을 서버에 확인하고 Google 팝업 없
   assert.equal(element('pagesAccount').textContent, 'owner@gmail.com');
   assert.equal(appended[0].src, './assets/app.js');
   await listeners.get('pagesLogoutclick')();
-  assert.equal(requests[1].url, 'https://api.example/logout');
+  assert.equal(requests.at(-1).url, 'https://api.example/logout');
   assert.equal(saved, null);
 });

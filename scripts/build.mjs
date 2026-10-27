@@ -28,6 +28,15 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
 js = roomAssetJs(repairJs(updateNotificationsJs(updateCalendarJs(updateNavigationJs(js)))),read('scripts/room-assets-client.js.txt'));
+js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
+ .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
+ .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;
+async function wxLoadAll(){if(wxLoadPromiseV314)return wxLoadPromiseV314;wxLoadPromiseV314=wxLoadAllInnerV314();try{return await wxLoadPromiseV314;}finally{wxLoadPromiseV314=null;}}
+async function wxLoadAllInnerV314(){\n wxNavigationReadyV314=false;`)
+ .replace("wxLoaded=false;wxLoadError='';if(view==='calendar')wxLoadAll();", "wxLoaded=false;wxLoadError='';wxLoadAll();")
+ .replace('navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();navRenderV233();','navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();wxNavigationReadyV314=true;navRenderV233();')
+ .replace("catch(e){wxLoaded=false;wxLoadError=String(e.message||e);", "catch(e){window.LOGBOOK_NAVIGATION?.commit(false);wxLoaded=false;wxLoadError=String(e.message||e);");
+js=js.replace("navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴", "navEditToggleV220(false);navUpdateDirtyV220();window.LOGBOOK_NAVIGATION?.commit();toast('메뉴");
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
@@ -37,6 +46,8 @@ const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + r
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
 html=html.replace(/<title>[\s\S]*?<\/title>/,'<title>군수계 업무일지</title>');
+html=html.replace(/<html\b/,'<html data-navigation-pending');
+html=html.replace('</head>','<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style></head>');
 html = html.replaceAll('<h2>우선 처리할 업무</h2>', '<h2>마감 임박 · 우선 처리할 업무</h2>')
   .replace('v2.99 · Google Forms 조사', 'v'+releaseDetails.version+' · '+releaseDetails.title);
 html = html.replace('</head>', '<link rel="stylesheet" href="./assets/app.css">\n<link rel="stylesheet" href="./assets/pages.css">\n<script src="./config.js"></script>\n<script src="https://accounts.google.com/gsi/client" async defer></script>\n</head>');
@@ -63,10 +74,10 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 <div id="notificationDockV309" class="notification-dock"><aside class="pages-update-notice" id="pagesUpdateNotice" role="region" aria-label="새 업데이트 안내" hidden>
  <div class="pages-update-head"><strong>업데이트</strong><button id="pagesUpdateClose" type="button" aria-label="업데이트 알림 닫기">×</button></div><p>새 업데이트 사항이 있습니다</p>
  <p id="pagesUpdateVersion"></p><ul id="pagesUpdateNotes"></ul><p id="pagesUpdateHelp" role="status" aria-live="polite"></p><button id="pagesUpdateApply" type="button">확인</button>
-</aside></div><script src="./assets/updates.js"></script><script src="./assets/pages.js"></script>\n</body>`);
+</aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
+const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets]))};
 write('docs/release.json',JSON.stringify(release,null,2)+'\n');
 html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}" data-release-id="${release.id}"`);
