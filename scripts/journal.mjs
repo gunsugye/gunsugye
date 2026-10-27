@@ -32,6 +32,7 @@ export function updateJournalJs(js) {
     .replaceAll("e.due&&e.due<today", "journalOverdue(e)")
     .replaceAll("if(e.due<today)", "if(journalOverdue(e))")
     .replaceAll("e.due<today?", "journalOverdue(e)?")
+    .replace("const dueToday=unfinished.filter(e=>e.due===today).length", "const dueToday=unfinished.filter(e=>e.due===today&&!journalOverdue(e)).length")
     .replace("${escapeH(label)}</small>", "${escapeH(label)}${e.dueTime?' · '+escapeH(e.dueTime):''}${e.time?' · 업무 '+escapeH(e.time):''}</small>")
     .replace("(a.e.due||'9999-99-99').localeCompare(b.e.due||'9999-99-99')", "((a.e.due||'9999-99-99')+'T'+(a.e.dueTime||'23:59')).localeCompare((b.e.due||'9999-99-99')+'T'+(b.e.dueTime||'23:59'))");
   const end = js.lastIndexOf('})();');
