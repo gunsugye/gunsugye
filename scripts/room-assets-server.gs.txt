@@ -1,0 +1,51 @@
+const ASSET_PERSONAL_V311_=['신발장','옷장','침대틀','침대서랍','책상','회전의자','3단서랍','스탠드','서가','소파'];
+function assetPositionsV311_(name){return ASSET_PERSONAL_V311_.includes(String(name).replace(/\s/g,''))?['1','2']:['common'];}
+function assetSlotsReadV311_(value){
+ if(!value)return {slots:null,legacy:null};
+ let data;try{data=JSON.parse(value);}catch(e){throw Error('자리별 비품 기록이 손상되었습니다. 원본 시트를 확인하세요.');}
+ if(!data||!Array.isArray(data.slots))throw Error('자리별 비품 기록 형식을 확인하세요.');
+ return data;
+}
+function assetValidateSlotsV311_(slots,positions){
+ if(!Array.isArray(slots)||slots.length!==positions.length)throw Error('자리별 입력 수가 맞지 않습니다.');
+ return positions.map(position=>{
+  const matches=slots.filter(x=>x&&x.position===position);if(matches.length!==1)throw Error('자리 번호가 중복되었거나 누락되었습니다.');
+  const raw=matches[0],status=canonicalRepairStateV216_(raw.status||'');
+  if(status&&!ROOM_ASSET_STATUSES_V246.includes(status))throw Error('네 가지 비품 상태 중 선택하세요.');
+  if(typeof raw.unavailable!=='boolean')throw Error('사용불가 체크 값이 올바르지 않습니다.');
+  const details=String(raw.details||'');if(details.length>500)throw Error('세부사항은 자리별 500자 이내로 입력하세요.');
+  return {position,status,details:details.trim(),unavailable:raw.unavailable};
+ });
+}
+function assetSlotSummaryV311_(slots){
+ const count=status=>slots.filter(x=>x.status===status).length;
+ const status=['교체 필요','수리 필요(미보고)','수리 필요(보고)','정상'].find(x=>count(x))||'';
+ return {quantity:slots.length,normal:count('정상'),repair:slots.filter(x=>x.status&&x.status!=='정상').length,
+ confirmed:slots.every(x=>!!x.status),status,details:slots.filter(x=>x.details).map(x=>(x.position==='common'?'공용':x.position+'번')+': '+x.details).join('\n')};
+}
+function saveDormInventoryRoomV244(roomId,changes){
+ requireOwner_();return lockAndRun_(()=>{
+  if(!Array.isArray(changes)||!changes.length||changes.length>100)throw Error('저장할 품목을 확인하세요.');
+  const ss=spreadsheet_();roomId=String(roomId||'');
+  if(!assetV244Rooms_(ss).some(x=>x.id===roomId))throw Error('생활실을 찾을 수 없습니다.');
+  const cat=ss.getSheetByName(ROOM_ASSET_V244.CATALOG),sh=ss.getSheetByName(ROOM_ASSET_V244.RECORDS);
+  if(!cat||!sh)throw Error('비품 관리 최초 설정이 필요합니다.');
+  const allowed=new Map(assetV244Catalog_(cat).map(x=>[x.id,x]));
+  const rows=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,Math.min(10,sh.getMaxColumns())).getDisplayValues():[];
+  const index=new Map();rows.forEach((r,i)=>{if(!r[0]||!r[1])return;const key=r[0]+'|'+r[1];if(index.has(key))throw Error('비품 기록에 중복된 호실·품목이 있습니다.');index.set(key,{row:i+2,values:r});});
+  const used=new Set(),now=iso_();
+  const pending=changes.map(raw=>{
+   if(!raw||!allowed.has(raw.itemId)||used.has(raw.itemId))throw Error('품목이 누락되었거나 중복되었습니다.');used.add(raw.itemId);
+   const prev=index.get(roomId+'|'+raw.itemId),before=prev?prev.values:[];
+   if(String(before[6]||'')!==String(raw.expectedUpdatedAt||''))throw Error('다른 화면에서 변경되었습니다. 새로고침 후 다시 저장하세요.');
+   const slots=assetValidateSlotsV311_(raw.slots,assetPositionsV311_(allowed.get(raw.itemId).name));
+   const summary=assetSlotSummaryV311_(slots),stored=assetSlotsReadV311_(before[9]);
+   const legacy=stored.legacy||(!stored.slots&&prev?{quantity:before[2],normal:before[3],repair:before[4],status:before[7],details:before[8],updatedAt:before[6]}:null);
+   return {row:prev?prev.row:0,values:[roomId,raw.itemId,String(summary.quantity),String(summary.normal),String(summary.repair),summary.confirmed?'Y':'N',now,summary.status,safeCell_(summary.details),JSON.stringify({slots,legacy})]};
+  });
+  assetEnsureV246_(sh);
+  pending.filter(x=>x.row).forEach(x=>sh.getRange(x.row,1,1,10).setValues([x.values]));
+  const adds=pending.filter(x=>!x.row);if(adds.length){const start=sh.getLastRow()+1;ensureRows_(sh,start+adds.length-1);sh.getRange(start,1,adds.length,10).setValues(adds.map(x=>x.values));}
+  return {ok:true,saved:pending.length,roomId,updatedAt:now};
+ });
+}

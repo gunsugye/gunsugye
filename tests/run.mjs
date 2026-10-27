@@ -9,6 +9,8 @@ await import('./departures.test.mjs');
 await import('./performance.test.mjs');
 await import('./updates.test.mjs');
 await import('./notifications.test.mjs');
+if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./repairs.test.mjs');
+await import('./room-assets.test.mjs');
 if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
   await import('./apps-script.test.mjs');
 } else {

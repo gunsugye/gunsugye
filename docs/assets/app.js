@@ -158,11 +158,22 @@ async function decodeReadV282(value){
  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
  return JSON.parse(await new Response(stream).text());
 }
+function repairResponseV310(value){
+  if(Array.isArray(value))return value.map(repairResponseV310);
+  if(value&&typeof value==='object'){for(const key of Object.keys(value)){
+   if((key==='status'||key==='firearmStatus')&&typeof value[key]==='string'){
+    const s=value[key].replace(/\s+/g,'');
+    if(['수리필요(보고완료)','수리필요(보고)'].includes(s))value[key]='수리 필요(보고)';
+    else if(['수리필요','수리필요(미보고)'].includes(s))value[key]='수리 필요(미보고)';
+    else if(s==='교체필요')value[key]='교체 필요';
+   }else repairResponseV310(value[key]);
+  }}return value;
+ }
 function server(method,...args){return new Promise((resolve,reject)=>{
  let settled=false;
  const maxWait=90000;
  const timer=setTimeout(()=>finish(new Error('서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'),true),maxWait);
- function finish(value,isError){if(settled)return;settled=true;clearTimeout(timer);if(isError)reject(value);else {resolve(value);if(ready && CHANGE_WRITE_NAMES_V283.has(method))setTimeout(()=>changeHistoryLoadV283(),750);}}
+ function finish(value,isError){if(settled)return;settled=true;clearTimeout(timer);if(isError)reject(value);else {resolve(repairResponseV310(value));if(ready && CHANGE_WRITE_NAMES_V283.has(method))setTimeout(()=>changeHistoryLoadV283(),750);}}
  try{
   if(typeof google==='undefined'||!google.script||!google.script.run)throw Error('Google Apps Script 배포 주소에서 실행해야 합니다. HTML 파일을 직접 열면 저장되지 않습니다.');
   const packed=COMPRESSED_READS_V282.has(method),target=packed?'readCompressedV282':method,argv=packed?[method,...args]:args;
@@ -867,8 +878,8 @@ function rosterCmp(a,b){
     ||String(a.name||'').localeCompare(String(b.name||''),'ko',{numeric:true})
     ||String(a.id||'').localeCompare(String(b.id||''));
 }
-function isRepairV216(status){return status==='수리필요(보고 완료)'||status==='수리필요(미보고)'||status==='수리 필요';}
-function repairBadgeV216(status){return status==='수리필요(보고 완료)'?'보고 완료':'미보고';}
+function isRepairV216(status){return status==='수리 필요(보고)'||status==='수리 필요(미보고)'||status==='수리 필요'||status==='교체 필요';}
+function repairBadgeV216(status){return status==='교체 필요'?'교체 필요':status==='수리 필요(보고)'?'보고':'미보고';}
 function rosterFiltered(){
   const search=$('rosterSearch').value.trim().toLowerCase(),cohort=$('rosterCohort').value,company=$('rosterCompany').value;
   return rosterItems.filter(x=>(!cohort||x.cohort===cohort)&&(!company||x.company===company)&&(!$('rosterRepairOnly').checked||isRepairV216(x.firearmStatus))&&(!search||[x.name,x.cohort,x.company,x.flight,x.cadetNumber,x.firearmNumber,x.firearmStatus,x.memo].some(v=>String(v||'').toLowerCase().includes(search)))).sort(rosterCmp);
@@ -910,7 +921,7 @@ function rosterRender(){
   const results=rosterFiltered();
   const cohorts=new Set(rosterItems.map(x=>x.cohort).filter(Boolean));
   const counts={total:rosterItems.length,classes:cohorts.size,companies:new Set(rosterItems.map(x=>x.company).filter(Boolean)).size,shown:results.length};
-  $('rosterMetrics').innerHTML=[['전체 인원',counts.total+'명'],['수리필요(보고 완료)',rosterItems.filter(x=>x.firearmStatus==='수리필요(보고 완료)').length+'명'],['수리필요(미보고)',rosterItems.filter(x=>x.firearmStatus==='수리필요(미보고)').length+'명'],['조회 결과',counts.shown+'명']].map(x=>`<div class="roster-metric"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join('');
+  $('rosterMetrics').innerHTML=[['전체 인원',counts.total+'명'],['수리 필요(보고)',rosterItems.filter(x=>x.firearmStatus==='수리 필요(보고)').length+'명'],['수리 필요(미보고)',rosterItems.filter(x=>x.firearmStatus==='수리 필요(미보고)').length+'명'],['조회 결과',counts.shown+'명']].map(x=>`<div class="roster-metric"><small>${x[0]}</small><strong>${x[1]}</strong></div>`).join('');
   const companyFirst=rosterSortMode==='company';
   for(const [id,active] of [['rosterSortCompany',companyFirst],['rosterSortCohort',!companyFirst]]){
     $(id).classList.toggle('roster-sort-active',active);
@@ -932,7 +943,7 @@ function rosterRender(){
     const editable=canEdit&&rosterSchemaReady;
     const repair=isRepairV216(v.firearmStatus);
     const selected=v.firearmStatus||'';
-    const statusOptions=[['','상태 선택'],['정상','정상'],['수리필요(보고 완료)','수리필요(보고 완료)'],['수리필요(미보고)','수리필요(미보고)']].map(([value,label])=>`<option value="${escapeH(value)}" ${selected===value?'selected':''}>${label}</option>`).join('');
+    const statusOptions=[['','상태 선택'],['정상','정상'],['수리 필요(보고)','수리 필요(보고)'],['수리 필요(미보고)','수리 필요(미보고)']].map(([value,label])=>`<option value="${escapeH(value)}" ${selected===value?'selected':''}>${label}</option>`).join('');
     const statusSelect=`<select class="roster-status-select ${repair?'is-repair':''}" data-roster-field="firearmStatus" data-id="${escapeH(r.id)}" aria-label="${escapeH(r.name)} 총기상태" ${editable?'':'disabled'}>${statusOptions}</select>`;
     const note=`<textarea class="roster-inline-memo" data-roster-field="memo" data-id="${escapeH(r.id)}" maxlength="1500" rows="1" aria-label="${escapeH(r.name)} 총기상태 비고" placeholder="상태 상세 입력" title="${escapeH(v.memo||'')}" ${editable?'':'disabled'}>${escapeH(v.memo||'')}</textarea>`;
     const save=editable?`<button class="small-link roster-save-quick" data-roster-action="savequick" data-id="${escapeH(r.id)}" ${draft?'':'hidden'}>저장</button>`:'';
@@ -992,7 +1003,7 @@ async function rosterNormalizeCohort(){
   if(!confirm(`${cohort} ${members.length}명 전체의 총기상태를 정상으로 변경할까요? 수리 필요(보고 완료·미보고 합계) ${repairs}명도 정상으로 바뀝니다.`))return;
   const statusCounts={};
   for(const m of members){const status=m.firearmStatus||'미설정';statusCounts[status]=(statusCounts[status]||0)+1;}
-  const token=['정상','수리필요(보고 완료)','수리필요(미보고)','미설정'].map(k=>k+':'+(statusCounts[k]||0)).join('|');
+  const token=['정상','수리 필요(보고)','수리 필요(미보고)','미설정'].map(k=>k+':'+(statusCounts[k]||0)).join('|');
   rosterSaving=true;$('rosterNormalize').disabled=true;
   try{
     const result=await enqueue(()=>server('normalizeRosterCohort',cohort,members.length,repairs,token));
@@ -1266,7 +1277,7 @@ function supplyOrdered(rows){return [...rows].sort((a,b)=>supplyMode==='company'
   supplyNumeric(a.company)-supplyNumeric(b.company)||supplyNumeric(a.cohort)-supplyNumeric(b.cohort)||a.name.localeCompare(b.name,'ko'):
   supplyNumeric(a.cohort)-supplyNumeric(b.cohort)||supplyNumeric(a.company)-supplyNumeric(b.company)||a.name.localeCompare(b.name,'ko'));
 }
-function supplyStatusHTML(s){return [['','상태 선택'],['정상','정상'],['수리필요(보고 완료)','수리필요(보고 완료)'],['수리필요(미보고)','수리필요(미보고)']].map(([v,label])=>`<option value="${escapeH(v)}" ${s===v?'selected':''}>${label}</option>`).join('');}
+function supplyStatusHTML(s){return [['','상태 선택'],['정상','정상'],['수리 필요(보고)','수리 필요(보고)'],['수리 필요(미보고)','수리 필요(미보고)']].map(([v,label])=>`<option value="${escapeH(v)}" ${s===v?'selected':''}>${label}</option>`).join('');}
 function supplyFilters(){
   const rows=supplyItem?.rows||[],prevC=$('supplyCohort').value,prevU=$('supplyCompany').value;
   const cohorts=[...new Set(rows.map(x=>x.cohort).filter(Boolean))].sort((a,b)=>supplyNumeric(a)-supplyNumeric(b));
@@ -1294,7 +1305,7 @@ function supplyFiltered(){
 }
 function supplyMetricsOnly(){
   const rows=supplyItem?.rows||[],statuses=rows.map(x=>supplyDrafts.get(x.id)?.status??x.status);
-  $('supplyMetrics').innerHTML=[['관리 인원',rows.length+'명'],['정상',statuses.filter(x=>x==='정상').length+'명'],['보고 완료',statuses.filter(x=>x==='수리필요(보고 완료)').length+'명'],['미보고',statuses.filter(x=>x==='수리필요(미보고)').length+'명'],['수량 입력',rows.filter(x=>String((supplyDrafts.get(x.id)||x).extra?.['수량']||'').trim()!=='').length+'명']].map(([a,b])=>`<div class="roster-metric"><small>${escapeH(a)}</small><strong>${escapeH(b)}</strong></div>`).join('');
+  $('supplyMetrics').innerHTML=[['관리 인원',rows.length+'명'],['정상',statuses.filter(x=>x==='정상').length+'명'],['보고 완료',statuses.filter(x=>x==='수리 필요(보고)').length+'명'],['미보고',statuses.filter(x=>x==='수리 필요(미보고)').length+'명'],['수량 입력',rows.filter(x=>String((supplyDrafts.get(x.id)||x).extra?.['수량']||'').trim()!=='').length+'명']].map(([a,b])=>`<div class="roster-metric"><small>${escapeH(a)}</small><strong>${escapeH(b)}</strong></div>`).join('');
 }
 function supplyRender(){
   if(!supplyItem){$('supplyActive').classList.add('hidden');return;}
@@ -1645,7 +1656,7 @@ function supplyInit(){
 let repairLoaded=false,repairLoading=false,repairItems=[],repairWarnings=[],repairReadAt='';
 function repairFiltered(){
   const term=$('repairSearch').value.trim().toLowerCase(),type=$('repairType').value,status=$('repairStatus').value;
-  const order={'수리필요(미보고)':0,'고장(보고 여부 미관리)':1,'수리필요(보고 완료)':2};
+  const order={'수리 필요(미보고)':0,'고장(보고 여부 미관리)':1,'수리 필요(보고)':2};
   return repairItems.filter(r=>(!type||r.type===type)&&(!status||r.status===status)&&(!term||[r.category,r.itemName,r.name,r.cadetNumber,r.cohort,r.company,r.location,r.note,r.status].some(v=>String(v||'').toLowerCase().includes(term))))
     .sort((a,b)=>(order[a.status]??9)-(order[b.status]??9)||String(a.category).localeCompare(String(b.category),'ko')||String(a.cohort).localeCompare(String(b.cohort),'ko',{numeric:true})||String(a.company).localeCompare(String(b.company),'ko',{numeric:true})||String(a.name).localeCompare(String(b.name),'ko'));
 }
@@ -1653,21 +1664,25 @@ function renderRepairDashboard(){
   const all=repairItems,rows=repairFiltered(),unknown=all.filter(r=>r.type==='equipment'),number=n=>n.toLocaleString('ko-KR');
   const metrics=[
     ['수리 필요 기록',number(all.length),'총기·군수품: 인원×품목 / 공용비품: 위치×종류',''],
-    ['수리필요(미보고)',number(all.filter(r=>r.status==='수리필요(미보고)').length),'총기·군수품 기록 수','attention'],
-    ['수리필요(보고 완료)',number(all.filter(r=>r.status==='수리필요(보고 완료)').length),'총기·군수품 기록 수',''],
+    ['수리 필요(미보고)',number(all.filter(r=>r.status==='수리 필요(미보고)').length),'총기·군수품 기록 수','attention'],
+    ['수리 필요(보고)',number(all.filter(r=>r.status==='수리 필요(보고)').length),'총기·군수품 기록 수',''],
     ['공용비품 고장 대수',number(unknown.reduce((sum,r)=>sum+(Number(r.count)||0),0))+'대','보고 여부는 별도로 관리되지 않음','info']
   ];
+  const groups=new Map();
+  all.forEach(r=>{const key=r.category+' / '+r.itemName;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);});
+  $('repairSummaryRows').innerHTML=[...groups.values()].map(list=>{const r=list[0],count=s=>list.filter(x=>x.status===s).length;return '<tr><td>'+escapeH(r.category)+'</td><td>'+escapeH(r.itemName)+'</td><td>'+list.length+'</td><td>'+count('수리 필요(보고)')+'</td><td>'+count('수리 필요(미보고)')+'</td><td>'+count('교체 필요')+'</td><td>'+list.filter(x=>!['수리 필요(보고)','수리 필요(미보고)','교체 필요'].includes(x.status)).length+'</td></tr>';}).join('')||'<tr><td colspan="7">수리 · 교체 필요 기록이 없습니다. 조회 오류가 있으면 아래 안내를 확인하세요.</td></tr>';
+  rows.sort((a,b)=>(a.category+' / '+a.itemName).localeCompare(b.category+' / '+b.itemName,'ko'));
   $('repairStats').innerHTML=metrics.map(x=>`<div class="repair-stat ${x[3]}"><small>${x[0]}</small><strong>${x[1]}</strong><em>${x[2]}</em></div>`).join('');
   $('repairCount').textContent=`전체 ${all.length.toLocaleString()}건 중 ${rows.length.toLocaleString()}건 표시 · 고장 공용비품은 위치×장비종류 단위`;
   $('repairReadAt').textContent=repairReadAt?'조회: '+String(repairReadAt).replace('T',' ').slice(0,19)+' UTC':'';
   $('repairWarnings').classList.toggle('hidden',!repairWarnings.length);
   $('repairWarnings').textContent=repairWarnings.length?'일부 자료를 읽지 못했습니다. 누락 가능 항목: '+repairWarnings.join(' / '):'';
-  $('repairRows').innerHTML=rows.length?rows.map(r=>{
-    const attention=r.status==='수리필요(미보고)',unknown=r.type==='equipment';
+  $('repairRows').innerHTML=rows.length?rows.map((r,index)=>{
+    const attention=r.status==='수리 필요(미보고)',unknown=r.type==='equipment'||r.type==='roomAsset';
     const badge=attention?'unreported':unknown?'unknown':'';
     const unit=r.cohort?[r.cohort,r.company?companyLabelV257(r.company):''].filter(Boolean).join(' · '):r.company||'—';
     const location=unknown?r.location:r.name+(r.cadetNumber?' / '+r.cadetNumber:'');
-    return `<tr class="${attention?'repair-unreported':unknown?'repair-unknown':''}"><td>${escapeH(r.category)}</td><td><strong>${escapeH(r.itemName)}</strong></td><td>${escapeH(location)}</td><td>${escapeH(unit)}</td><td><span class="repair-pill ${badge}">${escapeH(r.status)}</span></td><td>${unknown?Number(r.count||0).toLocaleString('ko-KR')+'대':'—'}</td><td class="repair-description">${escapeH(r.note||'—')}</td><td><button class="small-link" type="button" data-repair-open="${escapeH(r.type)}" data-repair-item="${escapeH(r.itemId||'')}" data-repair-key="${escapeH(r.cadetNumber||r.name||r.location||'')}" data-repair-place="${escapeH(r.location||'')}">원본 보기 →</button></td></tr>`;
+    return ((index===0||rows[index-1].category!==r.category||rows[index-1].itemName!==r.itemName)?'<tr><th colspan="8" style="text-align:left;background:#eef4ff">'+escapeH(r.category+' · '+r.itemName)+'</th></tr>':'')+`<tr class="${attention?'repair-unreported':unknown?'repair-unknown':''}"><td>${escapeH(r.category)}</td><td><strong>${escapeH(r.itemName)}</strong></td><td>${escapeH(location)}</td><td>${escapeH(unit)}</td><td><span class="repair-pill ${badge}">${escapeH(r.status)}</span></td><td>${unknown?Number(r.count||0).toLocaleString('ko-KR')+'대':'—'}</td><td class="repair-description">${escapeH(r.note||'—')}</td><td><button class="small-link" type="button" data-repair-open="${escapeH(r.type)}" data-repair-item="${escapeH(r.itemId||'')}" data-repair-key="${escapeH(r.cadetNumber||r.name||r.location||'')}" data-repair-place="${escapeH(r.location||'')}">원본 보기 →</button></td></tr>`;
   }).join(''):'<tr><td colspan="8" class="repair-empty">해당 조건에서 수리 필요 기록이 없습니다.</td></tr>';
 }
 async function loadRepairDashboard(){
@@ -1688,6 +1703,7 @@ function repairOpenOriginal(btn){
     if(switchView('equipment')===false)return;
     $('eqBuildingFilter').value='';$('eqUnitFilter').value='';$('eqSearch').value=(place||key).split(' / ').slice(-1)[0];
     if(eqLoaded)renderEquipment();
+  }else if(type==='saber'||type==='roomAsset'){switchView(type);
   }else if(type==='supply'){
     // 미리 선택해 두면 메뉴 최초 로딩 시에도 올바른 품목이 열립니다.
     supplySelected=item;
@@ -2298,7 +2314,7 @@ async function trainBulkRosterV227(){if(!trainCanChangeV227())return;if(!confirm
 function trainRenderGearV227(){const t=trainStateV227;const names=[...new Set(t.gear.map(g=>g.itemName))].sort((a,b)=>a.localeCompare(b,'ko'));$('trGearNames').innerHTML=names.map(n=>'<option value="'+trainEscapeV227(n)+'"></option>').join('');
  const name=$('trGearName').value.trim();const gearByPerson=new Map(t.gear.filter(g=>g.itemName===name).map(g=>[g.personId,g]));
  $('trGearRows').innerHTML=!name?'<tr><td colspan="9">품목명을 입력하거나 기존 품목을 선택해 주세요.</td></tr>':t.roster.length?t.roster.slice().sort((a,b)=>String(a.cohort).localeCompare(String(b.cohort),'ko',{numeric:true})||Number(a.company)-Number(b.company)||a.name.localeCompare(b.name,'ko')).map(p=>{
-  const g=gearByPerson.get(p.id);const status=g?.status||'정상';return `<tr data-train-gear="${trainEscapeV227(p.id)}"><td>${trainEscapeV227(p.cohort)}</td><td>${trainEscapeV227(p.company)}</td><td>${trainEscapeV227(p.name)}</td><td>${trainEscapeV227(p.cadetNumber)}</td><td><input data-gfield="size" value="${trainEscapeV227(g?.size||'')}" ${trainCanChangeV227()?'':'disabled'}></td><td><input data-gfield="quantity" value="${trainEscapeV227(g?.quantity||'')}" inputmode="numeric" ${trainCanChangeV227()?'':'disabled'}></td><td><select data-gfield="status" ${trainCanChangeV227()?'':'disabled'}>${['정상','수리필요(보고 완료)','수리필요(미보고)'].map(s=>'<option '+(s===status?'selected':'')+'>'+s+'</option>').join('')}</select></td><td><input class="train-long" data-gfield="detail" value="${trainEscapeV227(g?.detail||'')}" ${trainCanChangeV227()?'':'disabled'}></td><td>${trainCanChangeV227()?'<button class="btn btn-soft" type="button" data-train-savegear="'+trainEscapeV227(p.id)+'">저장</button>':'조회'}</td></tr>`;
+  const g=gearByPerson.get(p.id);const status=g?.status||'정상';return `<tr data-train-gear="${trainEscapeV227(p.id)}"><td>${trainEscapeV227(p.cohort)}</td><td>${trainEscapeV227(p.company)}</td><td>${trainEscapeV227(p.name)}</td><td>${trainEscapeV227(p.cadetNumber)}</td><td><input data-gfield="size" value="${trainEscapeV227(g?.size||'')}" ${trainCanChangeV227()?'':'disabled'}></td><td><input data-gfield="quantity" value="${trainEscapeV227(g?.quantity||'')}" inputmode="numeric" ${trainCanChangeV227()?'':'disabled'}></td><td><select data-gfield="status" ${trainCanChangeV227()?'':'disabled'}>${['정상','수리 필요(보고)','수리 필요(미보고)','교체 필요'].map(s=>'<option '+(s===status?'selected':'')+'>'+s+'</option>').join('')}</select></td><td><input class="train-long" data-gfield="detail" value="${trainEscapeV227(g?.detail||'')}" ${trainCanChangeV227()?'':'disabled'}></td><td>${trainCanChangeV227()?'<button class="btn btn-soft" type="button" data-train-savegear="'+trainEscapeV227(p.id)+'">저장</button>':'조회'}</td></tr>`;
  }).join(''):'<tr><td colspan="9">명단을 먼저 등록하세요.</td></tr>';
 }
 async function trainSaveGearRowV227(personId){if(!trainCanChangeV227())return;const name=$('trGearName').value.trim();const tr=Array.from(document.querySelectorAll('#trGearRows tr')).find(r=>r.dataset.trainGear===personId);if(!tr||!name)return;
@@ -2716,7 +2732,7 @@ function dormInitV234(){
  });
 }
 
-/* v2.44: 생활실 비품 13종 + 사용자 정의 종류, 호실별 실제 재고/상태. */
+/* v2.44: 생활실 비품 12종 + 사용자 정의 종류, 호실별 실제 재고/상태. */
 let assetDataV244=null,assetCurrentRoomV244='',assetDirtyV244=new Set(),assetSavingV244=false,assetOpenGroupsV245=null,assetResetGroupsV245=false;
 function assetRecMapV244(){return new Map((assetDataV244?.records||[]).map(r=>[r.roomId+'|'+r.itemId,r]));}
 // 한 호실은 정확히 한 그룹에만 포함되어 이중 집계되지 않음.
@@ -2747,22 +2763,23 @@ function assetSetCorridorsV244(){
  sel.innerHTML='<option value="">전체 복도</option>'+all.map(x=>'<option>'+escapeH(x)+'</option>').join('');
  sel.value=all.includes(old)?old:'';
 }
-const ASSET_STATUSES_V246=['정상','수리필요(보고 완료)','수리필요(미보고)'];
+const ASSET_STATUSES_V246=['정상','수리 필요(보고)','수리 필요(미보고)','교체 필요'];
 function assetStatusForEditV246(rec){
  if(!rec||!rec.confirmed)return '';
  if(ASSET_STATUSES_V246.includes(rec.status))return rec.status;
- return rec.repair>0?'수리필요(미보고)':'정상';
+ return rec.repair>0?'수리 필요(미보고)':'정상';
 }
 function assetStateV244(rec){
  if(!rec)return {label:'미입력',cls:'unknown',unknown:0};
  const un=Math.max(0,rec.quantity-rec.normal-rec.repair);
  if(un)return {label:un+'개 미점검',cls:'unknown',unknown:un};
- if(rec.status==='수리필요(보고 완료)')return {label:rec.status,cls:'repair',unknown:0};
- if(rec.status==='수리필요(미보고)')return {label:rec.status,cls:'repair',unknown:0};
+ if(rec.status==='수리 필요(보고)')return {label:rec.status,cls:'repair',unknown:0};
+ if(rec.status==='수리 필요(미보고)')return {label:rec.status,cls:'repair',unknown:0};
+ if(rec.status==='교체 필요')return {label:rec.status,cls:'repair',unknown:0};
  if(rec.status==='정상')return {label:rec.status,cls:'good',unknown:0};
  if(rec.quantity===0)return {label:'없음',cls:'zero',unknown:0};
  if(rec.repair&&rec.normal)return {label:'일부 요수리(기존 기록)',cls:'mixed',unknown:0};
- if(rec.repair)return {label:'수리필요(미보고)',cls:'repair',unknown:0};
+ if(rec.repair)return {label:'수리 필요(미보고)',cls:'repair',unknown:0};
  return {label:'정상',cls:'good',unknown:0};
 }
 function assetStatusTagV244(s){return '<span class="asset-pill asset-'+s.cls+'">'+escapeH(s.label)+'</span>';}
@@ -2836,56 +2853,38 @@ function assetCloseRoomV245(){
  qsa('[data-asset-room]',$('assetRoomRowsV244')).forEach(b=>{b.textContent='점검 / 수정';b.setAttribute('aria-expanded','false');});
 }
 function assetEditorSnapshotV244(row){
- return JSON.stringify(['qty','good','repair','status','details'].map(k=>row.querySelector('[data-asset-'+k+']')?.value??''));
+ return JSON.stringify(qsa('[data-asset-position]',row).map(card=>({position:card.dataset.assetPosition,status:card.querySelector('[data-seat-status]').value,details:card.querySelector('[data-seat-details]').value,unavailable:card.querySelector('[data-seat-unavailable]').checked})));
 }
 function assetRoomTitleV244(room){return [room.building,room.floor,room.corridor,room.room+'호'].join(' · ');}
 function assetOpenRoomV244(id){
- if(assetDirtyV244.size&&id!==assetCurrentRoomV244&&!confirm('저장하지 않은 비품 수정이 있습니다. 다른 호실을 열까요?'))return;
+ if(assetDirtyV244.size&&id!==assetCurrentRoomV244&&!confirm('저장하지 않은 변경을 버리고 다른 호실을 열까요?'))return;
  const room=assetDataV244?.rooms.find(x=>x.id===id);if(!room)return;
  assetCurrentRoomV244=id;assetDirtyV244.clear();$('assetRoomTitleV244').textContent=assetRoomTitleV244(room);
  const recs=assetRecMapV244(),readonly=canEdit?'':'disabled';
- const statusOptions=['','정상','수리필요(보고 완료)','수리필요(미보고)'];
  $('assetEditRowsV244').innerHTML=assetDataV244.items.map(item=>{
-  const r=recs.get(id+'|'+item.id),qty=r?r.quantity:item.recommended,status=assetStatusForEditV246(r),details=r?.details||'';
-  const opts=statusOptions.map(v=>'<option value="'+escapeH(v)+'" '+(v===status?'selected':'')+'>'+(v?escapeH(v):'상태 선택(미점검)')+'</option>').join('');
-  const normal=r?r.normal:0,repair=r?r.repair:0;
-  return '<tr data-asset-item="'+escapeH(item.id)+'"><td><strong>'+escapeH(item.name)+'</strong><small class="asset-unit">참고 '+item.recommended+escapeH(item.unit)+'</small></td><td><input class="field asset-quantity" type="number" min="0" max="999" step="1" data-asset-qty value="'+qty+'" '+readonly+'></td><td><input class="field asset-quantity" type="number" min="0" max="999" step="1" data-asset-good value="'+normal+'" '+readonly+'></td><td><input class="field asset-quantity" type="number" min="0" max="999" step="1" data-asset-repair value="'+repair+'" '+readonly+'></td><td><select class="field asset-status-select" data-asset-status '+readonly+'>'+opts+'</select></td><td><input class="field asset-details-input" type="text" maxlength="500" data-asset-details value="'+escapeH(details)+'" placeholder="수리 내용·상세 상태 등" '+readonly+'></td><td><button type="button" class="btn btn-soft asset-owner" data-asset-save="'+escapeH(item.id)+'" '+readonly+'>저장</button></td></tr>';
+  const r=recs.get(id+'|'+item.id),positions=item.positions||['common'];
+  const legacy=r&&!r.slots?'<p class="asset-legacy-note">기존 합산 기록: '+escapeH(r.status||'미점검')+' · 정상 '+r.normal+' / 요수리 '+r.repair+'개\n'+escapeH(r.details||'')+'\n자리별 상태는 확인 후 선택해 주세요.</p>':'';
+  const cards=positions.map(position=>{
+   const s=r?.slots?.find(x=>x.position===position)||{status:'',details:'',unavailable:false};
+   return '<div class="asset-seat-card" data-asset-position="'+position+'"><strong>'+ (position==='common'?'공용품목':position+'번 자리')+'</strong><label>상태<select class="field" data-seat-status '+readonly+'><option value="">선택 전 · 미점검</option>'+ASSET_STATUSES_V246.map(status=>'<option value="'+escapeH(status)+'" '+(s.status===status?'selected':'')+'>'+escapeH(status)+'</option>').join('')+'</select></label><label>세부사항<textarea class="field" data-seat-details maxlength="500" rows="2" placeholder="점검 내용·수리 조치 등" '+readonly+'>'+escapeH(s.details)+'</textarea></label><label class="asset-unavailable"><input type="checkbox" data-seat-unavailable '+(s.unavailable?'checked':'')+' '+readonly+'>사용불가</label></div>';
+  }).join('');
+  return '<tr data-asset-item="'+escapeH(item.id)+'"><td><strong>'+escapeH(item.name)+'</strong><small class="asset-unit">'+(positions.length===2?'개인별 1번 · 2번':'방 공용')+'</small></td><td>'+legacy+'<div class="asset-seat-grid">'+cards+'</div></td><td><button type="button" class="btn btn-soft asset-owner" data-asset-save="'+escapeH(item.id)+'" '+readonly+'>저장</button></td></tr>';
  }).join('');
  qsa('[data-asset-item]',$('assetEditRowsV244')).forEach(row=>row.dataset.assetInitial=assetEditorSnapshotV244(row));
- $('assetEditHelpV244').textContent='상태 변경 시 해당 품목 수량 전체를 정상 또는 요수리로 집계합니다. 일부만 수리 필요한 기존 기록은 다른 값을 수정하기 전까지 보존됩니다.';
+ $('assetEditHelpV244').textContent='각 자리 또는 공용품목의 상태·세부사항·사용불가를 입력한 뒤 저장하세요. 미선택 자리는 미점검으로 남습니다.';
  assetMountEditorV245(id);
 }
 function assetRowFromFormV244(row){
- const read=k=>row.querySelector('[data-asset-'+k+']');
- const nums=['qty','good','repair'].map(k=>Number(read(k).value));
- const [quantity,normal,repair]=nums,status=read('status').value,details=read('details').value.trim();
- if(['qty','good','repair'].some(k=>read(k).value.trim()==='')||nums.some(x=>!Number.isInteger(x)||x<0||x>999))throw Error('전체·정상·요수리 수량은 0~999 사이 정수여야 합니다.');
- if(normal+repair>quantity)throw Error('정상과 요수리 수량의 합은 실제 수량을 넘을 수 없습니다.');
- if(!ASSET_STATUSES_V246.includes(status))throw Error('정상 / 수리필요(보고 완료) / 수리필요(미보고) 중 상태를 선택하세요.');
- if(status==='정상'&&repair>0)throw Error('요수리 수량이 있으면 상태를 수리필요(보고 완료/미보고)로 설정하세요.');
- if(status!=='정상'&&repair===0&&quantity>0)throw Error('수리필요 상태는 요수리 수량을 1개 이상 입력하세요.');
- if(details.length>500)throw Error('세부사항은 500자 이내로 입력하세요.');
+ const slots=JSON.parse(assetEditorSnapshotV244(row));
+ for(const s of slots){if(s.status&&!ASSET_STATUSES_V246.includes(s.status))throw Error('비품 상태를 확인하세요.');if(s.details.length>500)throw Error('세부사항은 자리별 500자 이내로 입력하세요.');}
  const prev=assetRecMapV244().get(assetCurrentRoomV244+'|'+row.dataset.assetItem);
- return {itemId:row.dataset.assetItem,quantity,normal,repair,status,details,expectedUpdatedAt:prev?.updatedAt||''};
+ return {itemId:row.dataset.assetItem,slots,expectedUpdatedAt:prev?.updatedAt||''};
 }
 function assetRefreshEditStateV244(row,event){
- const field=k=>row.querySelector('[data-asset-'+k+']');
- const qty=Number(field('qty').value),status=field('status').value;
- // 상태나 전체 수량을 직접 바꾸면 우선 전체 수량에 해당 상태를 적용.
- // 이후 정상/요수리 칸을 개별 수정하면 일부 수리 상태도 등록할 수 있음.
- if(event&&(event.target.matches('[data-asset-status]')||event.target.matches('[data-asset-qty]'))){
-  if(Number.isInteger(qty)&&qty>=0&&qty<=999&&ASSET_STATUSES_V246.includes(status)){
-   field('good').value=status==='정상'?qty:0;field('repair').value=status==='정상'?0:qty;
-  }
- }
- const nums=['qty','good','repair'].map(k=>Number(field(k).value));
- const [q,normal,repair]=nums;
- const invalid=nums.some(x=>!Number.isInteger(x)||x<0||x>999)||normal+repair>q||(status==='정상'&&repair>0)||(status!=='정상'&&status!==''&&repair===0&&q>0);
- row.classList.toggle('asset-invalid',invalid);
  const changed=assetEditorSnapshotV244(row)!==row.dataset.assetInitial;
  row.classList.toggle('asset-edited',changed);
  if(changed)assetDirtyV244.add(row.dataset.assetItem);else assetDirtyV244.delete(row.dataset.assetItem);
- $('assetEditHelpV244').textContent=invalid?'수량과 상태가 일치하지 않습니다. 전체 ≥ 정상 + 요수리인지, 수리필요 상태에 요수리 수량이 있는지 확인하세요.':(assetDirtyV244.size?assetDirtyV244.size+'종 수정 중 · 저장 전에는 Google Sheets에 반영되지 않습니다.':'변경사항 없음');
+ $('assetEditHelpV244').textContent=assetDirtyV244.size?assetDirtyV244.size+'종 수정 중 · 저장 전에는 시트에 반영되지 않습니다.':'변경사항 없음';
 }
 async function assetSaveChangesV244(itemId){
  if(assetSavingV244||!mustEdit())return;
@@ -2914,7 +2913,7 @@ async function assetLoadV244(){
   $('assetSetupV244').classList.toggle('hidden',assetDataV244.initialized||!canEdit);
   $('assetActiveV244').classList.toggle('hidden',!assetDataV244.initialized);
   if(!assetDataV244.initialized){
-   show(canEdit?'최초 설정이 필요합니다. 아래 「기본 비품 13종 등록 · 사용 시작」 버튼을 눌러 주세요. 기존 생활실 데이터는 삭제되지 않습니다.':'비품 관리 최초 설정 전입니다. 군수계 관리 계정에서 「기본 비품 13종 등록」을 먼저 실행해야 합니다.');
+   show(canEdit?'최초 설정이 필요합니다. 아래 「기본 비품 12종 등록 · 사용 시작」 버튼을 눌러 주세요. 기존 생활실 데이터는 삭제되지 않습니다.':'비품 관리 최초 설정 전입니다. 군수계 관리 계정에서 「기본 비품 12종 등록」을 먼저 실행해야 합니다.');
    $('assetRoomCountV244').textContent='비품 관리 최초 설정 필요';return;
   }
   assetSetCorridorsV244();
@@ -2946,6 +2945,7 @@ function assetFilterChangeV245(e,resetCorridor){
  assetResetGroupsV245=true;assetRenderV244();
 }
 function assetInitV244(){
+ $('assetBulkApplyV246').closest('.asset-bulk-options')?.classList.add('asset-legacy-bulk-v311');
  ['assetBuildingV244','assetFloorV244','assetCorridorV244','assetOrgV245','assetGroupModeV245','assetSearchV244'].forEach(id=>{
   const field=$(id);field.dataset.assetLastValue=field.value;
   field.addEventListener(id==='assetSearchV244'?'input':'change',e=>assetFilterChangeV245(e,id==='assetBuildingV244'||id==='assetFloorV244'));
@@ -2953,7 +2953,7 @@ function assetInitV244(){
  $('assetReloadV244').addEventListener('click',()=>{if(assetDirtyV244.size&&!confirm('저장하지 않은 수정을 버리고 새로고침할까요?'))return;assetDirtyV244.clear();assetLoadV244();});
  $('assetSetupBtnV244').addEventListener('click',async()=>{
   if(!mustEdit())return;
-  try{await enqueue(()=>server('setupDormInventoryV244'));await assetLoadV244();toast('생활실 비품 13종 설정 완료');}catch(e){alert(e.message);}
+  try{await enqueue(()=>server('setupDormInventoryV244'));await assetLoadV244();toast('생활실 비품 12종 설정 완료');}catch(e){alert(e.message);}
  });
  $('assetKindRowsV244').addEventListener('click',async(e)=>{
   const b=e.target.closest('[data-asset-hide]');if(!b||!mustEdit())return;
@@ -3464,7 +3464,7 @@ function saberRenderV276(){
  const writable=canEdit&&data.canEdit;
  $('saberRowsV276').innerHTML=list.map(p=>{
   const state=p.status==='수리 필요'?'saber-repair-v276':p.status==='교체 필요'?'saber-replace-v277':'';
-  return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요" '+(p.status==='수리 필요'?'selected':'')+'>수리 필요</option><option value="교체 필요" '+(p.status==='교체 필요'?'selected':'')+'>교체 필요</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
+  return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요(보고)" '+(p.status==='수리 필요(보고)'?'selected':'')+'>수리 필요(보고)</option><option value="수리 필요(미보고)" '+(p.status==='수리 필요(미보고)'?'selected':'')+'>수리 필요(미보고)</option><option value="교체 필요" '+(p.status==='교체 필요'?'selected':'')+'>교체 필요</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
  }).join('')||'<tr><td colspan="4">검색 결과가 없습니다.</td></tr>';
  $('saberInfoV276').textContent=list.length+'개 직책 표시 · 상태 변경과 세부사항 입력은 자동 저장됩니다.';
  $('saberSyncTitlesV277').classList.toggle('hidden',!data.titleSyncNeeded||!writable);

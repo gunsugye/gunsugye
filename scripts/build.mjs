@@ -10,6 +10,8 @@ import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './depar
 import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
 import { updateNotificationsJs } from './notifications.mjs';
+import { repairJs, repairHtml, repairServer } from './repairs.mjs';
+import {roomAssetJs,roomAssetHtml,roomAssetServer,roomAssetCSS} from './room-assets.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -25,12 +27,12 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
     'const maxWait=90000;')
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
-js = updateNotificationsJs(updateCalendarJs(updateNavigationJs(js)));
+js = roomAssetJs(repairJs(updateNotificationsJs(updateCalendarJs(updateNavigationJs(js)))),read('scripts/room-assets-client.js.txt'));
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({dirty:!!(${leaveGuard[1]}||departuresBusyV305||settingsDirtyV258)});\n`+js.slice(hook);
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS;
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -71,12 +73,12 @@ html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}" data
 for (const [path, contents] of assets) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
-write('docs/index.html', updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html))));
+write('docs/index.html', roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html))))));
 write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
 
-let legacy = read('Code.gs.txt')+'\n'+read('scripts/departures-server.gs.txt');
+let legacy = roomAssetServer(repairServer(read('Code.gs.txt')+'\n'+read('scripts/departures-server.gs.txt')),read('scripts/room-assets-server.gs.txt'));
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
