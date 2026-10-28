@@ -3152,11 +3152,10 @@ function laborShowV259(result){
   (section||'<p class="help">지금 계산에 포함된 독방 생도가 없습니다.</p>')+
   '<p class="labor-pair-instructions-v266">이름 또는 미지정을 누르면 해당 생도의 짝 선택창이 열리고, <b>해당 관에 거주하는 생도만</b> 선택됩니다. 기존 짝에서 빠진 생도는 미지정 행이 생기고, 새 짝을 만든 생도의 기존 미지정 행은 없어집니다. 같은 관이면 다른 층·중대도 선택할 수 있습니다.</p>';
  if(denom!==1&&result.mode==='total')$('laborPairPickStatusV264').textContent+=' 총인원(B8) 방식은 공식 중대별 인원으로 계산하므로 가상 생활실 조정은 수량 분배에 적용하지 않습니다.';
- $('laborStatsV259').innerHTML=[['분배 대상',laborFmtV259(total)+'명'],['분배 수량',laborFmtV259(groups.reduce((s,g)=>s+Number(g.quota||0),0))+'개'],['완성 세트',laborFmtV259(groups.reduce((s,g)=>s+Number(g.full||0),0))+'개'],['독방 가상 2인실',(pairs.pairs||[]).length+'실']]
-  .map(([name,value])=>'<div class="labor-kpi"><span>'+escapeH(name)+'</span><b>'+escapeH(value)+'</b></div>').join('');
+ laborSummaryV324(result);
  // v2.97 · independent roster drill-down for room unconfirmed, smart mismatch and solo-unpaired.
  laborRenderReviewV297(result);
- $('laborTableV259').innerHTML=groups.map(g=>'<tr><td>'+escapeH(g.label)+(g.key==='호실 미확인'?' <button type="button" class="labor-review-inline-v297" data-review-open="missingRoom">명단 확인 ↗</button>':'')+'</td><td>'+laborFmtV259(g.count)+'명'+(g.allocationCount!==undefined&&g.allocationCount!==g.count?'<small class="labor-virtual-count-v268">배정 기준 '+laborFmtV259(g.allocationCount)+'명분</small>':'')+'</td><td><b>'+laborFmtV259(g.quota)+'</b></td><td>'+laborFmtV259(g.full)+'</td><td>'+laborFmtV259(g.remainder)+'명분 → '+laborFmtV259(g.remainder/denom)+'개</td></tr>').join('')||'<tr><td colspan="5">조회할 대상이 없습니다.</td></tr>';
+ $('laborTableV259').innerHTML=groups.map(g=>'<tr><td><strong>'+escapeH(g.label)+'</strong>'+(g.key==='호실 미확인'?' <button type="button" class="labor-review-inline-v297" data-review-open="missingRoom">이름 확인</button>':'')+'</td><td>'+laborFmtV259(g.count)+'명'+(g.allocationCount!==undefined&&g.allocationCount!==g.count?'<small class="labor-virtual-count-v268">짝 배정 반영: '+laborFmtV259(g.allocationCount)+'명분</small>':'')+'</td><td class="labor-quantity-v324"><b>'+laborFmtV259(g.quota)+'</b><span>개</span></td><td class="labor-how-v324">'+escapeH(laborExplanationV324(g,denom))+'</td></tr>').join('')||'<tr><td colspan="4">이 기준으로 나눠줄 대상이 없어요.</td></tr>';
  const virtualTransfers=groups.reduce((s,g)=>s+Math.max(0,Number(g.count)-Number(g.allocationCount??g.count)),0);
  if(virtualTransfers)$('laborNoticeV259').textContent+=' · 다른 중대·층 또는 관 내 조직구분 사이에 짝을 지정한 경우 가상 생활실의 대표 생도 소속으로 '+virtualTransfers+'명분이 이동하여 계산됩니다.';
 
@@ -4395,6 +4394,18 @@ function dormPlanInitV315(){
 }
 
 dormPlanInitV315();
+
+const laborExplanationV324=function distributionExplanation(group,divisor){
+ const full=Number(group.full)||0,remainder=Number(group.remainder)||0;
+ if(!remainder)return full?full+'개를 나눠주면 돼요.':'나눠줄 물품이 없어요.';
+ const portion=Number((remainder/divisor).toFixed(3));
+ const approximate=Math.abs(portion-remainder/divisor)>1e-9?'약 ':'';
+ return (full?full+'개를 나눠주고, ':'')+'남은 '+remainder+'명에게 '+approximate+portion+'개 분량이 더 필요해요.';
+};
+function laborSummaryV324(result){
+ const groups=result.groups||[],people=groups.reduce((s,g)=>s+Number(g.count||0),0),quantity=groups.reduce((s,g)=>s+Number(g.quota||0),0),divisor=Number(result.divisor)||2;
+ $('laborStatsV259').innerHTML='<div class="labor-answer-v324"><span>이번에 필요한 양</span><strong>'+laborFmtV259(quantity)+'<small>개</small></strong><p>'+laborFmtV259(people)+'명에게 '+divisor+'명당 1개씩 나눌 때의 계산이에요.</p></div><div class="labor-answer-note-v324"><b>아래에서 나눠줄 곳별 수량을 확인하세요.</b><p>0.5개는 반 개예요. 물품을 쪼갤 수 없다면 실제 지급할 개수는 ‘사역 내역’에서 정해주세요.</p></div>';
+}
 
 window.logbookReloadState=()=>({dirty:!!(isFormDirty()||modalSaving||eqDirty()||eqSaving||rosterIsDirty()||rosterHasQuickChanges()||rosterSaving||rosterQuickSaving.size||supplyDirty()||navDirtyV220||navSavingV220||wxCalDirty()||wxBulkDirtyV229()||wxCustomDirty()||wxCalSaving||wxBulkSavingV229||wxRowSaving||pendingNote||syncPending||assetDirtyV244.size||assetSavingV244||departuresBusyV305||settingsDirtyV258||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open)});
 })();
