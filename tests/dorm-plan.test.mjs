@@ -1,6 +1,21 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+test('도면에만 있는 방은 접미사 변경과 최초 배정을 함께 저장한다',()=>{
+ const f=fixture(),source={building:'정예 본관',floor:'1층',room:'132'};
+ f.c.DORM_PLAN_DEFAULT_V315_.layout=[{...source,page:1,x:.1,y:.1,width:.1,height:.1}];
+ const p=f.c.getDormPlanV315();
+ f.c.saveDormPlanV315({version:p.version,changes:[{...source,previousRoom:'132',room:'132-1',token:'new',members:[{cohort:'78',company:'1',name:'검증다'}]}]});
+ assert.equal(f.writes.filter(w=>w.members).length,2);assert.equal(f.savedPlans[0].layout[0].room,'132-1');
+ const g=fixture();assert.throws(()=>g.c.saveDormPlanV315({version:'initial-v315',changes:[{...source,previousRoom:'132',room:'132-1',token:'new',members:[]}]}));assert.equal(g.writes.length,0);
+});
+test('기수와 중대를 포함해 양방향 누락을 구분하고 조회 실패는 누락으로 표시하지 않는다',()=>{
+ const f=fixture(),same={cohort:'78',company:'1',name:'검증가'},other={cohort:'77기',company:'2',name:'검증나'};
+ const r=f.c.dormPlanCompareV318_([{building:'별관',floor:'1층',room:'132',members:[same]}],[{...same,cohort:'78기'},other]);
+ assert.equal(r.missingRoom.length,1);assert.equal(r.missingRoom[0].name,'검증나');assert.equal(r.missingSmart.length,0);
+ assert.equal(f.c.dormPlanCompareV318_([{members:[same]}],[{...same,company:'2'}]).missingSmart.length,1);
+ assert.ok(f.c.dormPlanCompareV318_([],[]).error);assert.ok(f.c.getDormPlanV315().comparison.error);
+});
 function fixture(){
  const properties=new Map(),writes=[],backups=[],books=[],savedPlans=[];
  for(const id of ['main','linked']){

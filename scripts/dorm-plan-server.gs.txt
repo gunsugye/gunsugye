@@ -27,8 +27,17 @@ function getDormPlanV315(includePdf){
   const u=book.unified.byId.get(room.id);
   rooms.push({...room,token:dormPlanTokenV315_(books,room),members:(u?.entries||[]).filter(p=>p.status!=='이전편성').map(p=>({cohort:p.cohort,company:p.company,name:p.name,female:!!p.female,status:p.status}))});
  }
- return {filename:plan.filename,...(includePdf===true?{base64:plan.base64}:{}),layout:plan.layout,version:plan.version,rooms,canEdit:true};
+ let comparison;
+ try{comparison=dormPlanCompareV318_(rooms,smartReferenceV253_(books[0].ss).items);}catch(e){comparison={error:String(e.message||e)};}
+ return {filename:plan.filename,...(includePdf===true?{base64:plan.base64}:{}),layout:plan.layout,version:plan.version,rooms,comparison,canEdit:true};
  });
+}
+function dormPlanCompareV318_(rooms,reference){
+ if(!reference.length)return {error:'스마트 당직 명단이 비어 있어 대조할 수 없습니다.'};
+ const key=p=>[String(p.cohort||'').trim().replace(/기$/,'').replace(/\.0$/,''),String(p.company||'').trim().replace(/중대$/,''),String(p.name||'').replace(/\s+/g,'')].join('|');
+ const assigned=rooms.flatMap(r=>(r.members||[]).map(p=>({...p,location:[r.building,r.floor,r.room].join(' ')})));
+ const smartKeys=new Set(reference.map(key)),assignedKeys=new Set(assigned.map(key));
+ return {missingRoom:reference.filter(p=>!assignedKeys.has(key(p))),missingSmart:assigned.filter(p=>!smartKeys.has(key(p)))};
 }
 function dormPlanValidateMembersV315_(members,capacity){
  if(!Array.isArray(members)||members.length>capacity)throw Error('배정 인원이 호실 정원을 넘었습니다.');
@@ -52,7 +61,7 @@ function saveDormPlanV315(payload){
    if(!/^\d{3}(?:-[1-8동생명여])?$/.test(source.room)||sources.has(sourceKey))throw Error('변경 전 호실이 중복되거나 올바르지 않습니다.');sources.add(sourceKey);
    if(change.token!==dormPlanTokenV315_(books,source))throw Error('다른 화면에서 배정이 변경되었습니다. 다시 불러오세요: '+source.room);
    if(source.room!==change.room){
-    if(!books.some(book=>dormPlanFindV315_(book,source)))throw Error('변경 전 호실이 없습니다. 다시 불러오세요.');
+    if(!books.some(book=>dormPlanFindV315_(book,source))&&!current.layout.some(r=>dormPlanKeyV315_(r)===sourceKey))throw Error('변경 전 호실이 없습니다. 다시 불러오세요.');
     if(books.some(book=>dormPlanFindV315_(book,change)))throw Error('변경할 호실 번호가 이미 사용 중입니다: '+change.room);
     renames.push({source,key,room:change.room});
    }
