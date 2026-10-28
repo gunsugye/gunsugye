@@ -20,11 +20,17 @@ export function assetOverviewJs(js){
  if(start<0||end<0)throw Error('비품 집계 표 위치를 확인하세요.');
  js=js.slice(0,start)+' assetOverviewRenderV327();\n'+js.slice(end);
  js=js.replace('function assetInitV244(){',`function assetInitV244(){
- $('assetOverviewModeV327').addEventListener('change',assetOverviewRenderV327);
+ $('assetOverviewModeV327').addEventListener('change',()=>assetOverviewChooseV328($('assetOverviewModeV327').value));
+ qsa('[data-asset-overview-mode]').forEach(input=>input.addEventListener('change',()=>assetOverviewChooseV328(input.value)));
  $('assetKindRowsV244').addEventListener('click',e=>{const button=e.target.closest('[data-asset-overview-toggle]');if(!button)return;const detail=$('assetOverviewDetailV327_'+button.dataset.assetOverviewToggle);detail.hidden=!detail.hidden;button.setAttribute('aria-expanded',String(!detail.hidden));});`);
  const hook=js.lastIndexOf('})();');
  const extra=`
 const assetOverviewGroupsV327=${assetOverviewGroups.toString()};
+function assetOverviewChooseV328(mode){
+ mode=mode==='company'?'company':'building';$('assetOverviewModeV327').value=mode;
+ qsa('[data-asset-overview-mode]').forEach(input=>input.checked=input.value===mode);
+ assetOverviewRenderV327();
+}
 function assetOverviewRenderV327(){
  if(!assetDataV244)return;
  const mode=$('assetOverviewModeV327').value,rows=assetOverviewGroupsV327(assetRoomsFilteredV244(),assetDataV244.items,assetDataV244.records,mode);

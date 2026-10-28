@@ -2987,7 +2987,8 @@ function assetFilterChangeV245(e,resetCorridor){
  assetResetGroupsV245=true;assetRenderV244();
 }
 function assetInitV244(){
- $('assetOverviewModeV327').addEventListener('change',assetOverviewRenderV327);
+ $('assetOverviewModeV327').addEventListener('change',()=>assetOverviewChooseV328($('assetOverviewModeV327').value));
+ qsa('[data-asset-overview-mode]').forEach(input=>input.addEventListener('change',()=>assetOverviewChooseV328(input.value)));
  $('assetKindRowsV244').addEventListener('click',e=>{const button=e.target.closest('[data-asset-overview-toggle]');if(!button)return;const detail=$('assetOverviewDetailV327_'+button.dataset.assetOverviewToggle);detail.hidden=!detail.hidden;button.setAttribute('aria-expanded',String(!detail.hidden));});
  $('assetResetV313').addEventListener('click',assetResetRecordsV313);
  ['assetBuildingV244','assetFloorV244','assetCorridorV244','assetOrgV245','assetGroupModeV245','assetSearchV244'].forEach(id=>{
@@ -4427,6 +4428,11 @@ const assetOverviewGroupsV327=function assetOverviewGroups(rooms,items,records,m
  const building=['정예 본관','정예 동관','정예 서관','별관'];
  return [...groups.values()].sort((a,b)=>mode==='company'?a.label.localeCompare(b.label,'ko',{numeric:true}):(building.includes(a.label)?building.indexOf(a.label):100)-(building.includes(b.label)?building.indexOf(b.label):100)||a.label.localeCompare(b.label,'ko'));
 };
+function assetOverviewChooseV328(mode){
+ mode=mode==='company'?'company':'building';$('assetOverviewModeV327').value=mode;
+ qsa('[data-asset-overview-mode]').forEach(input=>input.checked=input.value===mode);
+ assetOverviewRenderV327();
+}
 function assetOverviewRenderV327(){
  if(!assetDataV244)return;
  const mode=$('assetOverviewModeV327').value,rows=assetOverviewGroupsV327(assetRoomsFilteredV244(),assetDataV244.items,assetDataV244.records,mode);
