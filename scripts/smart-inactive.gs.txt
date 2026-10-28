@@ -18,8 +18,44 @@ function smartInactiveKeysV322_(reference,hints,statuses,key){
   if(statuses.some(s=>String(p.duty||'').replace(/\s+/g,'').includes(s)))excluded.add(key(p));
  }
  for(const row of (hints||[]).filter(r=>statuses.includes(r.status))){
+  const scoped=row.company?reference.filter(p=>smartPersonIdentityV322_(p)[1]===String(row.company)):reference;
+  const rowNames=new Map();for(const p of scoped){const name=smartPersonIdentityV322_(p)[2];for(const alias of new Set([name,name.replace(/([가-힣])[A-D]$/,'$1')])){if(!rowNames.has(alias))rowNames.set(alias,new Set());rowNames.get(alias).add(key(p));}}
   const tokens=new Set(row.preview.flatMap(c=>String(c.value||'').normalize('NFKC').split(/[\s,，、;:()\[\]{}\/·.\-]+/).filter(Boolean)));
-  for(const [name,identities] of names)if(tokens.has(name)&&identities.size===1)excluded.add([...identities][0]);
+  for(const [name,identities] of rowNames)if(tokens.has(name)&&identities.size===1)excluded.add([...identities][0]);
  }
  return excluded;
+}
+function smartAllStatusHintsV323_(){
+ const base=smartReferenceHintsV255_(true);
+ if(base.url&&!base.rows.length)return {...base,error:true};
+ const rows=[...(base.rows||[])],books=new Map(),seen=new Set();
+ const status=v=>{const m=String(v||'').normalize('NFKC').replace(/\s/g,'').match(/^(휴학|위탁|국외|파견|퇴학|퇴교)(?:자|생도|인원|명단|현황|자명단)?(?:[:：]?\(?\d+명?\)?)?$/);return m?m[1]:'';};
+ function book(id){if(!books.has(id))books.set(id,SpreadsheetApp.openById(id));return books.get(id);}
+ function scan(ss,sh,company){
+  const id=ss.getId()+'|'+sh.getSheetId();if(seen.has(id))return;seen.add(id);
+  const height=Math.min(sh.getLastRow(),500),width=Math.min(sh.getLastColumn(),100);if(!height||!width)return;
+  const grid=sh.getRange(1,1,height,width).getDisplayValues(),tabStatus=status(sh.getName());
+  grid.forEach((values,i)=>{
+   const first=values.findIndex(v=>String(v||'').trim());
+   const heading=first>=0&&(!!status(values[first])||values.some(v=>status(v)&&/자|생도|인원|명단|현황/.test(String(v))));
+   if(!heading&&!tabStatus)return; // 개인별 현황의 국외·파견 셀을 행 전체의 제목으로 읽지 않습니다.
+   const labels=values.map((v,col)=>({status:status(v),col})).filter(x=>x.status);
+   if(!labels.length&&tabStatus)labels.push({status:tabStatus,col:-1});
+   labels.forEach((label,j)=>{const end=labels[j+1]?.col??values.length;
+    rows.push({status:label.status,company:company||'',sheet:sh.getName(),row:i+1,preview:values.slice(label.col+1,end).map(value=>({value:String(value||'')}))});
+   });
+  });
+ }
+ try{
+  const cfg=smartConfiguredV255_(),units=Object.keys(cfg).filter(u=>/^[1-8]$/.test(u)&&cfg[u]);
+  if(units.length){
+   if(units.length!==8)throw Error('스마트당직 8개 중대 연결을 확인하세요.');
+   for(const u of units){const link=smartUrlV255_(cfg[u]),ss=book(link.id),sh=ss.getSheetByName(u+'중대')||ss.getSheets().find(s=>s.getSheetId()===link.gid);if(!sh)throw Error(u+'중대 상태 탭을 찾을 수 없습니다.');scan(ss,sh,u);}
+  }else{
+   const id=PropertiesService.getScriptProperties().getProperty(SMART_V253.SOURCE_PROP);
+   if(id){const ss=book(id);for(let u=1;u<=8;u++){const sh=ss.getSheetByName(u+'중대');if(!sh)throw Error(u+'중대 상태 탭을 찾을 수 없습니다.');scan(ss,sh,String(u));}}
+  }
+  for(const ss of books.values())for(const sh of ss.getSheets())if(status(sh.getName()))scan(ss,sh,'');
+  return {...base,rows,readOk:true};
+ }catch(e){return {url:base.url||'configured',rows:[],error:true,warning:'스마트당직 상태 명단 조회 실패: '+String(e.message||e)};}
 }

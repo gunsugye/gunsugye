@@ -4083,14 +4083,14 @@ trainV292Init();$('wxOngoingPanelV293').addEventListener('click',v293ClickOngoin
 
 let departuresDataV305=null,departuresBusyV305=false;
 const departureEscapeV305=escapeH;
-function departuresOptionsV305(values){return '<option value="">처리 선택</option>'+values.map(x=>'<option>'+escapeH(x)+'</option>').join('');}
+function departuresOptionsV305(values,selected=''){return '<option value="">처리 선택</option>'+values.map(x=>'<option'+(x===selected?' selected':'')+'>'+escapeH(x)+'</option>').join('');}
 function departuresRenderV305(){
  const d=departuresDataV305;if(!d)return;const q=$('departuresSearch').value.trim().toLowerCase();
  const rows=d.candidates||[];
  $('departuresStatus').textContent=d.ready?'기준: '+d.source+' · '+d.referenceCount+'명 대조 · 처리 대상 '+rows.length+'명':d.error||'스마트당직 연결을 확인하세요.';
  $('departuresCandidates').innerHTML=rows.map(c=>{
   const match=!q||[c.name,c.cohort,c.company+'중대'].join(' ').toLowerCase().includes(q);
-  return '<article class="departure-person" data-departure-id="'+escapeH(c.id)+'" '+(!match?'hidden':'')+'><div class="departure-person-head"><label><input type="checkbox" class="departure-pick"> <b>'+escapeH(c.cohort+' '+c.company+'중대 '+c.name)+'</b></label><span>'+(!c.roster?'피복만 남은 인원':'활동 명단 등록 인원')+'</span></div><div class="departure-fields"><label>관리 상태<select class="departure-state">'+departuresOptionsV305(['퇴교','퇴학','휴학','위탁'])+'</select></label><label>총기 '+escapeH(c.roster?.firearmNumber||'(활동 번호 없음)')+'<select class="departure-gun">'+departuresOptionsV305(['별도 보관','반납 완료','인계 완료','미지급 확인'])+'</select></label><label>피복 '+c.uniforms.length+'건<select class="departure-uniform" '+(!c.uniforms.length?'disabled':'')+'>'+departuresOptionsV305(['보관','반납 완료','인계 완료','미지급 확인'])+'</select></label></div><div class="departure-supply">'+(c.supplies.length?c.supplies.map(item=>'<label data-departure-item="'+escapeH(item.id)+'"><b>'+escapeH(item.name)+'</b> <span>'+escapeH([item.status,item.detail,Object.entries(item.extra||{}).map(([k,v])=>k+': '+v).join(' / ')].filter(Boolean).join(' · '))+'</span><select>'+departuresOptionsV305(['반납 완료','인계 완료','미지급 확인'])+'</select></label>').join(''):'<p>지급 기록이 있는 군수품 없음</p>')+'</div>'+(c.uniforms.length?'<details><summary>피복 사이즈 원본 확인</summary>'+c.uniforms.map(u=>'<p>'+escapeH(Object.entries(u.sizes||{}).map(([k,v])=>k+': '+v).join(' / ')||'사이즈 미입력')+'</p>').join('')+'</details>':'')+'<label>비고<input class="field departure-note" maxlength="400" placeholder="상태 이동 사유, 반납·인계 관련 사항"></label></article>';
+  return '<article class="departure-person" data-departure-id="'+escapeH(c.id)+'" '+(!match?'hidden':'')+'><div class="departure-person-head"><label><input type="checkbox" class="departure-pick"> <b>'+escapeH(c.cohort+' '+c.company+'중대 '+c.name)+'</b></label><span>'+(!c.roster?'피복만 남은 인원':'활동 명단 등록 인원')+'</span></div><div class="departure-fields"><label>관리 상태<select class="departure-state">'+departuresOptionsV305(['퇴교','퇴학','휴학','위탁'],c.suggestedStatus||'퇴교')+'</select></label><label>총기 '+escapeH(c.roster?.firearmNumber||'(활동 번호 없음)')+'<select class="departure-gun">'+departuresOptionsV305(['별도 보관','반납 완료','인계 완료','미지급 확인'])+'</select></label><label>피복 '+c.uniforms.length+'건<select class="departure-uniform" '+(!c.uniforms.length?'disabled':'')+'>'+departuresOptionsV305(['보관','반납 완료','인계 완료','미지급 확인'])+'</select></label></div><div class="departure-supply">'+(c.supplies.length?c.supplies.map(item=>'<label data-departure-item="'+escapeH(item.id)+'"><b>'+escapeH(item.name)+'</b> <span>'+escapeH([item.status,item.detail,Object.entries(item.extra||{}).map(([k,v])=>k+': '+v).join(' / ')].filter(Boolean).join(' · '))+'</span><select>'+departuresOptionsV305(['반납 완료','인계 완료','미지급 확인'])+'</select></label>').join(''):'<p>지급 기록이 있는 군수품 없음</p>')+'</div>'+(c.uniforms.length?'<details><summary>피복 사이즈 원본 확인</summary>'+c.uniforms.map(u=>'<p>'+escapeH(Object.entries(u.sizes||{}).map(([k,v])=>k+': '+v).join(' / ')||'사이즈 미입력')+'</p>').join('')+'</details>':'')+'<label>비고<input class="field departure-note" maxlength="400" placeholder="상태 이동 사유, 반납·인계 관련 사항"></label></article>';
  }).join('')||'<p>처리할 미등재 인원이 없습니다.</p>';
  $('departuresReview').textContent=(d.review||[]).map(x=>x.cohort+' '+x.company+'중대 '+x.name+' · '+x.reason).join(' / ')||'추가 확인 대상 없음';
  $('departuresArchived').textContent=(d.archived||[]).map(x=>x.cohort+' '+x.company+'중대 '+x.name+' · '+x.status).join(' / ')||'이동 관리 인원 없음';
@@ -4183,7 +4183,7 @@ async function changeReadPageV309(page,ids){
 }
 
 let dormPlanV315=null,dormPlanPdfV315=null,dormPlanDraftV315=null,dormPlanSelectedV315=null,dormPlanBusyV315=false,dormPlanRenderTaskV315=null,dormPlanRenderSequenceV315=0;
-const dormPlanKeyV315=r=>[r.building,r.floor,r.room].join('|');
+const dormPlanKeyV315=r=>[r.building,r.floor,String(r.room||'').split('-')[0]].join('|');
 let dormPlanZoomV316=1;
 function dormPlanSizeV316(mode){
  if(mode==='page'||mode==='width')dormPlanZoomV316=1;
@@ -4234,7 +4234,7 @@ async function dormTableEditV320(id){
 function dormPlanComparisonV318(result){
  const box=$('dormPlanComparisonV318');if(!box)return;
  if(!result||result.error){box.textContent='명단 대조 확인 필요: '+(result?.error||'대조 자료 없음');return;}
- box.innerHTML=[['방 배정 누락 · 휴학·위탁·퇴학·퇴교 제외 후 스마트 당직에만 있음',result.missingRoom],['스마트 당직 누락 · 방 배정에만 있음',result.missingSmart]].map(([title,items])=>'<details><summary>'+title+' ('+items.length+'명)</summary>'+(items.length?'<ul>'+items.map(p=>'<li>'+escapeH([String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기',String(p.company||'').normalize('NFKC').replace(/중대$/,'')+'중대',p.name,p.location||''].join(' · '))+'</li>').join('')+'</ul>':'<p>누락 인원 없음</p>')+'</details>').join('')+'<p class="panel-sub">스마트 당직 상태 및 연결된 참고 시트의 휴학·위탁·퇴학·퇴교 '+Number(result.excludedCount||0)+'명을 제외했습니다. 기수·중대·이름을 대조하며, 참고 시트의 동명이인은 누락 목록에 남겨 확인합니다.</p>';
+ box.innerHTML=[['방 배정 누락 · 휴학·위탁·국외·파견·퇴학·퇴교 제외 후 스마트 당직에만 있음',result.missingRoom],['퇴교 대상 · 스마트 당직에 없음',result.missingSmart]].map(([title,items])=>'<details><summary>'+title+' ('+items.length+'명)</summary>'+(items.length?'<ul>'+items.map(p=>'<li>'+escapeH([String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기',String(p.company||'').normalize('NFKC').replace(/중대$/,'')+'중대',p.name,p.location||''].join(' · '))+'</li>').join('')+'</ul>':'<p>누락 인원 없음</p>')+'</details>').join('')+'<p class="panel-sub">스마트 당직 상태 및 연결된 참고 시트의 휴학·위탁·국외·파견·퇴학·퇴교 '+Number(result.excludedCount||0)+'명을 제외했습니다. 기수·중대·이름을 대조하며, 참고 시트의 동명이인은 누락 목록에 남겨 확인합니다.</p>';
 }
 function dormPlanSetPagesV315(){
  const layout=dormPlanDraftV315?.layout||dormPlanV315?.layout||[],old=$('dormPlanPageV315').value;

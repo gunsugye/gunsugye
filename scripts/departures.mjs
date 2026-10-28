@@ -26,7 +26,7 @@ export function updateDeparturesJs(js){
  const extra=`
 let departuresDataV305=null,departuresBusyV305=false;
 const departureEscapeV305=escapeH;
-function departuresOptionsV305(values){return '<option value="">처리 선택</option>'+values.map(x=>'<option>'+escapeH(x)+'</option>').join('');}
+function departuresOptionsV305(values,selected=''){return '<option value="">처리 선택</option>'+values.map(x=>'<option'+(x===selected?' selected':'')+'>'+escapeH(x)+'</option>').join('');}
 function departuresRenderV305(){
  const d=departuresDataV305;if(!d)return;const q=$('departuresSearch').value.trim().toLowerCase();
  const rows=d.candidates||[];
@@ -72,7 +72,7 @@ $('departuresApply').addEventListener('click',departuresApplyV305);
 $('departuresSetStatus').addEventListener('click',()=>{const status=$('departuresBulkStatus').value;if(!status)return toast('관리 상태를 선택하세요.');const picked=$('departuresCandidates').querySelectorAll('.departure-pick:checked');if(!picked.length)return toast('대상 인원을 선택하세요.');picked.forEach(p=>p.closest('[data-departure-id]').querySelector('.departure-state').value=status);toast('선택 '+picked.length+'명에 '+status+' 상태를 지정했습니다. 물품 처리 결과 확인 후 일괄 처리하세요.');});
 $('departuresLegacy').addEventListener('click',()=>{switchView('roster');smartSwitchV253('special');});
 `;
- const index=js.lastIndexOf('})();');return js.slice(0,index)+extra+js.slice(index);
+ const index=js.lastIndexOf('})();');return js.slice(0,index)+extra.replace("departuresOptionsV305(['퇴교','퇴학','휴학','위탁'])","departuresOptionsV305(['퇴교','퇴학','휴학','위탁'],c.suggestedStatus||'퇴교')")+js.slice(index);
 }
 export const departuresCSS=`
 .departure-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}.departure-toolbar input{max-width:280px}

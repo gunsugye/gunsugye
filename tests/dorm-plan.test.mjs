@@ -1,6 +1,31 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync,existsSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+test('국외와 파견 인원은 누락에서 제외하고 스마트당직에 없는 배정자는 퇴교로 표시한다',()=>{
+ const f=fixture(),reference=[{name:'검증가A',cohort:'77기',company:'3',duty:'국외'},{name:'검증나',cohort:'76기',company:'8',duty:'파견'}];
+ const r=f.c.dormPlanCompareV318_([{members:[{name:'검증다',cohort:'77',company:'7'}]}],reference);
+ assert.equal(r.missingRoom.length,0);assert.equal(r.excludedCount,2);assert.equal(r.missingSmart[0].status,'퇴교');
+ assert.equal(f.c.dormPlanKeyV315_({building:'별관',floor:'1층',room:'132-1'}),f.c.dormPlanKeyV315_({building:'별관',floor:'1층',room:'132-8'}));
+});
+test('중대별 상태 명단을 같은 소속 범위에서 대조하고 별도 위탁 명단도 읽는다',()=>{
+ const source=readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8');
+ const sheets=Array.from({length:8},(_,i)=>({name:(i+1)+'중대',id:i,grid:i===2?[['위탁','검증가'],['1','검증다','국외','검증라']]:[['현황','']]})).concat([{name:'위탁명단',id:8,grid:[['이름'],['검증나']]}]);
+ sheets.forEach(s=>Object.assign(s,{getName:()=>s.name,getSheetId:()=>s.id,getLastRow:()=>s.grid.length,getLastColumn:()=>2,getRange:()=>({getDisplayValues:()=>s.grid})}));
+ const book={getId:()=> 'book',getSheetByName:n=>sheets.find(s=>s.name===n),getSheets:()=>sheets};
+ const c=vm.createContext({smartReferenceHintsV255_:()=>({url:'',rows:[]}),smartConfiguredV255_:()=>Object.fromEntries(Array.from({length:8},(_,i)=>[String(i+1),'url'+i])),smartUrlV255_:()=>({id:'book',gid:0}),SpreadsheetApp:{openById:()=>book}});vm.runInContext(source,c);
+ const hints=c.smartAllStatusHintsV323_();assert.equal(hints.readOk,true);assert.ok(hints.rows.some(r=>r.sheet==='위탁명단'));
+ const people=[{name:'검증가A',cohort:'77',company:'3'},{name:'검증가B',cohort:'77',company:'8'},{name:'검증나',cohort:'76',company:'8'}];
+ const key=p=>[p.cohort,p.company,p.name].join('|'),excluded=c.smartInactiveKeysV322_(people,hints.rows,['위탁'],key);
+ assert.ok(excluded.has(key(people[0])));assert.equal(excluded.has(key(people[1])),false);assert.ok(excluded.has(key(people[2])));
+ assert.equal(hints.rows.some(r=>r.company==='3'&&r.status==='국외'),false);
+});
+test('숫자 접미사와 방 소속 중대는 양방향으로 갱신하며 기본 번호와 ID를 유지한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
+ const f=fixture(),source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8'),start=source.indexOf('function dormCheckV234_('),end=source.indexOf('function dormValuesV234_',start);
+ f.c.dormGroupV242_=(group)=>group;f.c.dormPurposeV250_=(group)=>group;vm.runInContext(source.slice(start,end),f.c);
+ const old=f.books[0].room;
+ const suffix=f.c.dormCheckV234_({...old,room:'343-5'},old);assert.equal(suffix.group,'5중대');assert.equal(suffix.id,old.id);
+ const group=f.c.dormCheckV234_({...old,group:'7중대'},old);assert.equal(group.room,'343-7');assert.equal(group.id,old.id);
+});
 test('전각 중대·기수 접미사·일대일 이름 별칭은 대조하되 실제 미등재와 동명이인은 유지한다',()=>{
  const f=fixture(),p=(name,cohort,company)=>({name,cohort,company});
  const reference=[p('검증가A','77기','3'),p('검증나B','77기','3'),p('검증다','77기','4'),p('검증라','76기','7'),p('검증마','76기','8')];
@@ -42,7 +67,7 @@ test('도면에만 있는 방은 접미사 변경과 최초 배정을 함께 저
  const p=f.c.getDormPlanV315();
  f.c.saveDormPlanV315({version:p.version,changes:[{...source,previousRoom:'132',room:'132-1',token:'new',members:[{cohort:'78',company:'1',name:'검증다'}]}]});
  assert.equal(f.writes.filter(w=>w.members).length,2);assert.equal(f.savedPlans[0].layout[0].room,'132-1');
- const g=fixture();assert.throws(()=>g.c.saveDormPlanV315({version:'initial-v315',changes:[{...source,previousRoom:'132',room:'132-1',token:'new',members:[]}]}));assert.equal(g.writes.length,0);
+ const g=fixture();assert.throws(()=>g.c.saveDormPlanV315({version:'initial-v315',changes:[{...source,previousRoom:'131',room:'132-1',token:'new',members:[]}]}));assert.equal(g.writes.length,0);
 });
 test('기수와 중대를 포함해 양방향 누락을 구분하고 조회 실패는 누락으로 표시하지 않는다',()=>{
  const f=fixture(),same={cohort:'78',company:'1',name:'검증가'},other={cohort:'77기',company:'2',name:'검증나'};
@@ -73,6 +98,7 @@ function fixture(){
   dormEnsureUnifiedV248_:ss=>books.find(b=>b.ss===ss).sh,ensureRows_:()=>{},
   dormUnifiedSaveV248_:(sh,r,members)=>{assert.equal(backups.length,2);writes.push({id:books.find(b=>b.sh===sh).ss.getId(),members:JSON.parse(JSON.stringify(members)),row:r.row});},protectLimitedSheetV226_:()=>{},DriveApp:{createFile:()=>({getId:()=> 'plan-file'})}
  });vm.runInContext(readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8')+'\n'+code,c);
+ c.smartAllStatusHintsV323_=()=>c.smartReferenceHintsV255_();
  c.DriveApp.createFile=(_name,data)=>{savedPlans.push(JSON.parse(data));return {getId:()=> 'plan-file'};};
  return {c,books,writes,backups,properties,savedPlans,deny:()=>allowed=false};
 }

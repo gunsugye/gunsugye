@@ -3,7 +3,7 @@ function dormPlanDataV315_(){
  if(!id)return {...DORM_PLAN_DEFAULT_V315_,version:'initial-v315'};
  return JSON.parse(DriveApp.getFileById(id).getBlob().getDataAsString('UTF-8'));
 }
-function dormPlanKeyV315_(r){return [r.building,r.floor,r.room].join('|');}
+function dormPlanKeyV315_(r){return [r.building,r.floor,String(r.room||'').split('-')[0]].join('|');}
 function dormPlanBindLayoutV321_(layout,rooms){
  const used=new Set();return layout.map(anchor=>{
   const scoped=rooms.filter(r=>r.building===anchor.building&&r.floor===anchor.floor);
@@ -22,7 +22,7 @@ function dormPlanBooksV315_(){
   return {ss,sh,rows:dormReadV234_(sh),unified:dormUnifiedReadV248_(ss,false),rawById:new Map(raw.filter(r=>r[0]).map(r=>[String(r[0]),r]))};});
 }
 function dormPlanFindV315_(book,room){
- const matches=book.rows.filter(r=>r.building===room.building&&r.floor===room.floor&&r.room===room.room);
+ const matches=book.rows.filter(r=>dormPlanKeyV315_(r)===dormPlanKeyV315_(room));
  if(matches.length>1)throw Error('중복 호실이 있습니다: '+room.room);
  return matches[0]||null;
 }
@@ -47,8 +47,8 @@ function getDormPlanV315(includePdf){
  }}
  let comparison;
  try{
-  const reference=smartReferenceV253_(books[0].ss).items,hints=smartReferenceHintsV255_(true);
-  if(hints.url&&!hints.rows.length)throw Error(hints.warning||'휴학·위탁 참고 시트를 읽을 수 없습니다.');
+  const reference=smartReferenceV253_(books[0].ss).items,hints=smartAllStatusHintsV323_();
+  if(hints.error||(hints.url&&!hints.rows.length&&!hints.readOk))throw Error(hints.warning||'휴학·위탁 참고 시트를 읽을 수 없습니다.');
   comparison=dormPlanCompareV318_(rooms,reference,hints.rows);
  }catch(e){comparison={error:String(e.message||e)};}
  return {filename:plan.filename,...(includePdf===true?{base64:plan.base64}:{}),layout:dormPlanBindLayoutV321_(plan.layout,rooms),version:plan.version,rooms,comparison,canEdit:true};
@@ -59,9 +59,9 @@ function dormPlanCompareV318_(rooms,reference,hints=[]){
  const assigned=rooms.flatMap(r=>(r.members||[]).map(p=>({...p,location:[r.building,r.floor,r.room].join(' ')})));
  const key=smartComparisonKeyV322_(reference,assigned);
  const smartKeys=new Set(reference.map(key)),assignedKeys=new Set(assigned.map(key));
- const excluded=smartInactiveKeysV322_(reference,hints,['휴학','위탁','퇴학','퇴교'],key);
+ const excluded=smartInactiveKeysV322_(reference,hints,['휴학','위탁','국외','파견','퇴학','퇴교'],key);
  const missing=reference.filter(p=>!assignedKeys.has(key(p))),isExcluded=p=>excluded.has(key(p));
- return {missingRoom:missing.filter(p=>!isExcluded(p)),excludedCount:missing.filter(isExcluded).length,missingSmart:assigned.filter(p=>!smartKeys.has(key(p)))};
+ return {missingRoom:missing.filter(p=>!isExcluded(p)),excludedCount:missing.filter(isExcluded).length,missingSmart:assigned.filter(p=>!smartKeys.has(key(p))).map(p=>({...p,status:'퇴교'}))};
 }
 function dormPlanValidateMembersV315_(members,capacity,pdfImport){
  if(!Array.isArray(members)||members.length>capacity)throw Error('배정 인원이 호실 정원을 넘었습니다.');
@@ -84,7 +84,7 @@ function saveDormPlanV315(payload){
    const source={...change,room:change.previousRoom||change.room},sourceKey=dormPlanKeyV315_(source);
    if(!/^\d{3}(?:-[1-8동생명여])?$/.test(source.room)||sources.has(sourceKey))throw Error('변경 전 호실이 중복되거나 올바르지 않습니다.');sources.add(sourceKey);
    if(change.token!==dormPlanTokenV315_(books,source))throw Error('다른 화면에서 배정이 변경되었습니다. 다시 불러오세요: '+source.room);
-   if(source.room!==change.room){
+   if(source.room.split('-')[0]!==change.room.split('-')[0]){
     if(!books.some(book=>dormPlanFindV315_(book,source))&&!current.layout.some(r=>dormPlanKeyV315_(r)===sourceKey))throw Error('변경 전 호실이 없습니다. 다시 불러오세요.');
     if(books.some(book=>{const target=dormPlanFindV315_(book,change),old=dormPlanSourceV321_(book,source);return target&&target.id!==old?.id;}))throw Error('변경할 호실 번호가 이미 사용 중입니다: '+change.room);
     renames.push({source,key,room:change.room});

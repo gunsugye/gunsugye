@@ -24,6 +24,7 @@ function fixture(){
   uniformLogV278_:()=>events.push('uniform-log'),specialArchiveFindV255_:(_ss,id)=>archives.find(x=>x.id===id)
  });
  new vm.Script(readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8')+'\n'+source).runInContext(context);
+ context.smartAllStatusHintsV323_=()=>context.smartReferenceHintsV255_();
  return {context,members,clothes,events,tables,setRef:v=>ref=v,plan:c=>({id:c.id,token:c.token,status:'휴학',gunAction:'별도 보관',uniformAction:'보관',dispositions:{item:{action:'반납 완료'}}})};
 }
 test('스마트당직 미등재만 후보로 만들고 동명·소속 불일치는 자동 처리에서 제외한다',()=>{

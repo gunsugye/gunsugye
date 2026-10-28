@@ -10,7 +10,7 @@ function departureTokenV305_(value){
 function departureStateV305_(ss){
  const source=smartReferenceV253_(ss);
  if(!source.items||source.items.length<100)throw Error('스마트당직 기준 명단이 부족합니다. 8개 중대 연결과 명단을 확인하세요.');
- const hints=smartReferenceHintsV255_(true);if(hints.url&&!hints.rows.length)throw Error(hints.warning||'퇴학·퇴교 참고 시트를 읽을 수 없습니다.');
+ const hints=smartAllStatusHintsV323_();if(hints.error||(hints.url&&!hints.rows.length&&!hints.readOk))throw Error(hints.warning||'퇴학·퇴교 참고 시트를 읽을 수 없습니다.');
  const departed=smartInactiveKeysV322_(source.items,hints.rows,['퇴학','퇴교'],uniformKeyV278_);
  const active=source.items.filter(p=>!departed.has(uniformKeyV278_(p)));
  const refNames=new Set(active.map(r=>uniformNameV278_(r.name))),refKeys=new Set(active.map(uniformKeyV278_));
@@ -47,7 +47,8 @@ function departureStateV305_(ss){
    target.supplies.push({id:item.id,name:item.name,status:row.status,detail:row.detail,extra,updatedAt:row.updatedAt});
   }
  }
- for(const c of candidates)c.token=departureTokenV305_({roster:c.roster,uniforms:c.uniforms.map(({row,...u})=>u),supplies:c.supplies});
+ const expelled=smartInactiveKeysV322_(source.items,hints.rows,['퇴학'],uniformKeyV278_);
+ for(const c of candidates){c.suggestedStatus=c.priorStatus||(expelled.has(uniformKeyV278_(c))?'퇴학':'퇴교');c.token=departureTokenV305_({roster:c.roster,uniforms:c.uniforms.map(({row,...u})=>u),supplies:c.supplies});}
  return {source:source.mode,referenceCount:source.items.length,candidates,review,archived};
 }
 function departureHistoryV305_(ss){

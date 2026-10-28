@@ -1,5 +1,5 @@
 let dormPlanV315=null,dormPlanPdfV315=null,dormPlanDraftV315=null,dormPlanSelectedV315=null,dormPlanBusyV315=false,dormPlanRenderTaskV315=null,dormPlanRenderSequenceV315=0;
-const dormPlanKeyV315=r=>[r.building,r.floor,r.room].join('|');
+const dormPlanKeyV315=r=>[r.building,r.floor,String(r.room||'').split('-')[0]].join('|');
 let dormPlanZoomV316=1;
 function dormPlanSizeV316(mode){
  if(mode==='page'||mode==='width')dormPlanZoomV316=1;
