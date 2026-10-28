@@ -72,6 +72,7 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
    <button type="submit">입력한 이메일 적용</button>
   </form>
   <div id="pagesGoogleButton"></div>
+  <p><a href="./me/">개인 군수 조회 →</a></p>
   <p id="pagesLoginStatus" role="status" aria-live="polite">연결 설정을 확인하고 있습니다.</p>
   <button id="pagesRetry" type="button" hidden>다시 시도</button>
  </div>
@@ -84,8 +85,10 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 </aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
+const personalJs=read('scripts/personal-portal.js'),personalCss=read('scripts/personal-portal.css'),personalHtml=read('scripts/personal-portal.html').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
+write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
-const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets]))};
+const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
 write('docs/release.json',JSON.stringify(release,null,2)+'\n');
 html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}" data-release-id="${release.id}"`);
 for (const [path, contents] of assets) {
@@ -99,6 +102,7 @@ write('docs/assets/app.js', js);
 const privatePlan=JSON.parse(read('.deploy/dorm-plan-source.json'));
 let legacy = roomAssetServer(repairServer(correctDormSource(read('Code.gs.txt'),privatePlan.correction)+'\n'+read('scripts/departures-server.gs.txt')),read('scripts/room-assets-server.gs.txt'),read('scripts/room-assets-bulk.gs.txt'));
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
+legacy+='\n'+read('scripts/personal-server.gs.txt');
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
@@ -128,6 +132,12 @@ const suffix = `
 ${requestPerformanceCode}
 const pagesMethods_ = {${uniqueMethods.join(',')}};
 return {
+ personal: function(action,input){
+  if(action==='login')return personalLoginV330_(input);
+  if(action==='get')return personalDashboardV330_();
+  if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
+  pagesForbidden_();
+ },
  call: function(name, args) {
   pagesReadRequestV307_=(pagesReadMethodsV307_.has(name)||(name==='readCompressedV282'&&pagesReadMethodsV307_.has(args[0])))?{}:false;
   const cfg = config_();

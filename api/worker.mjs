@@ -103,12 +103,13 @@ export async function handleRequest(request, env, fetcher = fetch) {
   headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
   headers['Access-Control-Max-Age'] = '600';
   const path = new URL(request.url).pathname;
-  if (!['/rpc', '/session', '/logout'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
+  if (!['/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'POST 요청만 가능합니다.' });
   try {
     if (!env.GOOGLE_CLIENT_ID || !env.API_SHARED_SECRET || env.API_SHARED_SECRET.length < 32
         || !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(env.APPS_SCRIPT_URL || '')) throw new ApiError(503, 'API 서버 설정을 완료하세요.');
+    if(path.startsWith('/personal/'))return await handlePersonalRequest(request,env,fetcher,reply,path);
     const token = /^Bearer (\S+)$/.exec(request.headers.get('authorization') || '')?.[1];
     const actor = path !== '/session' && token?.startsWith('session.')
       ? await verifySession(token, env.API_SHARED_SECRET)
@@ -142,6 +143,27 @@ export async function handleRequest(request, env, fetcher = fetch) {
   } catch (error) {
     return reply(error instanceof ApiError ? error.status : 500, { ok: false, error: error instanceof ApiError ? error.message : 'API 처리 중 오류가 발생했습니다.' });
   }
+}
+
+async function handlePersonalRequest(request,env,fetcher,reply,path){
+ const body=await readBody(request),login=path==='/personal/login';
+ let actor,args=[],method;
+ if(login){
+  if(typeof body?.name!=='string'||typeof body?.firearmNumber!=='string'||body.name.length>60||body.firearmNumber.length>60)throw new ApiError(400,'이름과 총기번호를 확인하세요.');
+  actor={email:'personal@portal.invalid',sub:'personal-login',rateKey:await signPayload('personal-rate:'+request.headers.get('CF-Connecting-IP'),env.API_SHARED_SECRET)};
+  args=[{name:body.name,firearmNumber:body.firearmNumber}];method='pagesPersonalLogin';
+ }else{
+  const token=/^Bearer (\S+)$/.exec(request.headers.get('authorization')||'')?.[1];actor=await verifySession(token,env.API_SHARED_SECRET);
+  if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))throw new ApiError(403,'개인 조회 인증이 필요합니다.');
+  method=path==='/personal/me'?'pagesPersonalGet':'pagesPersonalLogout';
+ }
+ const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args}),signature=await signPayload(payload,env.API_SHARED_SECRET);
+ let response;try{response=await fetcher(env.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,signature}),redirect:'follow',signal:AbortSignal.timeout(85000)});}catch(_){throw new ApiError(504,'조회 서버 연결을 확인하세요.');}
+ if(!response.ok)throw new ApiError(502,'조회 서버 연결을 확인하세요.');
+ let result;try{result=await response.json();}catch(_){throw new ApiError(502,'조회 서버 응답을 확인하세요.');}
+ if(!result||typeof result.ok!=='boolean')throw new ApiError(502,'조회 서버 응답을 확인하세요.');
+ if(login&&result.ok){const {sessionId,expiresAt,sub}=result.result||{};if(!/^[0-9a-f-]{36}$/.test(sessionId||'')||!Number.isFinite(expiresAt)||expiresAt>Date.now()+16*60000||expiresAt<=Date.now()||!String(sub).startsWith('personal:'))throw new ApiError(502,'인증 서버를 확인하세요.');result.result={expiresAt,token:await sessionToken({email:'personal@portal.invalid',sub,sessionId,expiresAt},env.API_SHARED_SECRET)};}
+ return reply(result.ok?200:result.code==='SESSION_EXPIRED'?401:result.code==='RATE_LIMITED'?429:400,result);
 }
 
 export default { fetch(request, env) { return handleRequest(request, env); } };

@@ -7,6 +7,21 @@ import { createHmac, createHash, randomUUID } from 'node:crypto';
 const gateway = readFileSync(new URL('../apps-script/Gateway.gs', import.meta.url), 'utf8');
 const legacy = readFileSync(new URL('../apps-script/Legacy.gs', import.meta.url), 'utf8');
 const secret = 'test-secret-with-more-than-thirty-two-characters';
+test('개인 조회 인증 주체는 관리자 API와 일반 세션 생성에 접근할 수 없다',()=>{
+ const f=fixture();for(const method of ['getBootstrap','listFullEditorsV281','pagesSessionCreate','readCompressedV282'])assert.equal(f.rpc(f.signed('personal@portal.invalid',method,[],{sub:'personal:a',sessionId:randomUUID()})).code,'FORBIDDEN');
+ assert.equal(f.rpc(f.signed('owner@gmail.com','pagesPersonalGet',[],{sub:'google123',sessionId:randomUUID()})).code,'FORBIDDEN');
+});
+test('실제 Gateway와 Legacy의 개인 인증·본인 조회·종료가 정상 동작한다',()=>{
+ const f=fixture(),header=['명단ID','기수','중대','편대','이름','직책','비고','수정시각','교번','총기번호','총기상태'];
+ const people=[['person-a','77','3','','검증가','','','v1','001','000123','정상'],['person-b','77','3','','타인','','','v1','002','999999','정상']];
+ const sh={getLastRow:()=>3,getMaxColumns:()=>11,getRange:(row)=>({getDisplayValues:()=>row===1?[header]:people})};
+ f.context.SpreadsheetApp={openById:()=>({getSheetByName:name=>name==='생도명단'?sh:null,getId:()=> 'existing-spreadsheet'})};
+ const login=f.rpc(f.signed('personal@portal.invalid','pagesPersonalLogin',[{name:'검증가',firearmNumber:'000123'}],{sub:'personal-login',rateKey:'a'.repeat(43)}));assert.equal(login.ok,true,login.error);
+ const actor={sub:login.result.sub,sessionId:login.result.sessionId};
+ const read=()=>f.rpc(f.signed('personal@portal.invalid','pagesPersonalGet',['person-b'],actor));
+ const data=read();assert.equal(data.ok,true,data.error);assert.equal(data.result.person.name,'검증가');assert.equal(JSON.stringify(data).includes('타인'),false);
+ assert.equal(f.rpc(f.signed('personal@portal.invalid','pagesPersonalLogout',[],actor)).ok,true);assert.equal(read().code,'SESSION_EXPIRED');
+});
 function fixture() {
   const values = new Map([
     ['LOGBOOK_OWNER_EMAIL', 'owner@gmail.com'], ['LOGBOOK_SHEET_ID', 'existing-spreadsheet'],

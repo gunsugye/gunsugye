@@ -7,6 +7,15 @@ function doGet() {
 function doPost(e) {
   try {
     const actor = pagesVerifyRequest_(e);
+    if(actor.method==='pagesPersonalLogin'){
+      if(actor.email!=='personal@portal.invalid'||actor.sub!=='personal-login'||actor.sessionId)pagesForbidden_();
+      return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal('login',actor.args[0])});
+    }
+    if(['pagesPersonalGet','pagesPersonalLogout'].includes(actor.method)){
+      if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))pagesForbidden_();
+      return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal(actor.method==='pagesPersonalGet'?'get':'logout')});
+    }
+    if(actor.sub.startsWith('personal:')||actor.sub==='personal-login')pagesForbidden_();
     if (actor.sessionId) pagesCheckSession_(actor);
     if (actor.method === 'pagesSessionLogout') {
       if (actor.sessionId) PropertiesService.getScriptProperties().deleteProperty('PAGES_SESSION_' + actor.sessionId);
