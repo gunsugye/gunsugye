@@ -2814,10 +2814,10 @@ function assetRenderV244(){
  $('assetRoomRowsV244').innerHTML=rooms.length?mainNames.map((main,idx)=>{
   const inside=buckets.get(main),subNames=[...inside.keys()].sort((x,y)=>bRank(x)-bRank(y)||x.localeCompare(y,'ko'));
   const count=subNames.reduce((n,k)=>n+inside.get(k).length,0),mainKey='main:'+mode+':'+main;
-  const mainOpen=assetOpenGroupsV245===null||assetOpenGroupsV245.has(mainKey);
+  const mainOpen=assetOpenGroupsV245?.has(mainKey)||false;
   return '<details class="asset-group" data-asset-group-key="'+escapeH(mainKey)+'" '+(mainOpen?'open':'')+'><summary><span>'+escapeH(main)+'</span><span class="asset-group-note">'+count+'호 · '+subNames.length+'개 구분</span></summary><div class="asset-group-body">'+subNames.map((sub,j)=>{
    const list=inside.get(sub),subKey='sub:'+mode+':'+main+':'+sub;
-   const subOpen=assetOpenGroupsV245===null?j===0:assetOpenGroupsV245.has(subKey);
+   const subOpen=assetOpenGroupsV245?.has(subKey)||false;
    return '<details class="asset-group" data-asset-group-key="'+escapeH(subKey)+'" '+(subOpen?'open':'')+'><summary><span>'+escapeH(sub)+'</span><span class="asset-group-note">'+list.length+'호</span></summary><div class="asset-group-body eq-scroll"><table class="asset-table"><thead><tr><th>층</th><th>복도</th><th>호실</th><th>점검완료</th><th>기록 수량</th><th>요수리</th><th>관리</th></tr></thead><tbody>'+list.map(r=>{
      const a=items.map(x=>records.get(r.id+'|'+x.id)).filter(Boolean),verified=a.filter(x=>x.confirmed).length,bad=a.reduce((n,x)=>n+x.repair,0),qty=a.reduce((n,x)=>n+x.quantity,0);
      return '<tr data-asset-room-row="'+escapeH(r.id)+'" class="'+(r.id===assetCurrentRoomV244?'asset-row-open':'')+'"><td>'+escapeH(r.floor)+'</td><td>'+escapeH(r.corridor)+'</td><td><b>'+escapeH(r.room)+'</b></td><td>'+verified+' / '+items.length+'종</td><td>'+qty+'개</td><td class="asset-bad-text">'+bad+'개</td><td><button class="btn btn-soft" type="button" data-asset-room="'+escapeH(r.id)+'" aria-expanded="'+(r.id===assetCurrentRoomV244?'true':'false')+'">'+(r.id===assetCurrentRoomV244?'접기':'점검 / 수정')+'</button></td></tr><tr data-asset-inline-for="'+escapeH(r.id)+'" class="asset-inline-detail hidden"><td colspan="7"><div data-asset-inline-slot="'+escapeH(r.id)+'"></div></td></tr>';

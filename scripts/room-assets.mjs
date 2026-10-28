@@ -41,6 +41,8 @@ export function roomAssetHtml(html){
  .replace('id="assetRestoreKindV247">삭제 품목 복구</button>','id="assetRestoreKindV247">삭제 품목 복구</button><button type="button" class="btn hidden" id="assetResetV313">점검 기록 전체 초기화</button>');
 }
 export function roomAssetJs(js,client){
+ js=js.replace('const mainOpen=assetOpenGroupsV245===null||assetOpenGroupsV245.has(mainKey);','const mainOpen=assetOpenGroupsV245?.has(mainKey)||false;')
+ .replace('const subOpen=assetOpenGroupsV245===null?j===0:assetOpenGroupsV245.has(subKey);','const subOpen=assetOpenGroupsV245?.has(subKey)||false;');
  for(const name of ['assetEditorSnapshotV244','assetOpenRoomV244','assetRowFromFormV244','assetRefreshEditStateV244']){
   const pattern=new RegExp('function '+name+'\\([^)]*\\)\\{[\\s\\S]*?\\n\\}');
   const body=client.match(pattern);if(!body)throw Error('비품 클라이언트 함수 누락 '+name);
