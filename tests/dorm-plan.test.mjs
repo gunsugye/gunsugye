@@ -1,6 +1,15 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+test('스마트 당직에만 있는 휴학·위탁 인원을 제외하되 동명이인과 부분 이름은 남긴다',()=>{
+ const f=fixture(),person=(name,company='1',duty='')=>({name,company,cohort:'78',duty});
+ const reference=[person('검증가','1','휴 학'),person('검증나'),person('검증다'),person('검증다','2'),person('검증라'),person('검증마'),person('검증바','1','위탁')];
+ const hints=[{status:'휴학',preview:[{value:'78.1.검증나, 검증다'}]},{status:'위탁',preview:[{value:'검증라마'}]}];
+ const result=f.c.dormPlanCompareV318_([],reference,hints);
+ assert.equal(result.excludedCount,3);assert.deepEqual(Array.from(result.missingRoom,p=>p.name),['검증다','검증다','검증라','검증마']);
+ f.c.smartReferenceV253_=()=>({items:reference});f.c.smartReferenceHintsV255_=()=>({url:'configured',rows:[],warning:'조회 실패'});
+ assert.equal(f.c.getDormPlanV315().comparison.error,'조회 실패');
+});
 test('도면에만 있는 방은 접미사 변경과 최초 배정을 함께 저장한다',()=>{
  const f=fixture(),source={building:'정예 본관',floor:'1층',room:'132'};
  f.c.DORM_PLAN_DEFAULT_V315_.layout=[{...source,page:1,x:.1,y:.1,width:.1,height:.1}];

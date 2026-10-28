@@ -4208,7 +4208,7 @@ async function dormPlanLoadV315(){
 function dormPlanComparisonV318(result){
  const box=$('dormPlanComparisonV318');if(!box)return;
  if(!result||result.error){box.textContent='명단 대조 확인 필요: '+(result?.error||'대조 자료 없음');return;}
- box.innerHTML=[['방 배정 누락 · 스마트 당직에만 있음',result.missingRoom],['스마트 당직 누락 · 방 배정에만 있음',result.missingSmart]].map(([title,items])=>'<details><summary>'+title+' ('+items.length+'명)</summary>'+(items.length?'<ul>'+items.map(p=>'<li>'+escapeH([p.cohort+'기',p.company+'중대',p.name,p.location||''].join(' · '))+'</li>').join('')+'</ul>':'<p>누락 인원 없음</p>')+'</details>').join('')+'<p class="panel-sub">기수·중대·이름이 모두 같은 인원을 대조합니다. 소속 표기가 다르거나 동명이인이 있으면 원본을 확인하세요.</p>';
+ box.innerHTML=[['방 배정 누락 · 휴학·위탁 제외 후 스마트 당직에만 있음',result.missingRoom],['스마트 당직 누락 · 방 배정에만 있음',result.missingSmart]].map(([title,items])=>'<details><summary>'+title+' ('+items.length+'명)</summary>'+(items.length?'<ul>'+items.map(p=>'<li>'+escapeH([p.cohort+'기',p.company+'중대',p.name,p.location||''].join(' · '))+'</li>').join('')+'</ul>':'<p>누락 인원 없음</p>')+'</details>').join('')+'<p class="panel-sub">스마트 당직 상태 및 연결된 참고 시트의 휴학·위탁 '+Number(result.excludedCount||0)+'명을 제외했습니다. 기수·중대·이름을 대조하며, 참고 시트의 동명이인은 누락 목록에 남겨 확인합니다.</p>';
 }
 function dormPlanSetPagesV315(){
  const layout=dormPlanDraftV315?.layout||dormPlanV315?.layout||[],old=$('dormPlanPageV315').value;
