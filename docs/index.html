@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-app-version="feea0802bc3eb970" data-release-id="78af3a3b4bc9bea0" data-navigation-pending lang="ko">
+<html data-app-version="f60bd543a788c575" data-release-id="d8b75b32c905880a" data-navigation-pending lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -67,7 +67,7 @@ body.v294-training-mode #sidebarMenu,body.v294-training-mode #wxAddMenu,body.v29
 body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 @media(max-width:700px){.mobile-nav .v294-mobile-training{white-space:nowrap}.mobile-nav .v294-mobile-training.hidden{display:none!important}body.v294-training-mode .mobile-nav [data-view]:not([data-view="today"]):not([data-view="train"]){display:none!important}}
 </style>
-<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style><link rel="stylesheet" href="./assets/app.css?v=69104d03153ef33c">
+<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style><link rel="stylesheet" href="./assets/app.css?v=81648f2e4b0c0219">
 <link rel="stylesheet" href="./assets/pages.css?v=cbcbfe8085adf1d9">
 <script src="./config.js?v=32d1574ddff155dc"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -148,7 +148,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div class="v273-detail" id="v273Detail" role="status"></div>
   <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
 </div>
-<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.24 · 쉬운 사역 분배 안내</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.25 · 간결한 사역 분배 표</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header>
  <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
  <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
 <div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
@@ -659,9 +659,9 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   </div>
   <div class="labor-step-grid">
    <div class="labor-step">
-    <div class="labor-step-head"><span class="labor-step-number">01</span><label for="laborDivisorV259">몇 명당 1개씩 줄까요?</label></div>
+    <div class="labor-step-head"><span class="labor-step-number">01</span><label for="laborDivisorV259">지급 기준</label></div>
     <select id="laborDivisorV259" class="field"><option value="1">1인 1개</option><option value="2" selected>2인 1개</option><option value="3">3인 1개</option><option value="4">4인 1개</option><option value="5">5인 1개</option><option value="6">6인 1개</option></select>
-    <small>품목 1개를 몇 명에게 배분할까요?</small>
+    <small>1개당 인원</small>
    </div>
    <div class="labor-step">
     <div class="labor-step-head"><span class="labor-step-number">02</span><label for="laborGradeV261">학년 기준</label></div>
@@ -674,7 +674,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
     <small>실제 남은 인원 / 전체 대상 / 공식 총원</small>
    </div>
    <div class="labor-step">
-    <div class="labor-step-head"><span class="labor-step-number">04</span><label for="laborDimV259">어디별로 나눠줄까요?</label></div>
+    <div class="labor-step-head"><span class="labor-step-number">04</span><label for="laborDimV259">분배 단위</label></div>
     <select id="laborDimV259" class="field"><option value="company">중대별 (소속 기준)</option><option value="building">관별 (거주 관 기준)</option><option value="floor">층별 (거주 층 기준)</option></select>
     <small>총인원 선택 시 중대별로 자동 고정</small>
    </div>
@@ -696,9 +696,9 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   </div>
   <div id="laborPairListV259" class="labor-solo-list"></div>
  </div> <div class="panel labor-planner-panel labor-results-card">
-  <div class="labor-section-head"><div><p class="labor-eyebrow">계산 결과</p><h2 class="panel-title">어디에 몇 개씩 나눠주나요?</h2><p class="panel-sub">필요한 전체 수량을 먼저 보고, 아래 표대로 나눠주세요.</p></div></div>
+  <div class="labor-section-head"><div><h2 class="panel-title">분배 수량</h2></div></div>
   <div id="laborStatsV259" class="labor-kpis"></div>
-  <div class="labor-table-wrap labor-results-table"><table class="eq-table" style="min-width:560px"><thead><tr><th>나눠줄 곳</th><th>받는 사람</th><th>필요한 양</th><th>이렇게 나눠주세요</th></tr></thead><tbody id="laborTableV259"><tr><td colspan="4">위에서 기준을 고르고 계산 버튼을 누르면 여기에 표시돼요.</td></tr></tbody></table></div>
+  <div class="labor-table-wrap labor-results-table"><table class="eq-table" style="min-width:480px"><thead><tr><th>구분</th><th>인원</th><th>수량</th><th>잔여분</th></tr></thead><tbody id="laborTableV259"><tr><td colspan="4">계산 전</td></tr></tbody></table></div>
   <details id="laborReviewV297" class="labor-review-v297 hidden"><summary>미지정·대조 누락 명단 확인 <span id="laborReviewCountV297" class="labor-review-count-v297"></span></summary>
     <p class="help">호실 미확인과 독방 짝 미지정은 서로 다른 문제입니다. 아래 항목을 누르면 해당 생도 명단과 사유를 확인할 수 있습니다.</p>
     <div id="laborReviewButtonsV297" class="labor-review-tabs-v297"></div>
@@ -708,7 +708,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <p id="laborNoticeV259" class="labor-status-line" role="status">계산 대기 중 · 스마트당직 연결은 기타 → 설정에서 확인할 수 있습니다.</p>
   <div class="labor-record-cta"><div><strong>계산 결과를 임시 저장하기</strong><p>지금 선택한 학년·인원·분배 기준과 구역별 계산 수량, 독방 짝 배정을 그대로 보관합니다. 품목명과 실제 수량은 <b>사역 내역</b>에서 나중에 작성하세요.</p></div><button type="button" id="laborDraftOpenV264" class="btn btn-primary" disabled>사역 내역으로 임시 저장 ↓</button></div>
   <p class="help" role="status" id="laborRecordMessageV264"></p>
-  <details class="labor-method-notes"><summary>계산된 소수 수량은 어떻게 배분하나요?</summary><p>예: 2인 1개 기준으로 5명이면 2개는 4명에게 배분할 수 있고, 나머지 1명에게 필요한 양은 0.5개입니다. 표의 소수는 계산상 수량이며, 실제 물품을 나눌 수 없다면 반올림이 아닌 올림 지급 등 운영 기준을 정해 조정하세요.</p><p>현재·전체 인원은 스마트당직 상태를 확인하고 최신 생활실 호실로 위치를 분류합니다. 총인원은 호실 미배정자도 포함하므로 중대별로만 분배합니다.</p><p>생활실현황: A열 방 ID · E열 호실 · P:AQ 배정명단 / 스마트당직: B4:B7 학년별, B8 중대 총원</p></details>
+  <details class="labor-method-notes"><summary>수량 기준</summary><p>소수: 계산값 · 실제 지급량: 사역 내역에서 입력</p></details>
  </div>
 
 </section>
