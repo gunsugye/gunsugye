@@ -1215,6 +1215,7 @@ body[data-readonly="true"] .roster-edit{display:none!important}
 .journal-datetime-grid .form-item{min-width:0}.journal-datetime-grid input{min-width:0;width:100%;box-sizing:border-box;min-height:44px}.journal-datetime-grid small{display:block;margin-top:5px;font-size:11px;color:#6b7e94}
 @media(max-width:480px){.journal-datetime-grid{padding:10px;gap:12px 10px}.journal-datetime-grid input{font-size:14px;padding:8px}.journal-datetime-grid .time24-badge{font-size:9px}}
 
+#assetKindRowsV244 tr[hidden]{display:none}
 .asset-legacy-bulk-v311{display:none!important}
 .asset-editor{min-width:680px;width:100%;table-layout:fixed}
 .asset-editor th:first-child{width:86px}.asset-editor th:last-child{width:60px}

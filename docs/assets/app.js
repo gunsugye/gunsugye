@@ -2797,10 +2797,7 @@ function assetRenderV244(){
  const activeItemIds=new Set(items.map(x=>x.id));const scoped=assetDataV244.records.filter(r=>roomSet.has(r.roomId)&&activeItemIds.has(r.itemId)),total=scoped.reduce((n,r)=>n+r.quantity,0),good=scoped.reduce((n,r)=>n+r.normal,0),repair=scoped.reduce((n,r)=>n+r.repair,0),unknown=total-good-repair;
  const completed=rooms.filter(r=>items.length&&items.every(x=>{const rec=records.get(r.id+'|'+x.id);return rec&&rec.confirmed;})).length;
  $('assetSummaryV244').innerHTML=[['생활실',rooms.length+'호'],['점검 완료 호실',completed+'호'],['기록 수량',total+'개'],['정상 수량',good+'개'],['요수리',repair+'개'],['미점검 수량',unknown+'개']].map(([name,val])=>'<div class="asset-metric"><small>'+name+'</small><strong>'+val+'</strong></div>').join('');
- $('assetKindRowsV244').innerHTML=items.length?items.map(t=>{
-  const a=scoped.filter(r=>r.itemId===t.id),q=a.reduce((n,r)=>n+r.quantity,0),ok=a.reduce((n,r)=>n+r.normal,0),bad=a.reduce((n,r)=>n+r.repair,0),verified=a.filter(x=>x.confirmed).length;
-  return '<tr><td><strong>'+escapeH(t.name)+'</strong></td><td>'+t.recommended+escapeH(t.unit)+'</td><td>'+q+'</td><td class="asset-good-text">'+ok+'</td><td class="asset-bad-text">'+bad+'</td><td>'+(q-ok-bad)+'</td><td>'+verified+' / '+rooms.length+'호</td><td><button type="button" class="btn btn-soft asset-owner" data-asset-hide="'+escapeH(t.id)+'" title="점검 이력은 그대로 보존됩니다">목록 삭제</button></td></tr>';
- }).join(''):'<tr><td colspan="8">등록된 품목이 없습니다.</td></tr>';
+ assetOverviewRenderV327();
  $('assetRoomCountV244').textContent=rooms.length+'개 호실';
  const bulkNote=$('assetBulkScopeV245');if(bulkNote)bulkNote.textContent='현재 조회 범위 '+rooms.length+'호 · 일괄처리 시 선택한 품목·자리에 상태를 적용합니다. 세부사항 미입력 시 기존 내용은 보존합니다.';
  // 렌더링 중 기존 편집 DOM이 제거되지 않게 먼저 안전한 위치로 옮김.
@@ -2990,6 +2987,8 @@ function assetFilterChangeV245(e,resetCorridor){
  assetResetGroupsV245=true;assetRenderV244();
 }
 function assetInitV244(){
+ $('assetOverviewModeV327').addEventListener('change',assetOverviewRenderV327);
+ $('assetKindRowsV244').addEventListener('click',e=>{const button=e.target.closest('[data-asset-overview-toggle]');if(!button)return;const detail=$('assetOverviewDetailV327_'+button.dataset.assetOverviewToggle);detail.hidden=!detail.hidden;button.setAttribute('aria-expanded',String(!detail.hidden));});
  $('assetResetV313').addEventListener('click',assetResetRecordsV313);
  ['assetBuildingV244','assetFloorV244','assetCorridorV244','assetOrgV245','assetGroupModeV245','assetSearchV244'].forEach(id=>{
   const field=$(id);field.dataset.assetLastValue=field.value;
@@ -4409,6 +4408,32 @@ const laborExplanationV324=function distributionExplanation(group,divisor){
 function laborSummaryV324(result){
  const groups=result.groups||[],people=groups.reduce((s,g)=>s+Number(g.count||0),0),quantity=groups.reduce((s,g)=>s+Number(g.quota||0),0),divisor=Number(result.divisor)||2;
  $('laborStatsV259').innerHTML=[['대상 인원',laborFmtV259(people)+'명'],['지급 기준',divisor+'명당 1개'],['총수량',laborFmtV259(quantity)+'개']].map(([label,value])=>'<div class="labor-answer-v324"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
+}
+
+const assetOverviewGroupsV327=function assetOverviewGroups(rooms,items,records,mode){
+ const itemIds=new Set(items.map(i=>i.id)),byRecord=new Map(records.filter(r=>itemIds.has(r.itemId)).map(r=>[r.roomId+'|'+r.itemId,r])),groups=new Map();
+ const empty=()=>({quantity:0,normal:0,repair:0,unknown:0,unavailable:0});
+ for(const room of rooms){
+  const group=String(room.group||'').normalize('NFKC').replace(/\s+/g,''),company=group.match(/^([1-8])(?:중대)?$/)||((!group||group==='미분류')?String(room.room||'').match(/-([1-8])$/):null);
+  const label=mode==='company'?(company?company[1]+'중대':group||'미분류'):room.building||'미분류';
+  if(!groups.has(label))groups.set(label,{label,rooms:0,completed:0,...empty(),items:items.map(i=>({...empty(),id:i.id,name:i.name}))});
+  const row=groups.get(label);row.rooms++;
+  if(items.length&&items.every(i=>byRecord.get(room.id+'|'+i.id)?.confirmed))row.completed++;
+  for(const item of row.items){const rec=byRecord.get(room.id+'|'+item.id);if(!rec)continue;
+   const values={quantity:Number(rec.quantity)||0,normal:Number(rec.normal)||0,repair:Number(rec.repair)||0,unknown:Math.max(0,(Number(rec.quantity)||0)-(Number(rec.normal)||0)-(Number(rec.repair)||0)),unavailable:(rec.slots||[]).filter(s=>s.unavailable).length};
+   for(const [key,value] of Object.entries(values)){row[key]+=value;item[key]+=value;}
+  }
+ }
+ const building=['정예 본관','정예 동관','정예 서관','별관'];
+ return [...groups.values()].sort((a,b)=>mode==='company'?a.label.localeCompare(b.label,'ko',{numeric:true}):(building.includes(a.label)?building.indexOf(a.label):100)-(building.includes(b.label)?building.indexOf(b.label):100)||a.label.localeCompare(b.label,'ko'));
+};
+function assetOverviewRenderV327(){
+ if(!assetDataV244)return;
+ const mode=$('assetOverviewModeV327').value,rows=assetOverviewGroupsV327(assetRoomsFilteredV244(),assetDataV244.items,assetDataV244.records,mode);
+ $('assetOverviewTitleV327').textContent=(mode==='company'?'중대별':'건물별')+' 비품 현황';
+ $('assetOverviewGroupV327').textContent=mode==='company'?'중대':'건물';
+ const counts=r=>'<td>'+r.quantity+'</td><td class="asset-good-text">'+r.normal+'</td><td class="asset-bad-text">'+r.repair+'</td><td>'+r.unknown+'</td><td>'+r.unavailable+'</td>';
+ $('assetKindRowsV244').innerHTML=rows.map((r,i)=>'<tr><td><button type="button" class="btn btn-soft" data-asset-overview-toggle="'+i+'" aria-expanded="false" aria-controls="assetOverviewDetailV327_'+i+'">'+escapeH(r.label)+' · 품목 ▾</button></td><td>'+r.rooms+'</td>'+counts(r)+'<td>'+r.completed+' / '+r.rooms+'</td></tr><tr id="assetOverviewDetailV327_'+i+'" hidden><td colspan="8"><table class="asset-table"><thead><tr><th>품목</th><th>수량</th><th>정상</th><th>수리·교체</th><th>미점검</th><th>사용불가</th><th>관리</th></tr></thead><tbody>'+r.items.map(item=>'<tr><td>'+escapeH(item.name)+'</td>'+counts(item)+'<td>'+(canEdit?'<button type="button" class="btn btn-soft asset-owner" data-asset-hide="'+escapeH(item.id)+'">목록 삭제</button>':'—')+'</td></tr>').join('')+'</tbody></table></td></tr>').join('')||'<tr><td colspan="8">조회 결과 없음</td></tr>';
 }
 
 window.logbookReloadState=()=>({dirty:!!(isFormDirty()||modalSaving||eqDirty()||eqSaving||rosterIsDirty()||rosterHasQuickChanges()||rosterSaving||rosterQuickSaving.size||supplyDirty()||navDirtyV220||navSavingV220||wxCalDirty()||wxBulkDirtyV229()||wxCustomDirty()||wxCalSaving||wxBulkSavingV229||wxRowSaving||pendingNote||syncPending||assetDirtyV244.size||assetSavingV244||departuresBusyV305||settingsDirtyV258||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open)});

@@ -15,6 +15,7 @@ import {roomAssetJs,roomAssetHtml,roomAssetServer,roomAssetCSS} from './room-ass
 import {correctDormSource,correctDormClient} from './dorm-corrections.mjs';
 import {dormPlanHtml,dormPlanClient,dormPlanCSS} from './dorm-plan.mjs';
 import {laborInterfaceJs,laborInterfaceCSS} from './labor-interface.mjs';
+import {assetOverviewJs} from './asset-overview.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -33,6 +34,7 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
 js = roomAssetJs(repairJs(updateNotificationsJs(updateCalendarJs(updateNavigationJs(js)))),read('scripts/room-assets-client.js.txt'));
 js=dormPlanClient(correctDormClient(js),read('scripts/dorm-plan-client.js.txt'));
 js=laborInterfaceJs(js);
+js=assetOverviewJs(js);
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
  .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;

@@ -26,6 +26,13 @@ function assetV244Catalog_(sh){return assetV244CatalogRawV311_(sh).filter(x=>Str
  return source;
 }
 export function roomAssetHtml(html){
+ const marker=html.indexOf('<tbody id="assetKindRowsV244"'),start=html.lastIndexOf('<table',marker),end=html.indexOf('</table>',marker)+8;
+ if(marker<0||start<0||end<8)throw Error('비품 현황 표 위치를 확인하세요.');
+ html=html.slice(0,start)+'<table class="asset-table"><thead><tr><th id="assetOverviewGroupV327">건물</th><th>호실</th><th>수량</th><th>정상</th><th>수리·교체</th><th>미점검</th><th>사용불가</th><th>점검 완료</th></tr></thead><tbody id="assetKindRowsV244"></tbody></table>'+html.slice(end);
+ html=html.replace('<h2 class="panel-title">품목별 비품 현황</h2>','<h2 class="panel-title" id="assetOverviewTitleV327">건물별 비품 현황</h2>')
+ .replace('선택 범위에서 <b>시트에 등록된 수량만</b> 집계하며, 미점검 호실은 따로 표시합니다.','조회 범위 기준 · 기록 수량만 집계 · 중대는 호실 소속 기준')
+ .replace(/<button\b[^>]*id="assetCsvV244"[^>]*>/,button=>'<label>보기 <select class="field" id="assetOverviewModeV327" aria-label="비품 현황 보기"><option value="building">건물별</option><option value="company">중대별</option></select></label>'+button);
+ if(!html.includes('id="assetOverviewModeV327"'))throw Error('비품 보기 선택 위치를 확인하세요.');
  return html.replace('<table class="asset-table asset-editor"><thead><tr><th>품목</th><th>전체</th><th>정상</th><th>요수리</th><th>상태</th><th>세부사항</th><th>저장</th></tr>', '<table class="asset-table asset-editor"><thead><tr><th>품목</th><th>자리별 · 공용 점검</th><th>저장</th></tr>')
  .replace('품목별 수량·상태·세부사항을 기록합니다. 2개 중 1개만 고장인 경우처럼 정상·요수리 수량을 각각 수정할 수 있습니다. 상태를 바꾸면 수량 전체에 해당 상태가 우선 적용됩니다.','1번·2번 자리를 각각 점검하고 냉장고·공기청정기는 공용으로 기록합니다. 사용불가는 상태와 별도로 체크합니다.')
  .replaceAll('기본 비품 13종','기본 비품 12종')
@@ -54,6 +61,7 @@ export function roomAssetJs(js,client){
  return js.replaceAll('비품 13종','비품 12종');
 }
 export const roomAssetCSS=`
+#assetKindRowsV244 tr[hidden]{display:none}
 .asset-legacy-bulk-v311{display:none!important}
 .asset-editor{min-width:680px;width:100%;table-layout:fixed}
 .asset-editor th:first-child{width:86px}.asset-editor th:last-child{width:60px}

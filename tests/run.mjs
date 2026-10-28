@@ -14,6 +14,7 @@ await import('./room-assets.test.mjs');
 await import('./room-assets-bulk.test.mjs');
 await import('./dorm-plan.test.mjs');
 await import('./labor-interface.test.mjs');
+await import('./asset-overview.test.mjs');
 await import('./dorm-corrections.test.mjs');
 if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
   await import('./apps-script.test.mjs');
