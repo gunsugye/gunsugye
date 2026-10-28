@@ -4,6 +4,16 @@ function dormPlanDataV315_(){
  return JSON.parse(DriveApp.getFileById(id).getBlob().getDataAsString('UTF-8'));
 }
 function dormPlanKeyV315_(r){return [r.building,r.floor,r.room].join('|');}
+function dormPlanBindLayoutV321_(layout,rooms){
+ const used=new Set();return layout.map(anchor=>{
+  const scoped=rooms.filter(r=>r.building===anchor.building&&r.floor===anchor.floor);
+  let matches=anchor.roomId?scoped.filter(r=>String(r.id)===String(anchor.roomId)):[];
+  if(!matches.length)matches=scoped.filter(r=>r.room===anchor.room);
+  if(!matches.length)matches=scoped.filter(r=>r.room.split('-')[0]===anchor.room.split('-')[0]);
+  if(matches.length!==1||used.has(String(matches[0].id)))return {...anchor,linkWarning:matches.length?'호실 연결 중복 확인 필요':''};
+  const room=matches[0];used.add(String(room.id));return {...anchor,room:room.room,roomId:room.id,sourceRoom:anchor.sourceRoom||anchor.room};
+ });
+}
 function dormPlanHashV315_(value){return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(value))).replace(/=+$/,'');}
 function dormPlanBooksV315_(){
  const main=spreadsheet_(),books=[main],source=livingSourceV272_();
@@ -17,23 +27,31 @@ function dormPlanFindV315_(book,room){
  return matches[0]||null;
 }
 function dormPlanTokenV315_(books,room){
- if(books.every(book=>!dormPlanFindV315_(book,room)))return 'new';
- return dormPlanHashV315_(books.map(book=>{const r=dormPlanFindV315_(book,room);return [book.ss.getId(),r?book.rawById.get(String(r.id)):null];}));
+ if(books.every(book=>!dormPlanSourceV321_(book,room)))return 'new';
+ return dormPlanHashV315_(books.map(book=>{const r=dormPlanSourceV321_(book,room);return [book.ss.getId(),r?book.rawById.get(String(r.id)):null];}));
+}
+function dormPlanSourceV321_(book,room){
+ const exact=dormPlanFindV315_(book,room);if(exact)return exact;
+ const matches=book.rows.filter(r=>r.building===room.building&&r.floor===room.floor&&r.room.split('-')[0]===room.room.split('-')[0]);
+ if(matches.length>1)throw Error('호실 연결이 모호합니다: '+room.room);
+ return matches[0]||null;
 }
 function getDormPlanV315(includePdf){
  requireOwner_();return lockAndRun_(()=>{const plan=dormPlanDataV315_(),books=dormPlanBooksV315_(),seen=new Set(),rooms=[];
- for(const book of books)for(const room of book.rows){
+ for(const book of books){
+ const roster=dormRosterReadV240_(book.ss);
+ for(const room of book.rows){
+  if(book!==books[0]&&rooms.some(r=>r.building===room.building&&r.floor===room.floor&&r.room.split('-')[0]===room.room.split('-')[0]))continue;
   const key=dormPlanKeyV315_(room);if(seen.has(key))continue;seen.add(key);
-  const u=book.unified.byId.get(room.id);
-  rooms.push({...room,token:dormPlanTokenV315_(books,room),members:(u?.entries||[]).filter(p=>p.status!=='이전편성').map(p=>({cohort:p.cohort,company:p.company,name:p.name,female:!!p.female,status:p.status}))});
- }
+  rooms.push({...room,token:dormPlanTokenV315_(books,room),members:roster.filter(p=>String(p.roomId)===String(room.id)).map(p=>({cohort:p.cohort,company:p.company,name:p.name,female:!!p.female,status:p.verified?'확인':'확인필요'}))});
+ }}
  let comparison;
  try{
   const reference=smartReferenceV253_(books[0].ss).items,hints=smartReferenceHintsV255_(true);
   if(hints.url&&!hints.rows.length)throw Error(hints.warning||'휴학·위탁 참고 시트를 읽을 수 없습니다.');
   comparison=dormPlanCompareV318_(rooms,reference,hints.rows);
  }catch(e){comparison={error:String(e.message||e)};}
- return {filename:plan.filename,...(includePdf===true?{base64:plan.base64}:{}),layout:plan.layout,version:plan.version,rooms,comparison,canEdit:true};
+ return {filename:plan.filename,...(includePdf===true?{base64:plan.base64}:{}),layout:dormPlanBindLayoutV321_(plan.layout,rooms),version:plan.version,rooms,comparison,canEdit:true};
  });
 }
 function dormPlanCompareV318_(rooms,reference,hints=[]){
@@ -51,13 +69,13 @@ function dormPlanCompareV318_(rooms,reference,hints=[]){
  const missing=reference.filter(p=>!assignedKeys.has(key(p))),isExcluded=p=>/휴학|위탁/.test(String(p.duty||'').replace(/\s+/g,''))||excluded.has(key(p));
  return {missingRoom:missing.filter(p=>!isExcluded(p)),excludedCount:missing.filter(isExcluded).length,missingSmart:assigned.filter(p=>!smartKeys.has(key(p)))};
 }
-function dormPlanValidateMembersV315_(members,capacity){
+function dormPlanValidateMembersV315_(members,capacity,pdfImport){
  if(!Array.isArray(members)||members.length>capacity)throw Error('배정 인원이 호실 정원을 넘었습니다.');
  const used=new Set();return members.map(p=>{
   const name=text_(p.name,60),cohort=text_(p.cohort,24),company=String(p.company||'').replace(/중대$/,'').trim();
-  if(!name||!/^\d{2,3}$/.test(cohort)||! /^[1-8]$/.test(company))throw Error('배정자마다 기수·중대·이름을 확인하세요.');
+  if(!name||(!/^\d{2,3}$/.test(cohort)&&!(pdfImport&&!cohort))||(!/^[1-8]$/.test(company)&&!(pdfImport&&!company)))throw Error('배정자마다 기수·중대·이름을 확인하세요.');
   const key=[cohort,company,name].join('|');if(used.has(key))throw Error('한 호실에 중복된 배정자가 있습니다.');used.add(key);
-  return {cohort,company,name,female:!!p.female,status:'수동확인',original:name,page:''};
+  return {cohort,company,name,female:!!p.female,status:pdfImport?'PDF확인필요':'수동확인',original:name,page:''};
  });
 }
 function saveDormPlanV315(payload){
@@ -74,13 +92,13 @@ function saveDormPlanV315(payload){
    if(change.token!==dormPlanTokenV315_(books,source))throw Error('다른 화면에서 배정이 변경되었습니다. 다시 불러오세요: '+source.room);
    if(source.room!==change.room){
     if(!books.some(book=>dormPlanFindV315_(book,source))&&!current.layout.some(r=>dormPlanKeyV315_(r)===sourceKey))throw Error('변경 전 호실이 없습니다. 다시 불러오세요.');
-    if(books.some(book=>dormPlanFindV315_(book,change)))throw Error('변경할 호실 번호가 이미 사용 중입니다: '+change.room);
+    if(books.some(book=>{const target=dormPlanFindV315_(book,change),old=dormPlanSourceV321_(book,source);return target&&target.id!==old?.id;}))throw Error('변경할 호실 번호가 이미 사용 중입니다: '+change.room);
     renames.push({source,key,room:change.room});
    }
-   const members=dormPlanValidateMembersV315_(change.members,change.building==='별관'?4:2);
-   members.forEach(p=>{const identity=[p.cohort,p.company,p.name].join('|');if(incoming.has(identity)&&incoming.get(identity)!==key)throw Error('같은 기수·중대·이름이 여러 변경 호실에 있습니다. 동명이인은 구분 정보를 확인하세요.');incoming.set(identity,key);});
+   const members=dormPlanValidateMembersV315_(change.members,change.building==='별관'?4:2,!!payload.pdf&&payload.pdfImport===true);
+   members.forEach(p=>{if(!p.cohort||!p.company)return;const identity=[p.cohort,p.company,p.name].join('|');if(incoming.has(identity)&&incoming.get(identity)!==key)throw Error('같은 기수·중대·이름이 여러 변경 호실에 있습니다. 동명이인은 구분 정보를 확인하세요.');incoming.set(identity,key);});
    for(const book of books){
-    const old=dormPlanFindV315_(book,source),existing=old?book.unified.byId.get(old.id):null;
+    const old=dormPlanSourceV321_(book,source),existing=old?book.unified.byId.get(old.id):null;
     if(old&&!existing)throw Error('통합명단 열이 준비되지 않았습니다. 먼저 배정명단 통합을 실행하세요.');
     const capacity=change.building==='별관'?4:2;
     const suffix=(change.room.match(/-([1-8])$/)||[])[1];
@@ -91,7 +109,7 @@ function saveDormPlanV315(payload){
   if(renames.some(r=>sources.has(r.key)))throw Error('호실 번호를 서로 교환하거나 겹쳐 변경할 수 없습니다. 한 호실씩 저장하세요.');
   // 대상 밖에 이미 배정된 동일한 기수·중대·이름은 자동 이동하지 않습니다.
   for(const book of books)for(const r of book.unified.list){
-   if(sources.has(dormPlanKeyV315_(r)))continue;
+   if(sources.has(dormPlanKeyV315_(r))||pending.some(p=>p.book===book&&p.old?.id===r.id))continue;
    for(const p of r.entries.filter(x=>x.status!=='이전편성'))if(incoming.has([p.cohort,p.company,p.name].join('|')))throw Error('다른 호실에도 같은 기수·중대·이름이 배정되어 있습니다: '+r.room+' · 대상자를 확인하세요.');
   }
   let next=null;
@@ -100,7 +118,7 @@ function saveDormPlanV315(payload){
    if(typeof pdf.base64!=='string'||pdf.base64.length>10*1024*1024||!pdf.base64.startsWith('JVBERi0')||!Array.isArray(pdf.layout)||pdf.layout.length>1000)throw Error('PDF 파일과 호실 좌표를 확인하세요. (7MB 이하)');
    const layout=pdf.layout.map(r=>{
     if(!['정예 본관','정예 동관','정예 서관','별관'].includes(r.building)||!['1층','2층','3층'].includes(r.floor)||!/^\d{3}(?:-[1-8동생명여])?$/.test(r.room)||!Number.isInteger(r.page)||r.page<1||r.page>50||['x','y','width','height'].some(k=>!Number.isFinite(r[k])||r[k]<0||r[k]>1)||r.width===0||r.height===0)throw Error('PDF의 호실 좌표를 확인하세요.');
-    return {building:r.building,floor:r.floor,room:r.room,sourceRoom:r.sourceRoom||r.room,page:r.page,x:r.x,y:r.y,width:r.width,height:r.height,fullBox:!!r.fullBox};
+    return {building:r.building,floor:r.floor,room:r.room,sourceRoom:r.sourceRoom||r.room,page:r.page,x:r.x,y:r.y,width:r.width,height:r.height,fullBox:!!r.fullBox,pdfMembers:Array.isArray(r.pdfMembers)?r.pdfMembers.slice(0,4).map(p=>({name:text_(p.name,60),cohort:text_(p.cohort,24),company:text_(p.company,12)})):[]};
    });
    if(new Set(layout.map(dormPlanKeyV315_)).size!==layout.length)throw Error('PDF에 중복 호실 좌표가 있습니다.');
    next={filename:text_(pdf.filename,150),base64:pdf.base64,layout,version:Utilities.getUuid()};
@@ -111,6 +129,10 @@ function saveDormPlanV315(payload){
    if(new Set(next.layout.map(dormPlanKeyV315_)).size!==next.layout.length)throw Error('변경 후 도면 호실이 중복됩니다.');
   }
   if(!pending.length&&!next)throw Error('변경할 내용이 없습니다.');
+  // PDF 배치는 고정하고 호실 ID로 연결합니다. 이후 이름 수정은 통합명단만 읽습니다.
+  const canonical=books[0].rows.filter(r=>!pending.some(p=>p.book===books[0]&&p.old&&p.old.id===r.id)).concat(pending.filter(p=>p.book===books[0]).map(p=>p.normalized));
+  if(!next)next={...current,layout:current.layout.map(r=>({...r})),version:Utilities.getUuid()};
+  next.layout=dormPlanBindLayoutV321_(next.layout,canonical);
   // 모든 대조를 마친 뒤 각 파일의 원본 시트를 백업합니다. 비품 기록과 호실 ID는 유지합니다.
   const backups=[];
   for(const book of books.filter(b=>pending.some(p=>p.book===b))){if(book.sh){const backup=book.sh.copyTo(book.ss);backup.setName('생활실_도면편집전_'+Date.now());protectLimitedSheetV226_(backup);backups.push(backup.getName());}}
@@ -127,7 +149,7 @@ function saveDormPlanV315(payload){
     }
    }
    // 통합 원본이 기준이며 이전 백업 명단을 다시 읽어 정정을 되돌리지 않습니다.
-   PropertiesService.getScriptProperties().setProperty('DORM_MERGED_V248',p.book.ss.getId());
+   PropertiesService.getScriptProperties().setProperty('DORM_ROOM_OVERRIDE_V321_'+p.book.ss.getId()+'_'+p.normalized.id,'1');
   }
   if(next){const file=DriveApp.createFile('생활실_편성안_'+Date.now()+'.json',JSON.stringify(next),'application/json');PropertiesService.getScriptProperties().setProperty('DORM_PLAN_FILE_V315',file.getId());}
   SpreadsheetApp.flush();return {ok:true,rooms:payload.changes.length,files:new Set(pending.map(p=>p.book.ss.getId())).size,backups,version:next?next.version:current.version};

@@ -53,6 +53,7 @@ function fixture(){
   DORM_PLAN_DEFAULT_V315_:{filename:'test.pdf',base64:'JVBERi0xLjQK',layout:[]},requireOwner_:()=>{if(!allowed)throw Error('권한 없음');},lockAndRun_:f=>f(),spreadsheet_:()=>books[0].ss,livingSourceV272_:()=>({id:'linked'}),SpreadsheetApp:{openById:id=>books.find(b=>b.ss.getId()===id).ss,flush(){}},
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k),setProperty:(k,v)=>properties.set(k,v)})},
   dormTabV234_:ss=>books.find(b=>b.ss===ss).sh,dormReadV234_:sh=>[books.find(b=>b.sh===sh).room],
+  dormRosterReadV240_:ss=>{const b=books.find(b=>b.ss===ss);return b.entries.map(p=>({...p,roomId:b.room.id,verified:true}));},
   dormUnifiedReadV248_:ss=>{const b=books.find(b=>b.ss===ss),r={...b.room,row:2,entries:b.entries};return {sh:b.sh,list:[r],byId:new Map([[r.id,r]])};},
   Utilities:{DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(_alg,s)=>createHash('sha256').update(s).digest(),base64EncodeWebSafe:b=>Buffer.from(b).toString('base64url'),getUuid:()=> 'new-version'},
   text_:(v,n)=>String(v||'').trim().slice(0,n),iso_:()=> 'new',
@@ -99,7 +100,36 @@ test('호실 접미사 변경은 두 파일의 ID와 배정자 중대를 유지�
 });
 test('이미 있는 호실 번호로 변경하거나 동일한 원본 호실을 두 번 변경하면 쓰기 전에 차단한다',()=>{
  for(const collision of [true,false]){const f=fixture(),p=f.c.getDormPlanV315(),r=p.rooms[0];
- if(collision)f.books[1].room={...f.books[1].room,room:'343-1'};
+ if(collision){const read=f.c.dormReadV234_;f.c.dormReadV234_=sh=>read(sh).concat(sh===f.books[1].sh?[{...f.books[1].room,id:'another-room',room:'343-1'}]:[]);}
  const changes=[{...r,previousRoom:r.room,room:'343-1'}];if(!collision)changes.push({...r,previousRoom:r.room,room:'343-2'});
  assert.throws(()=>f.c.saveDormPlanV315({version:p.version,changes}));assert.equal(f.backups.length,0);assert.equal(f.writes.length,0);}
+});
+test('여러 호실의 접미사 차이를 연결하고 고정 ID로 이후 번호 수정까지 유지한다',()=>{
+ const f=fixture(),rooms=Array.from({length:30},(_,i)=>({id:'r'+i,building:'정예 본관',floor:'1층',room:String(132+i)+'-1'}));
+ const layout=rooms.map(r=>({building:r.building,floor:r.floor,room:r.room.split('-')[0],page:1,x:.1,y:.2}));
+ const bound=f.c.dormPlanBindLayoutV321_(layout,rooms);assert.equal(bound.length,30);
+ bound.forEach((a,i)=>{assert.equal(a.roomId,rooms[i].id);assert.equal(a.room,rooms[i].room);assert.equal(a.sourceRoom,layout[i].room);assert.equal(a.x,.1);});
+ const renamed=rooms.map(r=>({...r,room:r.room.replace('-1','-2')})),again=f.c.dormPlanBindLayoutV321_(bound,renamed);
+ assert.equal(again[0].room,'132-2');assert.equal(again[0].roomId,'r0');assert.equal(again[0].sourceRoom,'132');
+ const ambiguous=f.c.dormPlanBindLayoutV321_([layout[0]],[rooms[0],{...rooms[0],id:'other',room:'132-2'}]);assert.ok(ambiguous[0].linkWarning);assert.equal(ambiguous[0].roomId,undefined);
+});
+test('배치도와 아래 표는 같은 명단 조회를 사용하고 연결 파일의 옛 표기를 중복 표시하지 않는다',()=>{
+ const f=fixture();f.books[1].room.room='343';
+ f.c.dormRosterReadV240_=ss=>[{roomId:f.books.find(b=>b.ss===ss).room.id,cohort:'78',company:'3',name:ss===f.books[0].ss?'표의최신명단':'연결파일옛명단',verified:true}];
+ f.c.DORM_PLAN_DEFAULT_V315_.layout=[{building:'정예 동관',floor:'3층',room:'343',page:1,x:.1,y:.1}];
+ const p=f.c.getDormPlanV315();assert.equal(p.rooms.length,1);assert.equal(p.rooms[0].members[0].name,'표의최신명단');assert.equal(p.layout[0].room,'343-3');assert.equal(p.layout[0].roomId,'main-room');
+ f.c.saveDormPlanV315({version:p.version,changes:[{...p.rooms[0],members:[{cohort:'78',company:'3',name:'저장명단'}]}]});
+ for(const b of f.books){const write=f.writes.find(w=>w.id===b.ss.getId()&&w.col===1);assert.equal(write.row,2);assert.equal(write.values[0][0],b.room.id);assert.equal(write.values[0][4],'343-3');}
+});
+test('PDF의 불완전한 명단도 기준본과 두 파일에 기록하며 이후 수동 편집에는 검증을 적용한다',()=>{
+ const f=fixture(),p=f.c.getDormPlanV315(),room=p.rooms[0],member={name:'PDF이름',cohort:'',company:'3'};
+ f.c.saveDormPlanV315({version:p.version,pdfImport:true,pdf:{filename:'new.pdf',base64:'JVBERi0xLjQK',layout:[{building:room.building,floor:room.floor,room:room.room,page:1,x:.1,y:.1,width:.1,height:.1,pdfMembers:[member]}]},changes:[{...room,members:[member]}]});
+ assert.equal(f.savedPlans[0].layout[0].roomId,room.id);assert.equal(f.savedPlans[0].layout[0].pdfMembers[0].name,'PDF이름');
+ for(const b of f.books){assert.equal(f.writes.find(w=>w.id===b.ss.getId()&&w.members).members[0].status,'PDF확인필요');assert.equal(f.properties.get('DORM_ROOM_OVERRIDE_V321_'+b.ss.getId()+'_'+b.room.id),'1');}
+ assert.throws(()=>f.c.dormPlanValidateMembersV315_([member],2));
+});
+test('수정한 방의 이전 명단은 되살리지 않고 다른 방의 기존 명단은 유지한다',()=>{
+ const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8'),start=source.indexOf('function dormRosterReadV240_('),end=source.indexOf('function dormUnifiedReadyV249_',start);
+ const props={'DORM_ROOM_OVERRIDE_V321_main_room-a':'1'},c=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperties:()=>props})},dormUnifiedReadyV249_:()=>false,dormUnifiedRosterReadV248_:()=>[],dormLegacyRosterReadV249_:()=>[{roomId:'room-a',name:'제외한이름'},{roomId:'room-b',name:'유지할이름'}]});
+ vm.runInContext(source.slice(start,end),c);const result=c.dormRosterReadV240_({getId:()=> 'main'});assert.equal(result.length,1);assert.equal(result[0].roomId,'room-b');
 });

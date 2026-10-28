@@ -20,7 +20,7 @@ async function dormPlanLoadV315(){
 
   dormPlanSetPagesV315();await dormPlanRenderV315();
   $('dormPlanPublishV315').hidden=true;
-  dormPlanStatusV315('간편 배치도 · 호실을 누르면 번호·중대·기수·이름을 편집합니다. PDF의 배치 순서를 기준으로 정리했습니다.');
+  dormPlanStatusV315('저장된 PDF 기준본: '+result.filename+' · 배치 순서는 고정하고, 호실 ID로 연결된 최신 명단을 표와 함께 표시합니다.');
  }catch(e){dormPlanStatusV315('도면 조회 실패: '+e.message);}finally{dormPlanBusyV315=false;}
 }
 function dormPlanAddUnplacedV320(plan){
@@ -59,7 +59,10 @@ function dormPlanSetPagesV315(){
  if(pages.includes(Number(old)))$('dormPlanPageV315').value=old;
 }
 function dormPlanRoomV315(layout){
- return (dormPlanDraftV315?.changes||[]).find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(layout))||dormPlanV315.rooms.find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(layout))||{...layout,members:[],group:(layout.room.match(/-([1-8])$/)||[])[1]+'중대',corridor:'PDF 도면',token:'new'};
+ const scoped=dormPlanV315.rooms.filter(r=>r.building===layout.building&&r.floor===layout.floor);
+ const exact=scoped.find(r=>layout.roomId?String(r.id)===String(layout.roomId):r.room===layout.room);
+ const physical=scoped.filter(r=>r.room.split('-')[0]===layout.room.split('-')[0]);
+ return (dormPlanDraftV315?.changes||[]).find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(layout))||exact||(physical.length===1?physical[0]:null)||{...layout,members:[],group:((layout.room.match(/-([1-8])$/)||[])[1]||'')+'중대',corridor:'PDF 도면',token:'new'};
 }
 async function dormPlanRenderV315(){
  if(!dormPlanV315)return;
@@ -72,17 +75,17 @@ async function dormPlanRenderV315(){
  });
  $('dormPlanHotspotsV315').innerHTML=bands.map((band,i)=>'<section class="dorm-plan-band"><h3>배치 '+(i+1)+'</h3><div class="dorm-plan-grid">'+band.items.sort((a,b)=>a.r.x-b.r.x).map(({r,index})=>{
   const room=dormPlanRoomV315(r),members=room.members||[],text=members.map(p=>[p.cohort,p.company,p.name].join('.')).join(' / ');
-  return '<button type="button" class="dorm-plan-room" data-plan-room="'+index+'" aria-label="'+escapeH(r.room+' '+text)+'"><b>'+escapeH(r.room)+'</b>'+(live?(members.length?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'기 · '+(p.company||'?')+'중대')+'</small><span>'+escapeH(p.name||'미확인')+'</span></span>').join(''):'<span class="dorm-plan-empty">배정 확인 필요</span>'):'<span class="dorm-plan-empty">'+escapeH(room.group||'미분류')+'</span>')+'</button>';
+  return '<button type="button" class="dorm-plan-room" data-plan-room="'+index+'" aria-label="'+escapeH(room.room+' '+text)+'"><b>'+escapeH(room.room)+'</b>'+(live?(members.length?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'기 · '+(p.company||'?')+'중대')+'</small><span>'+escapeH(p.name||'미확인')+'</span></span>').join(''):'<span class="dorm-plan-empty">배정 확인 필요</span>'):'<span class="dorm-plan-empty">'+escapeH(room.group||'미분류')+'</span>')+'</button>';
  }).join('')+'</div></section>').join('');
  $('dormPlanHotspotsV315').onclick=e=>{const b=e.target.closest('[data-plan-room]');if(b)dormPlanEditV315(layout[Number(b.dataset.planRoom)]);};
  dormPlanSizeV316();
 }
 function dormPlanMemberRowV315(p,index){return '<tr><td>'+(index+1)+'</td><td><input class="field" aria-label="중대" data-plan-company maxlength="1" inputmode="numeric" value="'+escapeH(p.company||'')+'"></td><td><input class="field" aria-label="기수" data-plan-cohort maxlength="3" inputmode="numeric" value="'+escapeH(p.cohort||'')+'"></td><td><input class="field" aria-label="이름" data-plan-name maxlength="60" value="'+escapeH(p.name||'')+'"></td><td><button type="button" class="btn" data-plan-remove>제외</button></td></tr>';}
 function dormPlanEditV315(layout){
- const room=dormPlanRoomV315(layout);dormPlanSelectedV315={...room,...layout};
+ const room=dormPlanRoomV315(layout);dormPlanSelectedV315={...layout,...room};
  $('dormPlanRoomTitleV315').textContent=[layout.building,layout.floor,layout.room].join(' · ');
  $('dormPlanMembersV315').innerHTML=(room.members||[]).map(dormPlanMemberRowV315).join('');
- const parts=layout.room.split('-');$('dormPlanNumberV316').value=parts[0];$('dormPlanSuffixV316').value=parts[1]||'';
+ const parts=room.room.split('-');$('dormPlanNumberV316').value=parts[0];$('dormPlanSuffixV316').value=parts[1]||'';
  $('dormPlanGroupV315').value=['1중대','2중대','3중대','4중대','5중대','6중대','7중대','8중대','전(대)대','동생명','여생도','미분류'].includes(room.group)?room.group:'미분류';
  $('dormPlanFemaleV315').checked=!!room.femaleRoom;
  $('dormPlanRoomReviewV315').textContent=dormPlanDraftV315?'PDF에서 추출한 후보입니다. 원본 도면과 대조 후 「검토 저장」하세요.':'기수·중대·이름을 함께 확인하세요. 다른 호실의 동명이인을 자동으로 가져오지 않습니다.';
@@ -131,37 +134,41 @@ async function dormPlanUploadV315(){
    const page=await pdf.getPage(n),vp=page.getViewport({scale:1}),text=await page.getTextContent(),op=await page.getOperatorList();
    const tokens=text.items.filter(t=>t.str?.trim()).map(t=>{const point=vp.convertToViewportPoint(t.transform[4],t.transform[5]);return {str:t.str.trim(),x:point[0],y:point[1],width:t.width,height:t.height};});
    for(const t of tokens)if(/^\d{3}-$/.test(t.str)){const next=tokens.find(n=>/^[1-8동생명여女]$/.test(n.str)&&Math.abs(n.y-t.y)<2&&Math.abs(n.x-t.x-t.width)<6);if(next){t.str+=next.str.replace('女','여');t.width=next.x+next.width-t.x;}}
-   const title=tokens.filter(t=>t.y<50).map(t=>t.str).join('').replace(/\s/g,''),b=(title.match(/정예(본관|동관|서관)/)||[])[1],f=(title.match(/([123])층/)||[])[1];if(!b||!f)continue;
+   const title=tokens.filter(t=>t.y<50).map(t=>t.str).join('').replace(/\s/g,''),b=(title.match(/정예(본관|동관|서관)/)||[])[1]||(/별관/.test(title)?'별관':''),f=(title.match(/([123])층/)||[])[1];if(!b||!f)continue;
    const boxes=[];for(let i=0;i<op.fnArray.length;i++)if(op.fnArray[i]===pdfjsLib.OPS.constructPath){const a=op.argsArray[i][2];if(a?.length===4){const rect=vp.convertToViewportRectangle([a[0],a[2],a[1],a[3]]),x=Math.min(rect[0],rect[2]),y=Math.min(rect[1],rect[3]),w=Math.abs(rect[2]-rect[0]),h=Math.abs(rect[3]-rect[1]);if(w>20&&w<100&&h>8&&h<160)boxes.push({x,y,width:w,height:h});}}
    const anchors=tokens.flatMap(t=>[...t.str.matchAll(/(?:^|\s)(\d{3}(?:-[1-8동생명여])?)(?=\s|$)/g)].map(m=>({...t,str:m[1],x:t.x+t.width*(m.index+m[0].indexOf(m[1]))/t.str.length,width:t.width*m[1].length/t.str.length}))).filter(t=>t.y>45);
-   for(const a of anchors){const r={building:'정예 '+b,floor:f+'층',room:a.str,sourceRoom:a.str,page:n};
-    if(samePdf){const known=dormPlanV315.layout.find(l=>l.building===r.building&&l.floor===r.floor&&l.page===n&&l.sourceRoom===a.str);if(known)r.room=known.room;else continue;}
+   for(const a of anchors){const r={building:b==='별관'?b:'정예 '+b,floor:f+'층',room:a.str,sourceRoom:a.str,page:n};
+    if(samePdf){const known=dormPlanV315.layout.find(l=>l.building===r.building&&l.floor===r.floor&&l.page===n&&l.sourceRoom===a.str);if(known)r.room=known.room;}
     else if(/^\d{3}$/.test(r.room)){const matches=dormPlanV315.rooms.filter(old=>old.building===r.building&&old.floor===r.floor&&old.room.split('-')[0]===r.room);if(matches.length===1)r.room=matches[0].room;}
-    if(seen.has(dormPlanKeyV315(r)))continue;seen.add(dormPlanKeyV315(r));
     let box=boxes.filter(b=>b.height>50&&a.x+a.width/2>b.x&&a.x+a.width/2<b.x+b.width&&a.y>b.y&&a.y<b.y+25).sort((a,b)=>a.width*a.height-b.width*b.height)[0];
     if(!box){const header=boxes.filter(b=>b.height<26&&a.x+a.width/2>b.x&&a.x+a.width/2<b.x+b.width&&a.y>b.y&&a.y<b.y+b.height+1).sort((a,b)=>a.width-b.width)[0];if(header){let bottom=header.y+header.height;for(let i=0;i<2;i++){const body=boxes.filter(b=>b.height>25&&Math.abs(b.x-header.x)<1&&Math.abs(b.width-header.width)<1&&Math.abs(b.y-bottom)<1).sort((a,b)=>b.height-a.height)[0];if(!body)break;bottom=body.y+body.height;}if(bottom>header.y+40&&bottom-header.y<160)box={...header,height:bottom-header.y};}}
     Object.assign(r,{x:Math.max(0,(box?box.x:a.x-3)/vp.width),y:Math.max(0,(box?box.y:a.y-a.height-2)/vp.height),width:(box?box.width:Math.max(30,a.width+6))/vp.width,height:(box?box.height:a.height+6)/vp.height,fullBox:!!box});
-    const old=dormPlanV315.rooms.find(room=>dormPlanKeyV315(room)===dormPlanKeyV315(r));
+    const possible=dormPlanV315.rooms.filter(room=>room.building===r.building&&room.floor===r.floor&&room.room.split('-')[0]===r.room.split('-')[0]);
+    const old=dormPlanV315.rooms.find(room=>dormPlanKeyV315(room)===dormPlanKeyV315(r))||(possible.length===1?possible[0]:null);
+    if(old){r.room=old.room;r.roomId=old.id;}
+    if(seen.has(dormPlanKeyV315(r)))continue;seen.add(dormPlanKeyV315(r));
     const region=box?tokens.filter(t=>t.x>=box.x&&t.x<box.x+box.width&&t.y>a.y+5&&t.y<box.y+box.height):[];
-    const names=[...new Set(region.map(t=>t.str).filter(s=>/^[가-힣]{2,4}[A-C]?$/.test(s)&&!/(공실|중대|훈육|위원|동기|회장|총무|생도|화장|계단|보좌|문화|교육|명예|편집|사무)/.test(s)))].slice(0,2);
+    const names=[...new Set(region.map(t=>t.str).filter(s=>/^[가-힣]{2,4}[A-C]?$/.test(s)&&!/(공실|중대|훈육|위원|동기|회장|총무|생도|화장|계단|보좌|문화|교육|명예|편집|사무)/.test(s)))].slice(0,r.building==='별관'?4:2);
     if(!old&&!names.length&&region.some(t=>/훈육관|중대장|화장실|샤워|세탁|건조|계단|휴게실|창고/.test(t.str)))continue;
     layout.push(r);
     const members=names.map(name=>{const match=(old?.members||[]).filter(p=>p.name===name);return match.length===1?{...match[0]}:{name,company:(a.str.match(/-([1-8])$/)||[])[1]||'',cohort:''};});
-    changes.push({...old,...r,members,group:old?.group||((a.str.match(/-([1-8])$/)||[])[1]||'')+'중대',corridor:old?.corridor||'PDF 도면',femaleRoom:old?.femaleRoom||/-여$/.test(a.str),token:old?.token||'new',reviewed:false});
+    r.pdfMembers=members.map(p=>({...p}));
+    changes.push({...old,...r,members,group:old?.group||((a.str.match(/-([1-8])$/)||[])[1]||'')+'중대',corridor:old?.corridor||'PDF 도면',femaleRoom:old?.femaleRoom||/-여$/.test(a.str),token:old?.token||'new',reviewed:true});
    }
   }
   if(!layout.length)throw Error('호실 번호를 추출하지 못했습니다. 텍스트가 있는 편성안 PDF를 사용해 주세요.');
   dormPlanDraftV315={filename:file.name,base64,layout,changes};dormPlanPdfV315=pdf;
   dormPlanSetPagesV315();await dormPlanRenderV315();$('dormPlanPublishV315').hidden=false;
-  dormPlanStatusV315('추출 '+layout.length+'호. 호실을 눌러 기수·중대·이름을 검토 저장한 뒤 갱신 적용하세요. 미검토 배정은 원본을 유지합니다.');
+  dormPlanStatusV315('추출 '+layout.length+'호. PDF 배치와 명단을 기준본으로 저장합니다. 저장 후 표와 배치도에서 계속 수정할 수 있습니다.');
+  await dormPlanPublishV315();
  }catch(e){dormPlanStatusV315('PDF 분석 실패: '+e.message);}
 }
 async function dormPlanPublishV315(){
  const draft=dormPlanDraftV315;if(!draft)return;
  const changes=draft.changes.filter(x=>x.reviewed);
- if(!confirm('새 PDF 도면 '+draft.layout.length+'호와 검토 완료 배정 '+changes.length+'호를 적용할까요?\n미검토 배정과 PDF에 없는 기존 호실은 유지합니다. 변경 전 원본은 백업합니다.'))return;
+ if(!confirm('PDF의 '+draft.layout.length+'호 배치와 배정명단을 새 기준본으로 저장할까요?\nPDF에 있는 호실의 기존 명단을 교체하고 원본을 백업합니다. 기수·중대가 확인되지 않은 이름도 확인 필요로 기록합니다. PDF에 없는 방은 유지합니다.'))return;
  $('dormPlanPublishV315').disabled=true;
- try{const result=await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,pdf:{filename:draft.filename,base64:draft.base64,layout:draft.layout},changes}));dormPlanDraftV315=null;await dormPlanRefreshLinksV315();await dormPlanLoadV315();toast('PDF 도면 갱신 · '+result.rooms+'호 배정 반영 완료');}
+ try{const result=await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,pdfImport:true,pdf:{filename:draft.filename,base64:draft.base64,layout:draft.layout},changes}));dormPlanDraftV315=null;await dormPlanRefreshLinksV315();await dormPlanLoadV315();toast('PDF 기준본 저장 · '+result.rooms+'호 배정 반영 완료');}
  catch(e){alert('PDF 갱신 실패: '+e.message);}finally{$('dormPlanPublishV315').disabled=false;}
 }
 function dormPlanInitV315(){
