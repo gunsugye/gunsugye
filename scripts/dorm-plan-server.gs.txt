@@ -56,17 +56,11 @@ function getDormPlanV315(includePdf){
 }
 function dormPlanCompareV318_(rooms,reference,hints=[]){
  if(!reference.length)return {error:'스마트 당직 명단이 비어 있어 대조할 수 없습니다.'};
- const key=p=>[String(p.cohort||'').trim().replace(/기$/,'').replace(/\.0$/,''),String(p.company||'').trim().replace(/중대$/,''),String(p.name||'').replace(/\s+/g,'')].join('|');
  const assigned=rooms.flatMap(r=>(r.members||[]).map(p=>({...p,location:[r.building,r.floor,r.room].join(' ')})));
+ const key=smartComparisonKeyV322_(reference,assigned);
  const smartKeys=new Set(reference.map(key)),assignedKeys=new Set(assigned.map(key));
- const names=new Map();reference.forEach(p=>{const name=String(p.name||'').trim();if(!names.has(name))names.set(name,new Set());names.get(name).add(key(p));});
- const excluded=new Set();
- // 참고 시트 이름은 단어 전체로 대조하며, 여러 소속에 같은 이름이 있으면 제외하지 않습니다.
- for(const row of hints.filter(r=>['휴학','위탁'].includes(r.status))){
-  const tokens=new Set(row.preview.flatMap(c=>String(c.value||'').split(/[\s,，、;:()\[\]{}\/·.\-]+/).filter(Boolean)));
-  for(const [name,identities] of names)if(tokens.has(name)&&identities.size===1)excluded.add([...identities][0]);
- }
- const missing=reference.filter(p=>!assignedKeys.has(key(p))),isExcluded=p=>/휴학|위탁/.test(String(p.duty||'').replace(/\s+/g,''))||excluded.has(key(p));
+ const excluded=smartInactiveKeysV322_(reference,hints,['휴학','위탁','퇴학','퇴교'],key);
+ const missing=reference.filter(p=>!assignedKeys.has(key(p))),isExcluded=p=>excluded.has(key(p));
  return {missingRoom:missing.filter(p=>!isExcluded(p)),excludedCount:missing.filter(isExcluded).length,missingSmart:assigned.filter(p=>!smartKeys.has(key(p)))};
 }
 function dormPlanValidateMembersV315_(members,capacity,pdfImport){

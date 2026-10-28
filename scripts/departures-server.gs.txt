@@ -10,7 +10,10 @@ function departureTokenV305_(value){
 function departureStateV305_(ss){
  const source=smartReferenceV253_(ss);
  if(!source.items||source.items.length<100)throw Error('스마트당직 기준 명단이 부족합니다. 8개 중대 연결과 명단을 확인하세요.');
- const refNames=new Set(source.items.map(r=>uniformNameV278_(r.name))),refKeys=new Set(source.items.map(uniformKeyV278_));
+ const hints=smartReferenceHintsV255_(true);if(hints.url&&!hints.rows.length)throw Error(hints.warning||'퇴학·퇴교 참고 시트를 읽을 수 없습니다.');
+ const departed=smartInactiveKeysV322_(source.items,hints.rows,['퇴학','퇴교'],uniformKeyV278_);
+ const active=source.items.filter(p=>!departed.has(uniformKeyV278_(p)));
+ const refNames=new Set(active.map(r=>uniformNameV278_(r.name))),refKeys=new Set(active.map(uniformKeyV278_));
  const roster=rosterRows_(rosterRequired_(ss)),uniforms=uniformRowsV278_(uniformTabV278_(ss,false));
  const archived=specialArchiveItemsV255_(ss),byKey=new Map(),candidates=[],review=[];
  for(const p of roster){const key=uniformKeyV278_(p);if(!byKey.has(key))byKey.set(key,[]);byKey.get(key).push(p);}
@@ -60,7 +63,7 @@ function getDepartureDashboardV305(){
 }
 function processDepartureV305(input){
  departurePermissionV305_();
- if(!input||!SMART_V253.STATUSES.includes(input.status))throw Error('퇴교·휴학·위탁 중 관리 상태를 선택하세요.');
+ if(!input||!SMART_V253.STATUSES.includes(input.status))throw Error('퇴학·퇴교·휴학·위탁 중 관리 상태를 선택하세요.');
  if(!['별도 보관','반납 완료','인계 완료','미지급 확인'].includes(input.gunAction))throw Error('총기 처리 결과를 선택하세요.');
  return lockAndRun_(()=>{
   const ss=spreadsheet_(),state=departureStateV305_(ss),c=state.candidates.find(x=>x.id===String(input.id));

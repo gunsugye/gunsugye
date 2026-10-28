@@ -1,6 +1,18 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync,existsSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+test('전각 중대·기수 접미사·일대일 이름 별칭은 대조하되 실제 미등재와 동명이인은 유지한다',()=>{
+ const f=fixture(),p=(name,cohort,company)=>({name,cohort,company});
+ const reference=[p('검증가A','77기','3'),p('검증나B','77기','3'),p('검증다','77기','4'),p('검증라','76기','7'),p('검증마','76기','8')];
+ const members=[p('검증나','77','3'),p('검증다','77','４'),p('검증바','77','7'),p('검증라','76','７'),p('검증사','77','8')];
+ const r=f.c.dormPlanCompareV318_([{members}],reference);assert.deepEqual(Array.from(r.missingRoom,p=>p.name),['검증가A','검증마']);assert.deepEqual(Array.from(r.missingSmart,p=>p.name),['검증바','검증사']);
+ const ambiguous=f.c.dormPlanCompareV318_([{members:[p('검증나','77','3')]}],[p('검증나A','77기','3'),p('검증나B','77기','3')]);assert.equal(ambiguous.missingRoom.length,2);assert.equal(ambiguous.missingSmart.length,1);
+ const bothMarked=f.c.dormPlanCompareV318_([{members:[p('검증나A','77','3')]}],[p('검증나B','77기','3')]);assert.equal(bothMarked.missingRoom.length,1);
+});
+test('퇴학·퇴교와 참고 명단 별칭을 방 배정 누락에서 제외한다',()=>{
+ const f=fixture(),reference=[{name:'검증가A',cohort:'77기',company:'3',duty:'퇴 학'},{name:'검증나',cohort:'77기',company:'3',duty:'퇴교'},{name:'검증다B',cohort:'77기',company:'4'}];
+ const r=f.c.dormPlanCompareV318_([],reference,[{status:'퇴학',preview:[{value:'검증다'}]}]);assert.equal(r.missingRoom.length,0);assert.equal(r.excludedCount,3);
+});
 test('도면에 없는 신규 표 호실도 배치도에서 편집할 수 있고 원본 줄은 유지한다',()=>{
  const client=readFileSync(new URL('../scripts/dorm-plan-client.js.txt',import.meta.url),'utf8'),c=vm.createContext({});vm.runInContext(client,c);
  const room={building:'별관',floor:'1층',room:'132'},plan={layout:[{...room,room:'131',page:1,x:0,y:0}],rooms:[room]};
@@ -60,7 +72,7 @@ function fixture(){
   dormCheckV234_:(payload,old)=>({...payload,id:old?.id||'new-room'}),dormValuesV234_:r=>[r.id,r.building,r.floor,r.corridor,r.room,r.capacity,JSON.stringify(r.slots),'',r.verified?'Y':'N','new',r.femaleRoom?'Y':'N','',false,r.outsideCount,r.group],
   dormEnsureUnifiedV248_:ss=>books.find(b=>b.ss===ss).sh,ensureRows_:()=>{},
   dormUnifiedSaveV248_:(sh,r,members)=>{assert.equal(backups.length,2);writes.push({id:books.find(b=>b.sh===sh).ss.getId(),members:JSON.parse(JSON.stringify(members)),row:r.row});},protectLimitedSheetV226_:()=>{},DriveApp:{createFile:()=>({getId:()=> 'plan-file'})}
- });vm.runInContext(code,c);
+ });vm.runInContext(readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8')+'\n'+code,c);
  c.DriveApp.createFile=(_name,data)=>{savedPlans.push(JSON.parse(data));return {getId:()=> 'plan-file'};};
  return {c,books,writes,backups,properties,savedPlans,deny:()=>allowed=false};
 }

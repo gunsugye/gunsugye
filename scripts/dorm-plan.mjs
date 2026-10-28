@@ -14,6 +14,7 @@ export function dormPlanHtml(html){
  return html.replace('<section id="dormView" class="hidden">','<section id="dormView" class="hidden">'+panel);
 }
 export function dormPlanClient(js,client){
+ client=client.replaceAll('휴학·위탁','휴학·위탁·퇴학·퇴교').replace("[p.cohort+'기',p.company+'중대',p.name,p.location||'']","[String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기',String(p.company||'').normalize('NFKC').replace(/중대$/,'')+'중대',p.name,p.location||'']");
  const rowHook="+'</td><td>'+membersHTML+'</td><td>'";
  if(!js.includes(rowHook))throw Error('생활실 명단 편집 위치를 확인하세요.');
  js=js.replace(rowHook,"+'</td><td>'+membersHTML+(canChange?'<button type=\"button\" class=\"btn\" data-dorm-members-edit>배정 편집</button>':'')+'</td><td>'");

@@ -1,0 +1,25 @@
+function smartPersonIdentityV322_(p){
+ const normalize=v=>String(v||'').normalize('NFKC').replace(/\s+/g,'');
+ return [normalize(p.cohort).replace(/기$/,'').replace(/\.0$/,''),normalize(p.company).replace(/중대$/,''),normalize(p.name)];
+}
+function smartComparisonKeyV322_(left,right){
+ const groups=new Map(),stem=n=>n.replace(/([가-힣])[A-D]$/,'$1');
+ [left,right].forEach((people,side)=>people.forEach(p=>{const [c,u,n]=smartPersonIdentityV322_(p),base=[c,u,stem(n)].join('|');
+  if(!groups.has(base))groups.set(base,[new Set(),new Set()]);groups.get(base)[side].add(n);
+ }));
+ return p=>{const [c,u,n]=smartPersonIdentityV322_(p),s=stem(n),base=[c,u,s].join('|'),g=groups.get(base);
+  // A/B 자체가 서로 다른 두 사람을 나타낼 때는 합치지 않습니다.
+  return g&&g[0].size===1&&g[1].size===1&&(g[0].has(s)||g[1].has(s))?base:[c,u,n].join('|');
+ };
+}
+function smartInactiveKeysV322_(reference,hints,statuses,key){
+ const names=new Map(),excluded=new Set();
+ for(const p of reference){const name=smartPersonIdentityV322_(p)[2];for(const alias of new Set([name,name.replace(/([가-힣])[A-D]$/,'$1')])){if(!names.has(alias))names.set(alias,new Set());names.get(alias).add(key(p));}
+  if(statuses.some(s=>String(p.duty||'').replace(/\s+/g,'').includes(s)))excluded.add(key(p));
+ }
+ for(const row of (hints||[]).filter(r=>statuses.includes(r.status))){
+  const tokens=new Set(row.preview.flatMap(c=>String(c.value||'').normalize('NFKC').split(/[\s,，、;:()\[\]{}\/·.\-]+/).filter(Boolean)));
+  for(const [name,identities] of names)if(tokens.has(name)&&identities.size===1)excluded.add([...identities][0]);
+ }
+ return excluded;
+}
