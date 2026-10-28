@@ -1,6 +1,20 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+test('도면에 없는 신규 표 호실도 배치도에서 편집할 수 있고 원본 줄은 유지한다',()=>{
+ const client=readFileSync(new URL('../scripts/dorm-plan-client.js.txt',import.meta.url),'utf8'),c=vm.createContext({});vm.runInContext(client,c);
+ const room={building:'별관',floor:'1층',room:'132'},plan={layout:[{...room,room:'131',page:1,x:0,y:0}],rooms:[room]};
+ c.dormPlanAddUnplacedV320(plan);assert.equal(plan.layout.length,2);assert.equal(plan.layout[1].room,'132');assert.equal(plan.layout[1].unplaced,true);assert.equal(plan.layout[0].page,1);
+ c.dormPlanAddUnplacedV320(plan);assert.equal(plan.layout.length,2);
+});
+test('저장 성공 시 관련 화면을 무효화하고 실패한 저장은 갱신하지 않는다',async()=>{
+ const client=readFileSync(new URL('../scripts/dorm-plan-client.js.txt',import.meta.url),'utf8'),events=[],timers=[];let fail=false;
+ const node={addEventListener:(...args)=>events.push(args)};
+ const c=vm.createContext({$:()=>node,window:{addEventListener(){}},server:async()=>{if(fail)throw Error('저장 실패');return {ok:true};},dormOpenV234(){},setTimeout:f=>{timers.push(f);return timers.length;},clearTimeout(){},view:'dorm',repairLoaded:true,assetDataV244:{},laborResultV259:{},dormLoadedV234:true,rosterLoaded:true,supplyLoaded:true,eqLoaded:true,smartReportV253:{},departuresDataV305:{}});
+ vm.runInContext(client+';dormPlanInitV315();',c);await c.server('saveDormV234',{});
+ assert.equal(c.dormLoadedV234,false);assert.equal(c.assetDataV244,null);assert.equal(c.laborResultV259,null);assert.equal(c.repairLoaded,false);assert.equal(timers.length,1);
+ c.dormLoadedV234=true;fail=true;await assert.rejects(c.server('saveDormV234',{}));assert.equal(c.dormLoadedV234,true);assert.equal(timers.length,1);
+});
 test('스마트 당직에만 있는 휴학·위탁 인원을 제외하되 동명이인과 부분 이름은 남긴다',()=>{
  const f=fixture(),person=(name,company='1',duty='')=>({name,company,cohort:'78',duty});
  const reference=[person('검증가','1','휴 학'),person('검증나'),person('검증다'),person('검증다','2'),person('검증라'),person('검증마'),person('검증바','1','위탁')];

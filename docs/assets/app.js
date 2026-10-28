@@ -2472,7 +2472,7 @@ function dormRenderV234(){
   const members=Array.isArray(r.members)?r.members:[];
   const membersHTML=!canEdit?'<span class="dorm-roster-muted">권한 필요</span>':!members.length?'<span class="dorm-roster-muted">명단 미등록</span>':
     '<div class="dorm-member-list">'+members.map(p=>'<span class="dorm-member '+(matched.has([p.cohort,p.company,p.name].join('|'))?'dorm-member-out':'')+'" title="'+(p.verified?'배정 확인':'배정 확인 필요')+'">'+'<small>'+escapeH(p.cohort||'?')+'기 · '+escapeH(p.company||'?')+'중대 · </small>'+escapeH(p.name)+(matched.has([p.cohort,p.company,p.name].join('|'))?' <b>외출</b>':'')+(!p.verified?' <i>확인필요</i>':'')+'</span>').join('')+'</div>';
-  return '<tr data-dorm-id="'+escapeH(r.id)+'"><td>'+escapeH(r.floor)+' / '+escapeH(r.corridor)+'</td><td class="dorm-room-label">'+escapeH(r.room)+'</td><td>'+membersHTML+'</td><td>'+escapeH(r.purpose||'일반')+'</td><td>'+groupSel+'</td><td>'+countSel+'</td><td>'+femaleRoomCheck+'</td><td class="dorm-female-count">'+s.fem+'명</td><td>'+outSel+outDetail+'</td><td class="dorm-stay">'+(r.verified?s.remaining+'명':'미확인')+'</td><td><span class="dorm-status '+cls+'">'+status+'</span>'+(!r.verified&&canEdit?'<button type="button" class="btn btn-soft" data-dorm-empty style="font-size:11px;padding:5px;margin:4px">공실 확정</button>':'')+'</td><td><small data-dorm-save-state>'+(dormPendingV237.has(r.id)?'저장 중…':'저장됨')+'</small>'+ (canEdit?'<div><button class="btn" type="button" data-dorm-delete>삭제</button></div>':'')+'</td></tr>';
+  return '<tr data-dorm-id="'+escapeH(r.id)+'"><td>'+escapeH(r.floor)+' / '+escapeH(r.corridor)+'</td><td class="dorm-room-label">'+escapeH(r.room)+'</td><td>'+membersHTML+(canChange?'<button type="button" class="btn" data-dorm-members-edit>배정 편집</button>':'')+'</td><td>'+escapeH(r.purpose||'일반')+'</td><td>'+groupSel+'</td><td>'+countSel+'</td><td>'+femaleRoomCheck+'</td><td class="dorm-female-count">'+s.fem+'명</td><td>'+outSel+outDetail+'</td><td class="dorm-stay">'+(r.verified?s.remaining+'명':'미확인')+'</td><td><span class="dorm-status '+cls+'">'+status+'</span>'+(!r.verified&&canEdit?'<button type="button" class="btn btn-soft" data-dorm-empty style="font-size:11px;padding:5px;margin:4px">공실 확정</button>':'')+'</td><td><small data-dorm-save-state>'+(dormPendingV237.has(r.id)?'저장 중…':'저장됨')+'</small>'+ (canEdit?'<div><button class="btn" type="button" data-dorm-delete>삭제</button></div>':'')+'</td></tr>';
  };
  $('dormRoomRows').innerHTML=byBuilding.size?buildings.filter(b=>byBuilding.has(b)).map(b=>{
   const rooms=byBuilding.get(b),a=rooms.filter(r=>r.verified),occupied=a.reduce((n,r)=>n+dormStatsV234(r).occ,0),outed=a.reduce((n,r)=>n+dormStatsV234(r).outside,0);
@@ -4199,11 +4199,36 @@ async function dormPlanLoadV315(){
   dormPlanStatusV315('편성안 도면과 최신 배정명단을 불러오는 중…');
   const result=await server('getDormPlanV315');
   dormPlanV315=result;dormPlanDraftV315=null;dormPlanComparisonV318(result.comparison);
+  dormPlanAddUnplacedV320(result);
 
   dormPlanSetPagesV315();await dormPlanRenderV315();
   $('dormPlanPublishV315').hidden=true;
   dormPlanStatusV315('간편 배치도 · 호실을 누르면 번호·중대·기수·이름을 편집합니다. PDF의 배치 순서를 기준으로 정리했습니다.');
  }catch(e){dormPlanStatusV315('도면 조회 실패: '+e.message);}finally{dormPlanBusyV315=false;}
+}
+function dormPlanAddUnplacedV320(plan){
+ const known=new Set(plan.layout.map(dormPlanKeyV315));let page=Math.max(0,...plan.layout.map(r=>r.page));const groups=new Map();
+ for(const room of plan.rooms){if(known.has(dormPlanKeyV315(room)))continue;const group=[room.building,room.floor].join('|');
+  if(!groups.has(group))groups.set(group,++page);
+  plan.layout.push({building:room.building,floor:room.floor,room:room.room,page:groups.get(group),x:plan.layout.filter(r=>r.page===groups.get(group)).length,y:0,unplaced:true});
+ }
+}
+let dormSyncTimerV320=null,dormSyncNeededV320=false;
+function dormSyncScheduleV320(){
+ dormSyncNeededV320=true;clearTimeout(dormSyncTimerV320);
+ dormSyncTimerV320=setTimeout(async()=>{
+  if(view!=='dorm'||!ready)return;
+  if(dormPendingV237.size||dormPlanBusyV315||dormBulkBusyV237||dormPlanDraftV315||$('dormPlanRoomDialogV315').open){dormSyncScheduleV320();return;}
+  dormSyncNeededV320=false;await dormReloadV234();await dormPlanLoadV315();
+ },350);
+}
+async function dormTableEditV320(id){
+ if(!mustEdit())return;if(dormPendingV237.size)return toast('저장 중인 변경이 완료된 뒤 편집하세요.');
+ if(dormPlanDraftV315)return toast('PDF 검토를 적용하거나 다시 불러온 뒤 표를 편집하세요.');
+ await dormPlanLoadV315();if(!dormPlanV315)return;
+ const row=dormRoomsV234.find(r=>r.id===id),room=row&&dormPlanV315.rooms.find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(row));
+ if(!room)return toast('호실을 다시 불러온 뒤 편집하세요.');
+ dormPlanEditV315({building:room.building,floor:room.floor,room:room.room});
 }
 function dormPlanComparisonV318(result){
  const box=$('dormPlanComparisonV318');if(!box)return;
@@ -4323,6 +4348,31 @@ async function dormPlanPublishV315(){
  catch(e){alert('PDF 갱신 실패: '+e.message);}finally{$('dormPlanPublishV315').disabled=false;}
 }
 function dormPlanInitV315(){
+ const originalServer=server;
+ server=async function(method,...args){
+  const result=await originalServer(method,...args);
+  if(/^(save|delete|remove|import|apply|restore|unify|initialize|bulkSet|clear|set|add|move|change)/.test(method)){
+   repairLoaded=false;
+   if(/Dorm|LivingSource|SmartDuty/.test(method)){
+    if(typeof assetDataV244!=='undefined')assetDataV244=null;
+    if(typeof laborResultV259!=='undefined')laborResultV259=null;
+    dormLoadedV234=false;if(method!=='saveDormPlanV315')dormSyncScheduleV320();
+   }
+   if(/Roster|SmartDuty|Departure/.test(method)){if(view!=='roster')rosterLoaded=false;if(view!=='supply')supplyLoaded=false;smartReportV253=null;departuresDataV305=null;}
+   if(/Equipment/.test(method)&&view!=='equipment')eqLoaded=false;
+  }
+  return result;
+ };
+ $('dormRoomRows').addEventListener('click',e=>{
+  if(!e.target.closest('[data-dorm-members-edit],[data-dorm-empty]'))return;
+  e.stopImmediatePropagation();const row=e.target.closest('[data-dorm-id]');if(row)dormTableEditV320(row.dataset.dormId);
+ },true);
+ $('dormRoomRows').addEventListener('change',e=>{
+  if(!e.target.closest('[data-dorm-count]'))return;e.stopImmediatePropagation();
+  const row=e.target.closest('[data-dorm-id]');dormRenderV234();if(row)dormTableEditV320(row.dataset.dormId);
+ },true);
+ const originalOpen=dormOpenV234;
+ dormOpenV234=function(){originalOpen();if(dormSyncNeededV320||!dormPlanV315)dormSyncScheduleV320();};
  $('dormPlanMinusV316').onclick=()=>dormPlanSizeV316(1/1.2);$('dormPlanPlusV316').onclick=()=>dormPlanSizeV316(1.2);
  $('dormPlanWidthV316').onclick=()=>dormPlanSizeV316('width');$('dormPlanFitV316').onclick=()=>dormPlanSizeV316('page');
  window.addEventListener('resize',()=>dormPlanSizeV316());
