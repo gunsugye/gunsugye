@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
+import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync,existsSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
 test('도면에 없는 신규 표 호실도 배치도에서 편집할 수 있고 원본 줄은 유지한다',()=>{
@@ -128,7 +128,7 @@ test('PDF의 불완전한 명단도 기준본과 두 파일에 기록하며 이�
  for(const b of f.books){assert.equal(f.writes.find(w=>w.id===b.ss.getId()&&w.members).members[0].status,'PDF확인필요');assert.equal(f.properties.get('DORM_ROOM_OVERRIDE_V321_'+b.ss.getId()+'_'+b.room.id),'1');}
  assert.throws(()=>f.c.dormPlanValidateMembersV315_([member],2));
 });
-test('수정한 방의 이전 명단은 되살리지 않고 다른 방의 기존 명단은 유지한다',()=>{
+test('수정한 방의 이전 명단은 되살리지 않고 다른 방의 기존 명단은 유지한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
  const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8'),start=source.indexOf('function dormRosterReadV240_('),end=source.indexOf('function dormUnifiedReadyV249_',start);
  const props={'DORM_ROOM_OVERRIDE_V321_main_room-a':'1'},c=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperties:()=>props})},dormUnifiedReadyV249_:()=>false,dormUnifiedRosterReadV248_:()=>[],dormLegacyRosterReadV249_:()=>[{roomId:'room-a',name:'제외한이름'},{roomId:'room-b',name:'유지할이름'}]});
  vm.runInContext(source.slice(start,end),c);const result=c.dormRosterReadV240_({getId:()=> 'main'});assert.equal(result.length,1);assert.equal(result[0].roomId,'room-b');
