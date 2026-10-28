@@ -10,6 +10,7 @@ export function fixture(){
  vm.runInContext(server,c);return {c,rows,sh,writes:()=>writes};
 }
 const slots=()=>[{position:'1',status:'정상',details:'1번 메모',unavailable:false},{position:'2',status:'교체 필요',details:'2번 메모',unavailable:true}];
+test('공유 비품 저장은 잠금 안에서 배정 검증을 실행하고 관리자 권한 검사는 유지한다',()=>{const f=fixture();let locked=false;f.c.lockAndRun_=fn=>{locked=true;try{return fn();}finally{locked=false;}};assert.throws(()=>f.c.assetSaveRoomV331_('room',[{itemId:'desk',expectedUpdatedAt:'old',slots:slots()}],()=>{assert.equal(locked,true);throw Error('배정 변경');}),/배정 변경/);assert.equal(f.writes(),0);f.c.requireOwner_=()=>{throw Error('관리자 전용');};assert.throws(()=>f.c.saveDormInventoryRoomV244('room',[]),/관리자 전용/);assert.equal(f.writes(),0);});
 test('자리별 상태·메모·사용불가를 저장하고 기존 합산 기록을 보존한다',()=>{
  const {c,rows}=fixture();c.saveDormInventoryRoomV244('room',[{itemId:'desk',expectedUpdatedAt:'old',slots:slots()}]);
  const stored=JSON.parse(rows[0][9]);assert.deepEqual(stored.slots,slots());assert.equal(stored.legacy.details,'기존 합산 메모');

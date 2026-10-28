@@ -103,7 +103,7 @@ export async function handleRequest(request, env, fetcher = fetch) {
   headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
   headers['Access-Control-Max-Age'] = '600';
   const path = new URL(request.url).pathname;
-  if (!['/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
+  if (!['/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout','/personal/assets'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'POST 요청만 가능합니다.' });
   try {
@@ -155,14 +155,15 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
  }else{
   const token=/^Bearer (\S+)$/.exec(request.headers.get('authorization')||'')?.[1];actor=await verifySession(token,env.API_SHARED_SECRET);
   if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))throw new ApiError(403,'개인 조회 인증이 필요합니다.');
-  method=path==='/personal/me'?'pagesPersonalGet':'pagesPersonalLogout';
+  method=path==='/personal/me'?'pagesPersonalGet':path==='/personal/assets'?'pagesPersonalAssets':'pagesPersonalLogout';
+  if(path==='/personal/assets')args=[{changes:body.changes}];
  }
  const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args}),signature=await signPayload(payload,env.API_SHARED_SECRET);
  let response;try{response=await fetcher(env.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,signature}),redirect:'follow',signal:AbortSignal.timeout(85000)});}catch(_){throw new ApiError(504,'조회 서버 연결을 확인하세요.');}
  if(!response.ok)throw new ApiError(502,'조회 서버 연결을 확인하세요.');
  let result;try{result=await response.json();}catch(_){throw new ApiError(502,'조회 서버 응답을 확인하세요.');}
  if(!result||typeof result.ok!=='boolean')throw new ApiError(502,'조회 서버 응답을 확인하세요.');
- if(login&&result.ok){const {sessionId,expiresAt,sub}=result.result||{};if(!/^[0-9a-f-]{36}$/.test(sessionId||'')||!Number.isFinite(expiresAt)||expiresAt>Date.now()+16*60000||expiresAt<=Date.now()||!String(sub).startsWith('personal:'))throw new ApiError(502,'인증 서버를 확인하세요.');result.result={expiresAt,token:await sessionToken({email:'personal@portal.invalid',sub,sessionId,expiresAt},env.API_SHARED_SECRET)};}
+ if(login&&result.ok){const {sessionId,expiresAt,sub,preview}=result.result||{};if(!/^[0-9a-f-]{36}$/.test(sessionId||'')||!Number.isFinite(expiresAt)||expiresAt>Date.now()+16*60000||expiresAt<=Date.now()||!String(sub).startsWith('personal:'))throw new ApiError(502,'인증 서버를 확인하세요.');result.result={expiresAt,preview,token:await sessionToken({email:'personal@portal.invalid',sub,sessionId,expiresAt},env.API_SHARED_SECRET)};}
  return reply(result.ok?200:result.code==='SESSION_EXPIRED'?401:result.code==='RATE_LIMITED'?429:400,result);
 }
 

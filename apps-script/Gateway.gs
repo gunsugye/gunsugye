@@ -11,9 +11,9 @@ function doPost(e) {
       if(actor.email!=='personal@portal.invalid'||actor.sub!=='personal-login'||actor.sessionId)pagesForbidden_();
       return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal('login',actor.args[0])});
     }
-    if(['pagesPersonalGet','pagesPersonalLogout'].includes(actor.method)){
+    if(['pagesPersonalGet','pagesPersonalLogout','pagesPersonalAssets'].includes(actor.method)){
       if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))pagesForbidden_();
-      return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal(actor.method==='pagesPersonalGet'?'get':'logout')});
+      return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal(actor.method==='pagesPersonalGet'?'get':actor.method==='pagesPersonalAssets'?'assets':'logout',actor.args[0])});
     }
     if(actor.sub.startsWith('personal:')||actor.sub==='personal-login')pagesForbidden_();
     if (actor.sessionId) pagesCheckSession_(actor);

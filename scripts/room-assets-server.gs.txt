@@ -24,7 +24,11 @@ function assetSlotSummaryV311_(slots){
  confirmed:slots.every(x=>!!x.status),status,details:slots.filter(x=>x.details).map(x=>(x.position==='common'?'공용':x.position+'번')+': '+x.details).join('\n')};
 }
 function saveDormInventoryRoomV244(roomId,changes){
- requireOwner_();return lockAndRun_(()=>{
+ requireOwner_();return assetSaveRoomV331_(roomId,changes);
+}
+function assetSaveRoomV331_(roomId,changes,guard){
+ return lockAndRun_(()=>{
+  if(guard)guard();
   if(!Array.isArray(changes)||!changes.length||changes.length>100)throw Error('저장할 품목을 확인하세요.');
   const ss=spreadsheet_();roomId=String(roomId||'');
   if(!assetV244Rooms_(ss).some(x=>x.id===roomId))throw Error('생활실을 찾을 수 없습니다.');

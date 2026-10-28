@@ -133,8 +133,10 @@ ${requestPerformanceCode}
 const pagesMethods_ = {${uniqueMethods.join(',')}};
 return {
  personal: function(action,input){
+  if(action==='login'||action==='get'){pagesReadRequestV307_={};rosterRows_=pagesObjectMemoV307_(rosterRows_,pagesMemoEnabledV307_);}
   if(action==='login')return personalLoginV330_(input);
   if(action==='get')return personalDashboardV330_();
+  if(action==='assets')return personalSaveAssetsV331_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();
  },
