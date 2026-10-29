@@ -171,6 +171,12 @@ test('기준 방 없는 첫 공실도 호실 원본과 배치에 함께 기록�
  const anchor=f.savedPlans[0].layout.find(r=>r.room==='110');assert.equal(anchor.building,'정예 동관');assert.equal(anchor.floor,'1층');assert.equal(anchor.roomId,'new-room');
  const source=f.writes.find(w=>w.col===1).values[0];assert.equal(source[4],'110');assert.deepEqual(JSON.parse(source[6]).map(s=>s.occupied),[false,false]);assert.equal(source[8],'Y');
 });
+test('배정 원본이 없는 PDF 공실도 이동 기준 방으로 사용할 수 있다',()=>{
+ const f=fixture(),room=f.books[0].room,target={building:room.building,floor:room.floor,room:'345'};
+ f.c.DORM_PLAN_DEFAULT_V315_.layout=[{...room,page:8,x:.2,y:.1},{...target,page:8,x:.3,y:.1}];
+ const plan=f.c.getDormPlanV315();f.c.saveDormPlanV315({version:plan.version,changes:[],placement:{room,target,after:true}});
+ assert.deepEqual(f.savedPlans[0].layout.sort((a,b)=>a.x-b.x).map(r=>r.room),['345','343-3']);assert.equal(f.writes.length,0);
+});
 test('확인한 두 사람의 원본 정정만 적용하며 다른 호실의 동명이인은 바꾸지 않는다',()=>{
  const fix={building:'정예 동관',floor:'3층',fromRoom:'343-4',room:'343-3',cohort:'75',company:'3',group:'3중대',names:['검증가','검증나']};
  const rows=[['정예 동관','3층','복도','343-4','76','4','검증나','N','확인'],['정예 본관','2층','복도','259','76','4','검증나','N','확인']];

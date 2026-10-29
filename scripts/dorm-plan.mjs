@@ -27,6 +27,7 @@ export function dormPlanClient(js,client){
  return js.slice(0,hook)+'\n'+dormMemberCohortsV343.toString()+'\n'+dormPdfNamesV343.toString()+'\n'+dormPdfMembersV343.toString()+'\n'+client+'\ndormPlanInitV315();\n'+js.slice(hook);
 }
 export const dormPlanCSS=`
+.dorm-moving-v346{opacity:.55}.dorm-drop-before-v346{box-shadow:-6px 0 #f28a20!important}.dorm-drop-after-v346{box-shadow:6px 0 #f28a20!important}.dorm-drag-v344{user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 .dorm-drag-v344{display:block;flex:none;padding:5px;background:#e5edfa;color:#33547b;font-size:11px;cursor:grab;line-height:1.2}.dorm-plan-room:active .dorm-drag-v344{cursor:grabbing}
 .dorm-plan-panel [hidden]{display:none!important}
 .dorm-plan-panel .dorm-plan-canvas{min-width:0;--plan-font:10px}.dorm-plan-panel .dorm-plan-room,.dorm-plan-panel .dorm-plan-room b,.dorm-plan-panel .dorm-plan-person{font-size:var(--plan-font)}.dorm-plan-panel .dorm-plan-person small{font-size:calc(var(--plan-font)*.8)}.dorm-plan-panel .dorm-plan-scroll{height:70vh;max-height:78vh}.dorm-plan-controls label{display:flex;align-items:center;gap:8px}.dorm-plan-controls output{min-width:48px;text-align:center}

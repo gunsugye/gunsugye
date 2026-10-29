@@ -128,7 +128,7 @@ function saveDormPlanV315(payload){
   if(!next)next={...current,layout:current.layout.map(r=>({...r})),version:Utilities.getUuid()};
   if(payload.placement){
    const place=payload.placement,key=dormPlanKeyV315_(place.room||{}),targetKey=dormPlanKeyV315_(place.target||{});
-   const room=canonical.find(r=>dormPlanKeyV315_(r)===key);let target=canonical.find(r=>dormPlanKeyV315_(r)===targetKey);
+   const room=canonical.find(r=>dormPlanKeyV315_(r)===key);let target=canonical.find(r=>dormPlanKeyV315_(r)===targetKey)||next.layout.find(r=>dormPlanKeyV315_(r)===targetKey);
    if(!room||(!target&&!(place.create&&place.target===null))||typeof place.after!=='boolean')throw Error('이동할 방과 기준 방을 확인하세요.');
    if(place.create&&(!pending.some(p=>p.key===key)||books.some(b=>b.rows.some(r=>dormPlanKeyV315_(r)===key))))throw Error('이미 등록된 방입니다. 기존 방을 이동하세요.');
    if(!target){const anchors=next.layout.filter(r=>r.building===room.building&&r.floor===room.floor).sort((a,b)=>a.page-b.page||a.y-b.y||a.x-b.x);target=anchors[anchors.length-1];}

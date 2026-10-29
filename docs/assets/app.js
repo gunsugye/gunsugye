@@ -4431,7 +4431,7 @@ function dormPlanInitV315(){
  $('dormPlanRoomDialogV315').addEventListener('cancel',e=>{if(!confirm('입력 중인 편집을 닫을까요?'))e.preventDefault();});
 }
 
-let dormPlacementBusyV344=false,dormPlacementSkipClickV344=false;
+let dormPlacementBusyV344=false,dormPlacementSkipClickV344=false,dormPlacementRoomV346=null;
 async function dormPlacementSaveV344(room,target,after,create=false){
  if(dormPlacementBusyV344||dormPlanDraftV315||dormPlanBusyV315)throw Error('불러오기·PDF 검토를 마친 뒤 이동하세요.');
  dormPlacementBusyV344=true;
@@ -4452,10 +4452,15 @@ function dormPlacementWireV344(layout){
   button.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move';};
   button.ondrop=async e=>{e.preventDefault();const from=layout[Number(e.dataTransfer.getData('text/plain'))];if(!from||from===room)return;const rect=button.getBoundingClientRect();try{await dormPlacementSaveV344(from,room,e.clientX>rect.left+rect.width/2);}catch(error){toast(error.message);}};
   const handle=document.createElement('span');handle.className='dorm-drag-v344';handle.textContent='↔ 이동';handle.style.touchAction='none';button.append(handle);
+  handle.onclick=e=>{e.preventDefault();e.stopPropagation();};
+  handle.tabIndex=0;handle.setAttribute('role','button');handle.setAttribute('aria-label',room.room+'호 이동');handle.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();dormPlacementOpenMoveV346(room);}};
   let start=null;
-  handle.onpointerdown=e=>{if(dormPlanDraftV315||dormPlacementBusyV344)return;e.stopPropagation();start={x:e.clientX,y:e.clientY};handle.setPointerCapture(e.pointerId);};
-  handle.onpointerup=async e=>{if(!start)return;const moved=Math.hypot(e.clientX-start.x,e.clientY-start.y)>8;start=null;if(!moved)return;e.preventDefault();dormPlacementSkipClickV344=true;const targetButton=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-plan-room]');if(!targetButton)return;const target=layout[Number(targetButton.dataset.planRoom)];if(target===room)return;const rect=targetButton.getBoundingClientRect();try{await dormPlacementSaveV344(room,target,e.clientX>rect.left+rect.width/2);}catch(error){toast(error.message);}};
-  handle.onpointercancel=()=>{start=null;};
+  handle.ondragstart=e=>{e.preventDefault();e.stopPropagation();};
+  handle.onpointerdown=e=>{if(dormPlanDraftV315||dormPlacementBusyV344)return;e.preventDefault();e.stopPropagation();start={x:e.clientX,y:e.clientY};handle.setPointerCapture(e.pointerId);button.classList.add('dorm-moving-v346');};
+  handle.onpointermove=e=>{if(!start)return;e.preventDefault();root.querySelectorAll('.dorm-drop-before-v346,.dorm-drop-after-v346').forEach(b=>b.classList.remove('dorm-drop-before-v346','dorm-drop-after-v346'));const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-plan-room]');if(target&&target!==button){const rect=target.getBoundingClientRect();target.classList.add(e.clientX>rect.left+rect.width/2?'dorm-drop-after-v346':'dorm-drop-before-v346');}const scroll=$('dormPlanHotspotsV315').closest('.dorm-plan-scroll');if(scroll){const rect=scroll.getBoundingClientRect();if(e.clientX>rect.right-35)scroll.scrollLeft+=20;else if(e.clientX<rect.left+35)scroll.scrollLeft-=20;}};
+  handle.onpointerup=async e=>{if(!start)return;const moved=Math.hypot(e.clientX-start.x,e.clientY-start.y)>8;start=null;if(!moved){await dormPlacementOpenMoveV346(room);return;}e.preventDefault();dormPlacementSkipClickV344=true;const targetButton=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-plan-room]');if(!targetButton)return;const target=layout[Number(targetButton.dataset.planRoom)];if(target===room)return;const rect=targetButton.getBoundingClientRect();try{await dormPlacementSaveV344(room,target,e.clientX>rect.left+rect.width/2);}catch(error){toast(error.message);}};
+  const pointerUp=handle.onpointerup;handle.onpointerup=async e=>{button.classList.remove('dorm-moving-v346');root.querySelectorAll('.dorm-drop-before-v346,.dorm-drop-after-v346').forEach(b=>b.classList.remove('dorm-drop-before-v346','dorm-drop-after-v346'));await pointerUp(e);};
+  handle.onpointercancel=()=>{start=null;button.classList.remove('dorm-moving-v346');root.querySelectorAll('.dorm-drop-before-v346,.dorm-drop-after-v346').forEach(b=>b.classList.remove('dorm-drop-before-v346','dorm-drop-after-v346'));};
  }
 }
 function dormPlacementTargetsV344(){
@@ -4465,17 +4470,24 @@ function dormPlacementTargetsV344(){
  return rows;
 }
 function dormPlacementInitV344(){
+ const openAddReset=()=>{dormPlacementRoomV346=null;$('dormAddDialogV344').querySelector('h2').textContent='방 추가';$('dormAddDialogV344').querySelector('p').textContent='공실로 추가한 뒤 배정자를 입력할 수 있습니다.';$('dormAddSaveV344').textContent='공실 추가';$('dormAddNumberV344').readOnly=false;for(const id of ['dormAddBuildingV344','dormAddFloorV344'])$(id).disabled=false;};
  $('dormAddOpenV344').onclick=async()=>{if(!mustEdit())return;if(dormPlanDraftV315)return toast('PDF 검토를 마친 뒤 추가하세요.');if(!dormPlanV315)await dormPlanLoadV315();if(!dormPlanV315)return;const page=Number($('dormPlanPageV315').value),r=dormPlanV315.layout.find(r=>r.page===page);if(r){$('dormAddBuildingV344').value=r.building;$('dormAddFloorV344').value=r.floor;}$('dormAddNumberV344').value='';$('dormAddErrorV344').textContent='';dormPlacementTargetsV344();$('dormAddDialogV344').showModal();};
+ const openAdd=$('dormAddOpenV344').onclick;$('dormAddOpenV344').onclick=async()=>{openAddReset();await openAdd();};
  for(const id of ['dormAddBuildingV344','dormAddFloorV344'])$(id).onchange=dormPlacementTargetsV344;
  $('dormAddCloseV344').onclick=()=>$('dormAddDialogV344').close();
  $('dormAddSaveV344').onclick=async()=>{
   const button=$('dormAddSaveV344');if(button.disabled)return;
   const room={building:$('dormAddBuildingV344').value,floor:$('dormAddFloorV344').value,room:$('dormAddNumberV344').value.normalize('NFKC').trim()};
   const rows=dormPlanV315.layout.filter(r=>r.building===room.building&&r.floor===room.floor&&!r.unplaced),target=$('dormAddTargetV344').value===''?null:rows[Number($('dormAddTargetV344').value)];
+  if(dormPlacementRoomV346){if(!target||dormPlanKeyV315(target)===dormPlanKeyV315(room))return $('dormAddErrorV344').textContent='다른 기준 방을 선택하세요.';button.disabled=true;try{await dormPlacementSaveV344(dormPlacementRoomV346,target,$('dormAddAfterV344').value==='true');$('dormAddDialogV344').close();}catch(e){$('dormAddErrorV344').textContent=e.message;}finally{button.disabled=false;}return;}
   if(!/^\d{3}(?:-[1-8])?$/.test(room.room))return $('dormAddErrorV344').textContent='호실을 입력하세요. 예: 110, 110-2';
   if(dormPlanV315.rooms.some(r=>dormPlanKeyV315(r)===dormPlanKeyV315(room)))return $('dormAddErrorV344').textContent='이미 등록된 방입니다. 배치도에서 이동하세요.';
   button.disabled=true;try{await dormPlacementSaveV344(room,target,$('dormAddAfterV344').value==='true',true);$('dormAddDialogV344').close();}catch(e){$('dormAddErrorV344').textContent=e.message;}finally{button.disabled=false;}
  };
+}
+async function dormPlacementOpenMoveV346(room){
+ await $('dormAddOpenV344').onclick();if(!$('dormAddDialogV344').open)return;dormPlacementRoomV346=room;
+ $('dormAddDialogV344').querySelector('h2').textContent='방 이동';$('dormAddSaveV344').textContent='위치 저장';$('dormAddBuildingV344').value=room.building;$('dormAddFloorV344').value=room.floor;$('dormAddNumberV344').value=room.room;$('dormAddNumberV344').readOnly=true;for(const id of ['dormAddBuildingV344','dormAddFloorV344'])$(id).disabled=true;dormPlacementTargetsV344();$('dormAddDialogV344').querySelector('p').textContent='기준 방과 앞·뒤 위치를 선택하세요.';
 }
 
 dormPlacementInitV344();
