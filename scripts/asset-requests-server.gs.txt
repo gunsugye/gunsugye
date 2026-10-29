@@ -1,0 +1,32 @@
+const ASSET_REQUEST_TAB_V336_='생활실비품_수정요청';
+function assetRequestTabV336_(ss,create){let sh=ss.getSheetByName(ASSET_REQUEST_TAB_V336_);if(!sh&&create){sh=ss.insertSheet(ASSET_REQUEST_TAB_V336_);setupTab_(sh,['요청ID','요청시각','처리상태','요청JSON','처리시각','처리자','처리메모']);}return sh;}
+function assetRequestRowsV336_(ss){const sh=assetRequestTabV336_(ss,false);if(!sh||sh.getLastRow()<2)return [];return sh.getRange(2,1,sh.getLastRow()-1,7).getDisplayValues().map((r,i)=>{let data;try{data=JSON.parse(r[3]);}catch(_){throw Error('수정 요청 기록이 손상되었습니다.');}return {...data,id:r[0],createdAt:r[1],status:r[2],resolvedAt:r[4],resolvedBy:r[5],note:r[6],row:i+2};});}
+function assetRequestCreateV336_(ss,person,room,changes){
+ if(!Array.isArray(changes)||!changes.length||changes.length>100)throw Error('요청할 품목을 확인하세요.');
+ const available=personalAssetsV331_(ss,room),used=new Set();
+ const normalized=changes.map(raw=>{const item=available?.items.find(i=>i.id===raw.itemId);if(!item||used.has(item.id))throw Error('요청 품목을 확인하세요.');used.add(item.id);if(String(raw.expectedUpdatedAt||'')!==item.updatedAt)throw Error('비품 기록이 변경되었습니다. 새로고침 후 요청하세요.');
+  const positions=raw.slots?.map(s=>s.position);if(!positions?.length||positions.some(p=>!item.slots.some(s=>s.position===p)))throw Error('본인 자리 또는 공용 비품만 요청할 수 있습니다.');
+  const slots=assetValidateSlotsV311_(raw.slots,positions);return {itemId:item.id,name:item.name,slots,beforeSlots:positions.map(p=>item.slots.find(s=>s.position===p))};});
+ if(normalized.every(c=>JSON.stringify(c.slots)===JSON.stringify(c.beforeSlots)))throw Error('변경한 내용이 없습니다.');
+ const signature=personalHashV330_([person.id,room.id,room.personalPosition,normalized]);const pending=assetRequestRowsV336_(ss).find(r=>r.status==='대기'&&r.signature===signature);
+ if(pending)return {requested:true,requestId:pending.id,assets:personalAssetsV331_(ss,room,person.id)};
+ const data={personId:person.id,requester:{name:person.name,cohort:person.cohort,company:person.company},roomId:room.id,room:{building:room.building,floor:room.floor,room:room.room},position:room.personalPosition,changes:normalized,signature};
+ const json=JSON.stringify(data);if(json.length>20000)throw Error('요청 내용이 너무 깁니다. 품목을 나누어 요청하세요.');const sh=assetRequestTabV336_(ss,true),id=Utilities.getUuid();sh.appendRow([id,iso_(),'대기',json,'','','']);return {requested:true,requestId:id,assets:personalAssetsV331_(ss,room,person.id)};
+}
+function assetRequestAdminV336_(){const c=requireOwner_();if(!c.canManageUsers&&c.role!=='전체 편집자')throw Error('관리자만 수정 요청을 처리할 수 있습니다.');}
+function getDormInventoryRequestsV336(){assetRequestAdminV336_();const ss=spreadsheet_(),records=assetV244Records_(ss.getSheetByName(ROOM_ASSET_V244.RECORDS));return {requests:assetRequestRowsV336_(ss).filter((r,i,all)=>r.status==='대기'||i>=all.length-100).reverse().map(r=>({...r,changes:r.changes.map(c=>({...c,currentSlots:records.find(x=>x.roomId===r.roomId&&x.itemId===c.itemId)?.slots||[]}))}))};}
+function resolveDormInventoryRequestV336(id,action,edits,note){
+ assetRequestAdminV336_();return lockAndRun_(()=>{const ss=spreadsheet_(),request=assetRequestRowsV336_(ss).find(r=>r.id===id);if(!request)throw Error('요청을 찾을 수 없습니다.');if(request.status!=='대기')throw Error('이미 처리한 요청입니다. 새로고침하세요.');if(!['confirm','apply'].includes(action))throw Error('처리 방법을 확인하세요.');
+  note=String(note||'').trim();if(note.length>500)throw Error('처리 메모는 500자 이내로 입력하세요.');let applied=null,acceptedEdits=[];
+  if(action==='apply'){
+   const people=rosterRows_(rosterRequired_(ss)).filter(p=>p.id===request.personId),person=people.length===1?people[0]:null,room=person&&personalRoomV331_(ss,person);if(!room||room.id!==request.roomId||room.personalPosition!==request.position)throw Error('요청자의 생활실 또는 자리가 변경되었습니다. 확인 완료로 처리 후 다시 요청받으세요.');
+   if(!Array.isArray(edits)||edits.length!==request.changes.length)throw Error('수정할 품목을 확인하세요.');const catalog=assetV244Catalog_(ss.getSheetByName(ROOM_ASSET_V244.CATALOG)),records=assetV244Records_(ss.getSheetByName(ROOM_ASSET_V244.RECORDS)),used=new Set();
+   const merged=edits.map(edit=>{const original=request.changes.find(c=>c.itemId===edit.itemId),item=catalog.find(i=>i.id===edit.itemId);if(!original||!item||used.has(item.id))throw Error('품목이 변경되었습니다.');used.add(item.id);
+    const positions=original.slots.map(s=>s.position),slots=assetValidateSlotsV311_(edit.slots,positions),rec=records.find(r=>r.roomId===room.id&&r.itemId===item.id),current=rec?.slots||assetPositionsV311_(item.name).map(position=>({position,status:'',details:'',unavailable:false}));
+    for(const before of original.beforeSlots){const now=current.find(s=>s.position===before.position),desired=slots.find(s=>s.position===before.position);if(JSON.stringify(now)!==JSON.stringify(before)&&JSON.stringify(now)!==JSON.stringify(desired))throw Error('요청 이후 해당 자리 기록이 변경되었습니다. 새 요청이 필요합니다.');}
+    acceptedEdits.push({itemId:item.id,slots});return {itemId:item.id,expectedUpdatedAt:rec?.updatedAt||'',slots:current.map(s=>slots.find(x=>x.position===s.position)||s)};
+   });if(JSON.stringify({...request,appliedEdits:acceptedEdits}).length>44000)throw Error('반영할 세부사항이 너무 깁니다. 내용을 줄여주세요.');applied=assetSaveRoomLockedV336_(room.id,merged);
+  }
+  const status=action==='apply'?'반영 완료':'확인 완료',saved={...request,appliedEdits:action==='apply'?acceptedEdits:null};delete saved.row;assetRequestTabV336_(ss,false).getRange(request.row,1,1,7).setValues([[id,request.createdAt,status,JSON.stringify(saved),iso_(),safeCell_(config_().email),safeCell_(note)]]);return {ok:true,status,applied};
+ });
+}

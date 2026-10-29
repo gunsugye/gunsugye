@@ -8,7 +8,7 @@ const gateway = readFileSync(new URL('../apps-script/Gateway.gs', import.meta.ur
 const legacy = readFileSync(new URL('../apps-script/Legacy.gs', import.meta.url), 'utf8');
 const secret = 'test-secret-with-more-than-thirty-two-characters';
 test('개인 조회 인증 주체는 관리자 API와 일반 세션 생성에 접근할 수 없다',()=>{
- const f=fixture();for(const method of ['getBootstrap','listFullEditorsV281','pagesSessionCreate','readCompressedV282'])assert.equal(f.rpc(f.signed('personal@portal.invalid',method,[],{sub:'personal:a',sessionId:randomUUID()})).code,'FORBIDDEN');
+ const f=fixture();for(const method of ['getBootstrap','listFullEditorsV281','pagesSessionCreate','readCompressedV282','getDormInventoryRequestsV336','resolveDormInventoryRequestV336'])assert.equal(f.rpc(f.signed('personal@portal.invalid',method,[],{sub:'personal:a',sessionId:randomUUID()})).code,'FORBIDDEN');
  assert.equal(f.rpc(f.signed('owner@gmail.com','pagesPersonalGet',[],{sub:'google123',sessionId:randomUUID()})).code,'FORBIDDEN');
 });
 test('실제 Gateway와 Legacy의 개인 인증·본인 조회·종료가 정상 동작한다',()=>{

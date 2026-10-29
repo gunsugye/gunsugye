@@ -29,6 +29,10 @@ function saveDormInventoryRoomV244(roomId,changes){
 function assetSaveRoomV331_(roomId,changes,guard){
  return lockAndRun_(()=>{
   if(guard)guard();
+  return assetSaveRoomLockedV336_(roomId,changes);
+ });
+}
+function assetSaveRoomLockedV336_(roomId,changes){
   if(!Array.isArray(changes)||!changes.length||changes.length>100)throw Error('저장할 품목을 확인하세요.');
   const ss=spreadsheet_();roomId=String(roomId||'');
   if(!assetV244Rooms_(ss).some(x=>x.id===roomId))throw Error('생활실을 찾을 수 없습니다.');
@@ -51,5 +55,4 @@ function assetSaveRoomV331_(roomId,changes,guard){
   pending.filter(x=>x.row).forEach(x=>sh.getRange(x.row,1,1,10).setValues([x.values]));
   const adds=pending.filter(x=>!x.row);if(adds.length){const start=sh.getLastRow()+1;ensureRows_(sh,start+adds.length-1);sh.getRange(start,1,adds.length,10).setValues(adds.map(x=>x.values));}
   return {ok:true,saved:pending.length,roomId,updatedAt:now};
- });
 }
