@@ -18,7 +18,7 @@ export function requestObjectMemo(original, enabled) {
   };
 }
 export const requestPerformanceCode = `
-const pagesReadMethodsV307_=new Set(['getBootstrap','getRosterData','getEquipmentData','getSupplyCatalog','getSupplyItemData','getUniformV278','getRepairDashboardV219','getSmartDutyExceptionV253','getDepartureDashboardV305']);
+const pagesReadMethodsV307_=new Set(['getBootstrap','getRosterData','getEquipmentData','getSupplyCatalog','getSupplyItemData','getUniformV278','getRepairDashboardV219','getSmartDutyExceptionV253','getDepartureDashboardV305','getDormInventoryV244','getDormInventoryRequestsV336']);
 let pagesReadRequestV307_=false;
 const pagesMemoV307_=${requestMemo.toString()};
 const pagesObjectMemoV307_=${requestObjectMemo.toString()};
@@ -30,4 +30,13 @@ accessProfilesV284_=pagesMemoV307_(accessProfilesV284_,pagesMemoEnabledV307_);
 accessPolicyV284_=pagesMemoV307_(accessPolicyV284_,pagesMemoEnabledV307_);
 spreadsheet_=pagesMemoV307_(spreadsheet_,pagesMemoEnabledV307_);
 wxPages_=pagesObjectMemoV307_(wxPages_,pagesMemoEnabledV307_);
+function pagesSupplySheetsV337_(ss){return ss.getSheets();}
+pagesSupplySheetsV337_=pagesObjectMemoV307_(pagesSupplySheetsV337_,pagesMemoEnabledV307_);
+if(typeof rosterRequired_==='function')rosterRequired_=pagesObjectMemoV307_(rosterRequired_,pagesMemoEnabledV307_);
+if(typeof rosterRows_==='function')rosterRows_=pagesObjectMemoV307_(rosterRows_,pagesMemoEnabledV307_);
+if(typeof supplyRegistryItems_==='function')supplyRegistryItems_=pagesObjectMemoV307_(supplyRegistryItems_,pagesMemoEnabledV307_);
+if(typeof dormRosterReadV240_==='function')dormRosterReadV240_=pagesObjectMemoV307_(dormRosterReadV240_,pagesMemoEnabledV307_);
+if(typeof assetV244Catalog_==='function')assetV244Catalog_=pagesObjectMemoV307_(assetV244Catalog_,pagesMemoEnabledV307_);
+if(typeof assetV244Records_==='function')assetV244Records_=pagesObjectMemoV307_(assetV244Records_,pagesMemoEnabledV307_);
+if(typeof assetRequestRowsV336_==='function')assetRequestRowsV336_=pagesObjectMemoV307_(assetRequestRowsV336_,pagesMemoEnabledV307_);
 `;

@@ -118,6 +118,7 @@ const uniqueMethods = [...new Set(methods)].sort();
 const missing = [...js.matchAll(/server\(\s*['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]).filter(name => !uniqueMethods.includes(name));
 if (missing.length) throw new Error(`연결되지 않은 화면 API: ${[...new Set(missing)].join(', ')}`);
 legacy = legacy.replace(/Session\.get(?:Effective|Active)User\(\)\.getEmail\(\)/g, 'pagesEmail_()');
+legacy = legacy.replace('const sh=ss.getSheets().find(x=>x.getSheetId()===item.sheetId);','const sh=pagesSupplySheetsV337_(ss).find(x=>x.getSheetId()===item.sheetId);');
 legacy = legacy.replace(/PropertiesService\.getUserProperties\(\)/g, 'pagesUserProperties_()');
 legacy = legacy.replace(/(['"])trainingScheduledHandoffV227\1/g, "'pagesTrainingScheduled_'");
 legacy = legacy.replace(/(['"])surveysOnSubmitV299\1/g, "'pagesSurveySubmit_'");
@@ -139,9 +140,10 @@ ${requestPerformanceCode}
 const pagesMethods_ = {${uniqueMethods.join(',')}};
 return {
  personal: function(action,input){
-  if(action==='login'||action==='get'){pagesReadRequestV307_={};rosterRows_=pagesObjectMemoV307_(rosterRows_,pagesMemoEnabledV307_);}
+  if(['login','get','details'].includes(action)){pagesReadRequestV307_={};}
   if(action==='login')return personalLoginV330_(input);
-  if(action==='get')return personalDashboardV330_();
+  if(action==='get')return personalDashboardV330_(false);
+  if(action==='details')return personalDetailsV337_();
   if(action==='assets')return personalSaveAssetsV331_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();

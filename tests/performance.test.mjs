@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {requestMemo,requestObjectMemo,requestPerformanceCode} from '../scripts/performance.mjs';
+test('품목이 많아도 품목 목록·전체 시트 목록·명단 헤더와 본문은 요청당 한 번 읽는다',()=>{const counts={registry:0,sheets:0,schema:0,roster:0},sheet={},ss={getSheets:()=>{counts.sheets++;return [];}};const context=vm.createContext({config_:()=>({}),fullEditorsV281_:()=>[],limitedEditorEmailsV226_:()=>[],accessProfilesV284_:()=>({}),accessPolicyV284_:()=>({}),spreadsheet_:()=>ss,wxPages_:()=>[],rosterRequired_:()=>{counts.schema++;return sheet;},rosterRows_:()=>{counts.roster++;return [];},supplyRegistryItems_:()=>{counts.registry++;return [];}});vm.runInContext(requestPerformanceCode+`\nglobalThis.run=()=>{pagesReadRequestV307_={};for(let i=0;i<20;i++){const ss=spreadsheet_();supplyRegistryItems_(ss);pagesSupplySheetsV337_(ss);rosterRows_(rosterRequired_(ss));}};`,context);context.run();assert.deepEqual(counts,{registry:1,sheets:1,schema:1,roster:1});context.run();assert.deepEqual(counts,{registry:2,sheets:2,schema:2,roster:2});});
 
 test('중복 설정 조회를 요청 안에서만 합치며 쓰기와 다음 요청은 다시 읽는다',()=>{
  let scope={},reads=0,current='old';const read=requestMemo(()=>{reads++;return current;},()=>scope);

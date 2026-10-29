@@ -6,7 +6,7 @@ function assetRequestCreateV336_(ss,person,room,changes){
  const available=personalAssetsV331_(ss,room),used=new Set();
  const normalized=changes.map(raw=>{const item=available?.items.find(i=>i.id===raw.itemId);if(!item||used.has(item.id))throw Error('요청 품목을 확인하세요.');used.add(item.id);if(String(raw.expectedUpdatedAt||'')!==item.updatedAt)throw Error('비품 기록이 변경되었습니다. 새로고침 후 요청하세요.');
   const positions=raw.slots?.map(s=>s.position);if(!positions?.length||positions.some(p=>!item.slots.some(s=>s.position===p)))throw Error('본인 자리 또는 공용 비품만 요청할 수 있습니다.');
-  const slots=assetValidateSlotsV311_(raw.slots,positions);return {itemId:item.id,name:item.name,slots,beforeSlots:positions.map(p=>item.slots.find(s=>s.position===p))};});
+  if(raw.slots.some(s=>canonicalRepairStateV216_(s.status||'')==='수리 필요(미보고)'))throw Error('수리는 수리필요(보고완료)로 요청하세요.');const slots=assetValidateSlotsV311_(raw.slots,positions);return {itemId:item.id,name:item.name,slots,beforeSlots:positions.map(p=>item.slots.find(s=>s.position===p))};});
  if(normalized.every(c=>JSON.stringify(c.slots)===JSON.stringify(c.beforeSlots)))throw Error('변경한 내용이 없습니다.');
  const signature=personalHashV330_([person.id,room.id,room.personalPosition,normalized]);const pending=assetRequestRowsV336_(ss).find(r=>r.status==='대기'&&r.signature===signature);
  if(pending)return {requested:true,requestId:pending.id,assets:personalAssetsV331_(ss,room,person.id)};
