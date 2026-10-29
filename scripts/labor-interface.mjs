@@ -6,6 +6,8 @@ export function distributionExplanation(group,divisor){
  return remainder+'명 · '+approximate+portion+'개';
 }
 export function laborInterfaceJs(js){
+ js=js.replace("p.cohort+'기 · '","String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기 · '")
+ .replace("(p.cohort||'—')+'기 · '","String(p.cohort||'—').normalize('NFKC').replace(/기$/,'')+'기 · '");
  const stats=js.indexOf(" $('laborStatsV259').innerHTML="),review=js.indexOf(' // v2.97',stats);
  if(stats<0||review<0)throw Error('사역 요약 표시 위치를 확인하세요.');
  js=js.slice(0,stats)+' laborSummaryV324(result);\n'+js.slice(review);

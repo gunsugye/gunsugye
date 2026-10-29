@@ -3133,7 +3133,7 @@ function laborShowV259(result){
  $('laborPairPickStatusV264').textContent=denom===1?'1인 1개: 짝 지정이 필요하지 않습니다.':'자동 짝 배정 결과입니다. 바꾸려는 이름 또는 미지정을 눌러 같은 관 생도를 체크하세요.';
  laborPairPopupV268=null;
  const people=new Map(singles.map(p=>[p.key,p]));
- const displayName=k=>{const p=people.get(k);return p?escapeH(p.cohort+'기 · '+laborCompanyLabelV261(p.company)+' · '+p.name):escapeH(k);};
+ const displayName=k=>{const p=people.get(k);return p?escapeH(String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기 · '+laborCompanyLabelV261(p.company)+' · '+p.name):escapeH(k);};
  const groupsByBuilding=new Map();
  const placeRow=(building,rec)=>{if(!groupsByBuilding.has(building))groupsByBuilding.set(building,[]);groupsByBuilding.get(building).push(rec);};
  (pairs.pairs||[]).forEach(pair=>{
@@ -3195,7 +3195,7 @@ function laborShowReviewListV297(key){
  const list=Array.isArray(data[key])?data[key]:[];
  if(!list.length){box.innerHTML='<p class="labor-review-empty-v297">'+escapeH(match[1])+' 해당 인원이 없습니다.</p>';return;}
  box.innerHTML='<div class="labor-review-list-head-v297"><b>'+escapeH(match[1])+' · '+list.length+'명</b><span>기수 / 중대 / 이름 / 호실 / 확인 사유</span></div>'+list.map(p=>
-  '<div class="labor-review-person-v297"><strong>'+escapeH((p.cohort||'—')+'기 · '+laborCompanyLabelV261(p.company)+' · '+(p.name||'이름 없음'))+'</strong>'+
+  '<div class="labor-review-person-v297"><strong>'+escapeH(String(p.cohort||'—').normalize('NFKC').replace(/기$/,'')+'기 · '+laborCompanyLabelV261(p.company)+' · '+(p.name||'이름 없음'))+'</strong>'+
   '<small>호실 '+escapeH(p.room||'확인 필요')+' · '+escapeH(p.reason||'대조 필요')+'</small></div>').join('');
 }
 $('laborReviewButtonsV297').addEventListener('click',e=>{
