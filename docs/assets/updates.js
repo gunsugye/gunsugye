@@ -30,9 +30,13 @@
  $('pagesUpdateLauncher').addEventListener('click',()=>{if(latest)render(true);check(true);});
  $('pagesUpdateApply').addEventListener('click',()=>{
   if(!latest)return;if(latest.id===running){dismiss();return;}
-  const state=window.logbookReloadState?.();
-  if(state?.busy||state?.dirty){$('pagesUpdateHelp').textContent='저장 중이거나 저장하지 않은 내용이 있습니다. 저장을 완료한 뒤 다시 눌러주세요.';return;}
-  location.reload();
+  try{
+   const state=window.logbookReloadState?.();
+   if(state?.busy){$('pagesUpdateHelp').textContent='저장 중입니다. 완료 후 다시 적용해 주세요.';return;}
+   if(state?.dirty&&!window.confirm('저장하지 않은 변경사항이 있습니다. 변경사항을 버리고 새 버전을 적용할까요?')){$('pagesUpdateHelp').textContent='적용을 취소했습니다. 저장한 뒤 다시 적용해 주세요.';return;}
+   $('pagesUpdateHelp').textContent='새 버전을 불러오는 중…';
+   const url=new URL(location.href);url.searchParams.set('appUpdate',latest.id);location.assign(url.href);
+  }catch(error){$('pagesUpdateHelp').textContent='적용 실패: '+String(error.message||error)+' · 브라우저 새로고침으로 다시 불러와 주세요.';}
  });
  window.LOGBOOK_UPDATES={start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check();setInterval(()=>check(),60000);document.addEventListener('visibilitychange',()=>check());window.addEventListener('focus',()=>check());}};
 })();

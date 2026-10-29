@@ -54,7 +54,7 @@ js=js.replace("navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴", "na
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
-js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({dirty:!!(${leaveGuard[1]}||departuresBusyV305||settingsDirtyV258||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
+js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||settingsDirtyV258||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
 const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + assetPlanCSS + assetRequestsCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');

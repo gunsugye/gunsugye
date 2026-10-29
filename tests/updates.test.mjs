@@ -10,10 +10,10 @@ function noticeFixture(){
  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:true,textContent:'',children:[],addEventListener:(n,f)=>events.set(id+':'+n,f),replaceChildren(...nodes){this.children=nodes;},append(){}});return elements.get(id);};
  const context=vm.createContext({
   document:{documentElement:{dataset:{releaseId:'aaaaaaaaaaaaaaaa'}},visibilityState:'visible',getElementById:element,createElement:()=>({textContent:''}),querySelector:()=>({append(){}}),addEventListener:(n,f)=>events.set(n,f)},
-  window:{addEventListener:(n,f)=>events.set(n,f),logbookReloadState:()=>({dirty:false})},
+  window:{addEventListener:(n,f)=>events.set(n,f),logbookReloadState:()=>({dirty:false}),confirm:()=>false},URL,
   Date:class extends Date{static now(){return clock;}},AbortSignal,setInterval:f=>events.set('interval',f),
   localStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)},
-  fetch:async url=>{assert.match(url,/^\.\/release\.json\?t=/);requests++;return {ok:true,json:async()=>release};},location:{reload:()=>reloads++}
+  fetch:async url=>{assert.match(url,/^\.\/release\.json\?t=/);requests++;return {ok:true,json:async()=>release};},location:{href:'https://example.com/app/?keep=1#section',assign:url=>{assert.match(url,/appUpdate=bbbbbbbbbbbbbbbb/);assert.match(url,/keep=1/);assert.ok(url.endsWith('#section'));reloads++;}}
  });
  new vm.Script(read('docs/assets/updates.js')).runInContext(context);
  return {context,events,element,stored,advance:()=>{clock+=61000;},setRelease:r=>release=r,get reloads(){return reloads;},get requests(){return requests;}};
@@ -28,6 +28,13 @@ test('새 업데이트 알림은 배포 정보로 자동 표시하며 닫기·�
  assert.equal(f.element('pagesUpdateNotice').hidden,false);assert.equal(f.element('pagesUpdateApply').textContent,'새 버전 적용');
  f.context.window.logbookReloadState=()=>({dirty:true});f.events.get('pagesUpdateApply:click')();assert.equal(f.reloads,0);
  f.context.window.logbookReloadState=()=>({dirty:false});f.events.get('pagesUpdateApply:click')();assert.equal(f.reloads,1);
+});
+
+test('새 버전 적용은 저장 중을 차단하고 미저장 확인 및 오류를 표시한다',async()=>{
+ const f=noticeFixture();f.setRelease({id:'bbbbbbbbbbbbbbbb',version:'3.47',title:'검증',notes:[]});f.context.window.LOGBOOK_UPDATES.start();await tick();
+ f.context.window.logbookReloadState=()=>({busy:true,dirty:false});f.events.get('pagesUpdateApply:click')();assert.equal(f.reloads,0);assert.match(f.element('pagesUpdateHelp').textContent,/저장 중/);
+ f.context.window.logbookReloadState=()=>({dirty:true});f.context.window.confirm=()=>true;f.events.get('pagesUpdateApply:click')();assert.equal(f.reloads,1);
+ f.context.window.logbookReloadState=()=>{throw Error('검증 오류');};f.events.get('pagesUpdateApply:click')();assert.match(f.element('pagesUpdateHelp').textContent,/적용 실패: 검증 오류/);
 });
 
 test('생성된 배포 정보와 첫 화면 버전이 같고 새로고침 전에 로그인 덮개를 숨길 수 있다',()=>{
