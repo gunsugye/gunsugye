@@ -16,6 +16,7 @@ import {correctDormSource,correctDormClient} from './dorm-corrections.mjs';
 import {dormPlanHtml,dormPlanClient,dormPlanCSS} from './dorm-plan.mjs';
 import {laborInterfaceJs,laborInterfaceCSS} from './labor-interface.mjs';
 import {assetOverviewJs} from './asset-overview.mjs';
+import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} from './asset-plan.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -35,6 +36,7 @@ js = roomAssetJs(repairJs(updateNotificationsJs(updateCalendarJs(updateNavigatio
 js=dormPlanClient(correctDormClient(js),read('scripts/dorm-plan-client.js.txt'));
 js=laborInterfaceJs(js);
 js=assetOverviewJs(js);
+js=assetPlanJs(js);
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
  .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;
@@ -48,7 +50,7 @@ const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({dirty:!!(${leaveGuard[1]}||departuresBusyV305||settingsDirtyV258||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open)});\n`+js.slice(hook);
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS;
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + assetPlanCSS;
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -85,7 +87,7 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 </aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-const personalJs=read('scripts/personal-portal.js'),personalCss=read('scripts/personal-portal.css'),personalHtml=read('scripts/personal-portal.html').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
+const personalJs='const personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+read('scripts/personal-portal.js'),personalCss=read('scripts/personal-portal.css')+assetPlanCSS,personalHtml=read('scripts/personal-portal.html').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
 write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
@@ -94,13 +96,14 @@ html = html.replace(/<html\b/, `<html data-app-version="${fingerprint(js)}" data
 for (const [path, contents] of assets) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
-write('docs/index.html', dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html)))))));
+write('docs/index.html', assetPlanHtml(dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html))))))));
 write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
 
 const privatePlan=JSON.parse(read('.deploy/dorm-plan-source.json'));
 let legacy = roomAssetServer(repairServer(correctDormSource(read('Code.gs.txt'),privatePlan.correction)+'\n'+read('scripts/departures-server.gs.txt')),read('scripts/room-assets-server.gs.txt'),read('scripts/room-assets-bulk.gs.txt'));
+legacy=assetPlanServer(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
