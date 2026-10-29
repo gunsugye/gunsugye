@@ -1,6 +1,24 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync,existsSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
-const code=readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+import {dormMemberCohortsV343,dormPdfNamesV343,dormPdfMembersV343} from '../scripts/dorm-members.mjs';
+const code=dormMemberCohortsV343.toString()+'\n'+readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+
+test('PDF 괄호 근무는 제외하고 위아래 이름만 순서대로 읽는다',()=>{
+ const t=(str,y,x=0)=>({str,y,x});
+ assert.deepEqual(dormPdfNamesV343([t('테스트갑',10),t('(',20),t('당직',20,5),t(')',20,20),t('테스트을',30),t('(근무)',40)],2),['테스트갑','테스트을']);
+ assert.deepEqual(dormPdfNamesV343([t('테스트갑',10),t('(당직)',20),t('독방',30)],2),['테스트갑']);
+});
+test('한 기수만 확인된 방은 미입력 기수를 채우고 서로 다른 확정 기수는 유지한다',()=>{
+ assert.deepEqual(dormMemberCohortsV343([{cohort:'７７기'},{cohort:''}]).map(p=>p.cohort),['77','77']);
+ assert.deepEqual(dormMemberCohortsV343([{cohort:'77'},{cohort:'76'},{cohort:''}]).map(p=>p.cohort),['77','76','']);
+ assert.deepEqual(dormMemberCohortsV343([{cohort:''}]).map(p=>p.cohort),['']);
+});
+test('새 방의 유일한 기존 배정자 기수를 연결하고 같은 이름이 모호하면 추정하지 않는다',()=>{
+ const rows=dormPdfMembersV343(['테스트갑','테스트을'],[],[{name:'테스트갑',company:'1',cohort:'77'}],'1');
+ assert.deepEqual(rows.map(p=>p.cohort),['77','77']);
+ const ambiguous=dormPdfMembersV343(['테스트갑'],[],[{name:'테스트갑',company:'1',cohort:'77'},{name:'테스트갑',company:'1',cohort:'76'}],'1');
+ assert.equal(ambiguous[0].cohort,'');
+});
 test('국외와 파견 인원은 누락에서 제외하고 스마트당직에 없는 배정자는 퇴교로 표시한다',()=>{
  const f=fixture(),reference=[{name:'검증가A',cohort:'77기',company:'3',duty:'국외'},{name:'검증나',cohort:'76기',company:'8',duty:'파견'}];
  const r=f.c.dormPlanCompareV318_([{members:[{name:'검증다',cohort:'77',company:'7'}]}],reference);
@@ -110,9 +128,17 @@ test('도면 배정 저장은 호실 ID를 유지하며 두 연결 파일의 인
 });
 test('오래된 호실 버전·불완전한 기수·권한 없는 요청은 백업과 수정 전에 차단한다',()=>{
  for(const kind of ['stale','identity','denied']){
-  const f=fixture(),plan=f.c.getDormPlanV315(),room=plan.rooms[0];if(kind==='stale')room.token='old';if(kind==='identity')room.members[0].cohort='';if(kind==='denied')f.deny();
+  const f=fixture(),plan=f.c.getDormPlanV315(),room=plan.rooms[0];if(kind==='stale')room.token='old';if(kind==='identity')room.members.forEach(p=>p.cohort='');if(kind==='denied')f.deny();
   assert.throws(()=>f.c.saveDormPlanV315({version:plan.version,changes:[room]}));assert.equal(f.writes.length,0);assert.equal(f.backups.length,0);
  }
+});
+
+test('한 명만 저장하면 명단과 점유 자리가 함께 독방으로 반영된다',()=>{
+ const f=fixture(),plan=f.c.getDormPlanV315(),room=plan.rooms[0];room.members=room.members.slice(0,1);
+ f.c.saveDormPlanV315({version:plan.version,changes:[room]});
+ assert.ok(f.writes.filter(w=>w.members).every(w=>w.members.length===1));
+ const values=f.writes.filter(w=>w.col===1);assert.equal(values.length,2);
+ values.forEach(w=>assert.deepEqual(JSON.parse(w.values[0][6]).map(s=>s.occupied),[true,false]));
 });
 test('확인한 두 사람의 원본 정정만 적용하며 다른 호실의 동명이인은 바꾸지 않는다',()=>{
  const fix={building:'정예 동관',floor:'3층',fromRoom:'343-4',room:'343-3',cohort:'75',company:'3',group:'3중대',names:['검증가','검증나']};

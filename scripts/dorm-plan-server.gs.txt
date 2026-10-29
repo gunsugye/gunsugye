@@ -65,7 +65,7 @@ function dormPlanCompareV318_(rooms,reference,hints=[]){
 }
 function dormPlanValidateMembersV315_(members,capacity,pdfImport){
  if(!Array.isArray(members)||members.length>capacity)throw Error('배정 인원이 호실 정원을 넘었습니다.');
- const used=new Set();return members.map(p=>{
+ const used=new Set();return dormMemberCohortsV343(members).map(p=>{
   const name=text_(p.name,60),cohort=text_(p.cohort,24),company=String(p.company||'').replace(/중대$/,'').trim();
   if(!name||(!/^\d{2,3}$/.test(cohort)&&!(pdfImport&&!cohort))||(!/^[1-8]$/.test(company)&&!(pdfImport&&!company)))throw Error('배정자마다 기수·중대·이름을 확인하세요.');
   const key=[cohort,company,name].join('|');if(used.has(key))throw Error('한 호실에 중복된 배정자가 있습니다.');used.add(key);

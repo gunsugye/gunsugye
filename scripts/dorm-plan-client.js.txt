@@ -90,12 +90,12 @@ function dormPlanEditV315(layout){
  const parts=room.room.split('-');$('dormPlanNumberV316').value=parts[0];$('dormPlanSuffixV316').value=parts[1]||'';
  $('dormPlanGroupV315').value=['1중대','2중대','3중대','4중대','5중대','6중대','7중대','8중대','전(대)대','동생명','여생도','미분류'].includes(room.group)?room.group:'미분류';
  $('dormPlanFemaleV315').checked=!!room.femaleRoom;
- $('dormPlanRoomReviewV315').textContent=dormPlanDraftV315?'PDF에서 추출한 후보입니다. 원본 도면과 대조 후 「검토 저장」하세요.':'기수·중대·이름을 함께 확인하세요. 다른 호실의 동명이인을 자동으로 가져오지 않습니다.';
+ $('dormPlanRoomReviewV315').textContent='괄호: 근무 · 기수 1명 확인 시 빈 기수에 적용 · 1명 배정: 독방';
  $('dormPlanRoomDialogV315').showModal();
 }
 async function dormPlanSaveRoomV315(){
  const selected=dormPlanSelectedV315;if(!selected)return;
- const members=Array.from($('dormPlanMembersV315').querySelectorAll('tr')).map(row=>({company:row.querySelector('[data-plan-company]').value.trim(),cohort:row.querySelector('[data-plan-cohort]').value.trim(),name:row.querySelector('[data-plan-name]').value.trim(),female:$('dormPlanFemaleV315').checked}));
+ const members=dormMemberCohortsV343(Array.from($('dormPlanMembersV315').querySelectorAll('tr')).map(row=>({company:row.querySelector('[data-plan-company]').value.trim(),cohort:row.querySelector('[data-plan-cohort]').value.trim(),name:row.querySelector('[data-plan-name]').value.trim(),female:$('dormPlanFemaleV315').checked})).filter(p=>p.name||p.company||p.cohort));
  if(members.some(p=>! /^[1-8]$/.test(p.company)||! /^\d{2,3}$/.test(p.cohort)||!p.name))return alert('배정자마다 중대·기수·이름을 입력하세요.');
  const number=$('dormPlanNumberV316').value.trim(),suffix=$('dormPlanSuffixV316').value;
  if(!/^\d{3}$/.test(number))return alert('호실 번호는 세 자리 숫자로 입력하세요.');
@@ -150,10 +150,10 @@ async function dormPlanUploadV315(){
     if(old){r.room=old.room;r.roomId=old.id;}
     if(seen.has(dormPlanKeyV315(r)))continue;seen.add(dormPlanKeyV315(r));
     const region=box?tokens.filter(t=>t.x>=box.x&&t.x<box.x+box.width&&t.y>a.y+5&&t.y<box.y+box.height):[];
-    const names=[...new Set(region.map(t=>t.str).filter(s=>/^[가-힣]{2,4}[A-C]?$/.test(s)&&!/(공실|중대|훈육|위원|동기|회장|총무|생도|화장|계단|보좌|문화|교육|명예|편집|사무)/.test(s)))].slice(0,r.building==='별관'?4:2);
+    const names=dormPdfNamesV343(region,r.building==='별관'?4:2);
     if(!old&&!names.length&&region.some(t=>/훈육관|중대장|화장실|샤워|세탁|건조|계단|휴게실|창고/.test(t.str)))continue;
     layout.push(r);
-    const members=names.map(name=>{const match=(old?.members||[]).filter(p=>p.name===name);return match.length===1?{...match[0]}:{name,company:(a.str.match(/-([1-8])$/)||[])[1]||'',cohort:''};});
+    const members=dormPdfMembersV343(names,old?.members||[],dormPlanV315.rooms.flatMap(room=>room.members||[]),(a.str.match(/-([1-8])$/)||[])[1]||'');
     r.pdfMembers=members.map(p=>({...p}));
     changes.push({...old,...r,members,group:old?.group||((a.str.match(/-([1-8])$/)||[])[1]||'')+'중대',corridor:old?.corridor||'PDF 도면',femaleRoom:old?.femaleRoom||/-여$/.test(a.str),token:old?.token||'new',reviewed:true});
    }
@@ -208,6 +208,6 @@ function dormPlanInitV315(){
  $('dormPlanFileV315').onchange=dormPlanUploadV315;$('dormPlanPublishV315').onclick=dormPlanPublishV315;
  $('dormPlanRoomSaveV315').onclick=dormPlanSaveRoomV315;$('dormPlanRoomCloseV315').onclick=()=>$('dormPlanRoomDialogV315').close();
  $('dormPlanAddMemberV315').onclick=()=>{const rows=$('dormPlanMembersV315').querySelectorAll('tr');if(rows.length>=(dormPlanSelectedV315?.building==='별관'?4:2))return toast('호실 정원에 도달했습니다.');$('dormPlanMembersV315').insertAdjacentHTML('beforeend',dormPlanMemberRowV315({},rows.length));};
- $('dormPlanMembersV315').onclick=e=>{if(e.target.closest('[data-plan-remove]'))e.target.closest('tr').remove();};
+ $('dormPlanMembersV315').onclick=e=>{if(e.target.closest('[data-plan-remove]'))e.target.closest('tr').remove();if(e.target.closest('[data-plan-single]')){const row=e.target.closest('tr');if(!$('dormPlanMembersV315').querySelectorAll('tr')[1]||confirm('선택한 배정자만 남기고 독방으로 설정할까요?'))Array.from($('dormPlanMembersV315').querySelectorAll('tr')).forEach(other=>{if(other!==row)other.remove();});}};
  $('dormPlanRoomDialogV315').addEventListener('cancel',e=>{if(!confirm('입력 중인 편집을 닫을까요?'))e.preventDefault();});
 }

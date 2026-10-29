@@ -1,3 +1,4 @@
+import {dormMemberCohortsV343,dormPdfNamesV343,dormPdfMembersV343} from './dorm-members.mjs';
 export function dormPlanHtml(html){
  const panel=`<section class="panel dorm-edit-only dorm-plan-panel" aria-label="생활실 편성안 도면">
  <div class="panel-head"><div><h2 class="panel-title">생활실 편성안 · 간편 배치도</h2><p class="panel-sub">PDF의 배치 순서에 따라 호실을 간결하게 정리합니다. 호실을 눌러 번호·중대·기수·이름을 수정하세요.</p></div><button class="btn btn-primary" id="dormPlanLoadV315" type="button">배치도 불러오기</button></div>
@@ -14,12 +15,14 @@ export function dormPlanHtml(html){
  return html.replace('<section id="dormView" class="hidden">','<section id="dormView" class="hidden">'+panel);
 }
 export function dormPlanClient(js,client){
+ client=client.replace('.filter(p=>p.name||p.company||p.cohort)', '.filter(p=>p.name)');
+ client=client.replace('data-plan-remove>제외</button>','data-plan-remove>제외</button> <button type="button" class="btn" data-plan-single>독방</button>');
  client=client.replaceAll('휴학·위탁','휴학·위탁·국외·파견·퇴학·퇴교').replace('스마트 당직 누락 · 방 배정에만 있음','퇴교 대상 · 스마트 당직에 없음').replace("[p.cohort+'기',p.company+'중대',p.name,p.location||'']","[String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기',String(p.company||'').normalize('NFKC').replace(/중대$/,'')+'중대',p.name,p.location||'']");
  const rowHook="+'</td><td>'+membersHTML+'</td><td>'";
  if(!js.includes(rowHook))throw Error('생활실 명단 편집 위치를 확인하세요.');
  js=js.replace(rowHook,"+'</td><td>'+membersHTML+(canChange?'<button type=\"button\" class=\"btn\" data-dorm-members-edit>배정 편집</button>':'')+'</td><td>'");
  const hook=js.lastIndexOf('})();');if(hook<0)throw Error('도면 편집 초기화 위치를 확인하세요.');
- return js.slice(0,hook)+'\n'+client+'\ndormPlanInitV315();\n'+js.slice(hook);
+ return js.slice(0,hook)+'\n'+dormMemberCohortsV343.toString()+'\n'+dormPdfNamesV343.toString()+'\n'+dormPdfMembersV343.toString()+'\n'+client+'\ndormPlanInitV315();\n'+js.slice(hook);
 }
 export const dormPlanCSS=`
 .dorm-plan-panel [hidden]{display:none!important}
