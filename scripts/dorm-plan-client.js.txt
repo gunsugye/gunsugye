@@ -52,10 +52,12 @@ function dormPlanComparisonV318(result){
  if(!result||result.error){box.textContent='명단 대조 확인 필요: '+(result?.error||'대조 자료 없음');return;}
  box.innerHTML=[['방 배정 누락 · 휴학·위탁 제외 후 스마트 당직에만 있음',result.missingRoom],['스마트 당직 누락 · 방 배정에만 있음',result.missingSmart]].map(([title,items])=>'<details><summary>'+title+' ('+items.length+'명)</summary>'+(items.length?'<ul>'+items.map(p=>'<li>'+escapeH([p.cohort+'기',p.company+'중대',p.name,p.location||''].join(' · '))+'</li>').join('')+'</ul>':'<p>누락 인원 없음</p>')+'</details>').join('')+'<p class="panel-sub">스마트 당직 상태 및 연결된 참고 시트의 휴학·위탁 '+Number(result.excludedCount||0)+'명을 제외했습니다. 기수·중대·이름을 대조하며, 참고 시트의 동명이인은 누락 목록에 남겨 확인합니다.</p>';
 }
+function dormPlanPageLabelV334(page,fallback){return ({2:'정예본관 1층 동쪽',3:'정예본관 2층 동쪽',4:'정예본관 1층 서쪽',5:'정예본관 2층 서쪽',6:'정예동관 1층',7:'정예동관 2층',8:'정예동관 3층',9:'정예서관 1층',10:'정예서관 2층',11:'정예서관 3층'})[page]||fallback;}
+function dormPlanCorridorV334(index){return index<2?'북쪽복도':index<4?'남쪽복도':'배치 '+(index+1);}
 function dormPlanSetPagesV315(){
  const layout=dormPlanDraftV315?.layout||dormPlanV315?.layout||[],old=$('dormPlanPageV315').value;
  const pages=[...new Set(layout.map(x=>x.page))].sort((a,b)=>a-b);
- $('dormPlanPageV315').innerHTML=pages.map(n=>{const r=layout.find(x=>x.page===n);return '<option value="'+n+'">'+n+'쪽 · '+escapeH(r.building+' '+r.floor)+'</option>';}).join('');
+ $('dormPlanPageV315').innerHTML=pages.map(n=>{const r=layout.find(x=>x.page===n);return '<option value="'+n+'">'+n+'쪽 · '+escapeH(dormPlanPageLabelV334(n,r.building+' '+r.floor))+'</option>';}).join('');
  if(pages.includes(Number(old)))$('dormPlanPageV315').value=old;
 }
 function dormPlanRoomV315(layout){
@@ -73,7 +75,7 @@ async function dormPlanRenderV315(){
   let band=bands.find(b=>Math.abs(b.y-item.r.y)<.035);
   if(!band){band={y:item.r.y,items:[]};bands.push(band);}band.items.push(item);
  });
- $('dormPlanHotspotsV315').innerHTML=bands.map((band,i)=>'<section class="dorm-plan-band"><h3>배치 '+(i+1)+'</h3><div class="dorm-plan-grid">'+band.items.sort((a,b)=>a.r.x-b.r.x).map(({r,index})=>{
+ $('dormPlanHotspotsV315').innerHTML=bands.map((band,i)=>'<section class="dorm-plan-band"><h3>'+dormPlanCorridorV334(i)+'</h3><div class="dorm-plan-grid">'+band.items.sort((a,b)=>a.r.x-b.r.x).map(({r,index})=>{
   const room=dormPlanRoomV315(r),members=room.members||[],text=members.map(p=>[p.cohort,p.company,p.name].join('.')).join(' / ');
   return '<button type="button" class="dorm-plan-room" data-plan-room="'+index+'" aria-label="'+escapeH(room.room+' '+text)+'"><b>'+escapeH(room.room)+'</b>'+(live?(members.length?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'기 · '+(p.company||'?')+'중대')+'</small><span>'+escapeH(p.name||'미확인')+'</span></span>').join(''):'<span class="dorm-plan-empty">배정 확인 필요</span>'):'<span class="dorm-plan-empty">'+escapeH(room.group||'미분류')+'</span>')+'</button>';
  }).join('')+'</div></section>').join('');
