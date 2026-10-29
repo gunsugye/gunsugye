@@ -18,6 +18,7 @@ import {laborInterfaceJs,laborInterfaceCSS} from './labor-interface.mjs';
 import {assetOverviewJs} from './asset-overview.mjs';
 import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} from './asset-plan.mjs';
 import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} from './asset-requests.mjs';
+import {personalSessionStore} from './personal-session.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -89,7 +90,7 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 </aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-const personalJs='const personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+read('scripts/personal-portal.js'),personalCss=read('scripts/personal-portal.css')+assetPlanCSS,personalHtml=read('scripts/personal-portal.html').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
+const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+read('scripts/personal-portal.js'),personalCss=read('scripts/personal-portal.css')+assetPlanCSS,personalHtml=read('scripts/personal-portal.html').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
 write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
