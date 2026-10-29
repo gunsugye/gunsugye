@@ -20,6 +20,7 @@ import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} 
 import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} from './asset-requests.mjs';
 import {personalSessionStore} from './personal-session.mjs';
 import {dormMemberCohortsV343} from './dorm-members.mjs';
+import {dormPlaceRoomV344} from './dorm-placement.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(resolve(root, path), 'utf8').replace(/^\uFEFF/, '');
@@ -36,7 +37,7 @@ let js = updateJournalJs(updateDeparturesJs(unpack('v275JsGzip'))
   .replace("'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 시트 권한·배포 버전·Google 서버 상태를 확인하세요.'",
     "'서버 응답 시간 초과 ('+Math.round(maxWait/1000)+'초). 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.'"));
 js = roomAssetJs(repairJs(updateNotificationsJs(updateCalendarJs(updateNavigationJs(js)))),read('scripts/room-assets-client.js.txt'));
-js=dormPlanClient(correctDormClient(js),read('scripts/dorm-plan-client.js.txt'));
+js=dormPlanClient(correctDormClient(js),read('scripts/dorm-plan-client.js.txt')+'\n'+read('scripts/dorm-placement-client.js.txt')+'\ndormPlacementInitV344();');
 js=laborInterfaceJs(js);
 js=assetOverviewJs(js);
 js=assetPlanJs(js);
@@ -112,6 +113,7 @@ legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.t
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
+legacy+='\n'+dormPlaceRoomV344.toString();
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)

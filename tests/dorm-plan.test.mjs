@@ -1,7 +1,17 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync,existsSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {correctDormSource} from '../scripts/dorm-corrections.mjs';
 import {dormMemberCohortsV343,dormPdfNamesV343,dormPdfMembersV343} from '../scripts/dorm-members.mjs';
-const code=dormMemberCohortsV343.toString()+'\n'+readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+import {dormPlaceRoomV344} from '../scripts/dorm-placement.mjs';
+const code=dormPlaceRoomV344.toString()+'\n'+dormMemberCohortsV343.toString()+'\n'+readFileSync(new URL('../scripts/dorm-plan-server.gs.txt',import.meta.url),'utf8');
+
+test('공실을 두 방 사이에 넣고 같은 줄을 유지하며 재배치한다',()=>{
+ const room=n=>({building:'정예 동관',floor:'1층',room:String(n),page:6,x:(n-110)/4,y:.2,width:.05,height:.1});
+ const a=room(111),b=room(112),empty=room(110),original=[a,b];
+ const next=dormPlaceRoomV344(original,empty,a,true);
+ assert.deepEqual(next.sort((a,b)=>a.x-b.x).map(r=>r.room),['111','110','112']);assert.equal(next.every(r=>r.y===.2),true);assert.equal(original.length,2);
+ const moved=dormPlaceRoomV344(next,empty,b,true);assert.deepEqual(moved.sort((a,b)=>a.x-b.x).map(r=>r.room),['111','112','110']);
+ assert.throws(()=>dormPlaceRoomV344(next,{...empty,floor:'2층'},a,true),/같은 관/);
+});
 
 test('PDF 괄호 근무는 제외하고 위아래 이름만 순서대로 읽는다',()=>{
  const t=(str,y,x=0)=>({str,y,x});
@@ -139,6 +149,20 @@ test('한 명만 저장하면 명단과 점유 자리가 함께 독방으로 반
  assert.ok(f.writes.filter(w=>w.members).every(w=>w.members.length===1));
  const values=f.writes.filter(w=>w.col===1);assert.equal(values.length,2);
  values.forEach(w=>assert.deepEqual(JSON.parse(w.values[0][6]).map(s=>s.occupied),[true,false]));
+});
+test('방 추가는 공실과 배치 위치를 함께 저장하고 재배치는 배정명단을 쓰지 않는다',()=>{
+ const f=fixture(),target=f.books[0].room;
+ f.c.DORM_PLAN_DEFAULT_V315_.layout=[{...target,page:8,x:.2,y:.1,width:.05,height:.1}];
+ const plan=f.c.getDormPlanV315(),room={building:target.building,floor:target.floor,room:'344',token:'new',members:[],group:'미분류'};
+ f.c.saveDormPlanV315({version:plan.version,changes:[room],placement:{room,target,after:true,create:true}});
+ assert.equal(f.writes.filter(w=>w.members).length,2);assert.ok(f.writes.filter(w=>w.members).every(w=>w.members.length===0));
+ const layout=f.savedPlans[0].layout.sort((a,b)=>a.x-b.x);assert.deepEqual(layout.map(r=>r.room),['343-3','344']);assert.equal(layout[1].roomId,'new-room');
+ const move=fixture(),r=move.books[0].room;
+ move.c.DORM_PLAN_DEFAULT_V315_.layout=[{...r,page:8,x:.2,y:.1},{...r,room:'345',x:.3,page:8,y:.1}];
+ move.c.dormReadV234_=sh=>{const base=move.books.find(b=>b.sh===sh).room;return [base,{...base,id:base.id+'second',room:'345'}];};
+ const before=move.c.getDormPlanV315();
+ move.c.saveDormPlanV315({version:before.version,changes:[],placement:{room:r,target:{...r,room:'345'},after:true}});
+ assert.equal(move.writes.length,0);assert.deepEqual(move.savedPlans[0].layout.sort((a,b)=>a.x-b.x).map(r=>r.room),['345','343-3']);
 });
 test('확인한 두 사람의 원본 정정만 적용하며 다른 호실의 동명이인은 바꾸지 않는다',()=>{
  const fix={building:'정예 동관',floor:'3층',fromRoom:'343-4',room:'343-3',cohort:'75',company:'3',group:'3중대',names:['검증가','검증나']};

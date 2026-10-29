@@ -122,10 +122,17 @@ function saveDormPlanV315(payload){
    next.layout=next.layout.map(r=>{const rename=renames.find(x=>dormPlanKeyV315_(x.source)===dormPlanKeyV315_(r));return rename?{...r,room:rename.room,sourceRoom:r.sourceRoom||r.room}:r;});
    if(new Set(next.layout.map(dormPlanKeyV315_)).size!==next.layout.length)throw Error('변경 후 도면 호실이 중복됩니다.');
   }
-  if(!pending.length&&!next)throw Error('변경할 내용이 없습니다.');
+  if(!pending.length&&!next&&!payload.placement)throw Error('변경할 내용이 없습니다.');
   // PDF 배치는 고정하고 호실 ID로 연결합니다. 이후 이름 수정은 통합명단만 읽습니다.
   const canonical=books[0].rows.filter(r=>!pending.some(p=>p.book===books[0]&&p.old&&p.old.id===r.id)).concat(pending.filter(p=>p.book===books[0]).map(p=>p.normalized));
   if(!next)next={...current,layout:current.layout.map(r=>({...r})),version:Utilities.getUuid()};
+  if(payload.placement){
+   const place=payload.placement,key=dormPlanKeyV315_(place.room||{}),targetKey=dormPlanKeyV315_(place.target||{});
+   const room=canonical.find(r=>dormPlanKeyV315_(r)===key),target=canonical.find(r=>dormPlanKeyV315_(r)===targetKey);
+   if(!room||!target||typeof place.after!=='boolean')throw Error('이동할 방과 기준 방을 확인하세요.');
+   if(place.create&&(!pending.some(p=>p.key===key)||books.some(b=>b.rows.some(r=>dormPlanKeyV315_(r)===key))))throw Error('이미 등록된 방입니다. 기존 방을 이동하세요.');
+   next.layout=dormPlaceRoomV344(next.layout,room,target,place.after);
+  }
   next.layout=dormPlanBindLayoutV321_(next.layout,canonical);
   // 모든 대조를 마친 뒤 각 파일의 원본 시트를 백업합니다. 비품 기록과 호실 ID는 유지합니다.
   const backups=[];

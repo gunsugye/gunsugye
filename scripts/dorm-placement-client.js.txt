@@ -1,0 +1,44 @@
+let dormPlacementBusyV344=false,dormPlacementSkipClickV344=false;
+async function dormPlacementSaveV344(room,target,after,create=false){
+ if(dormPlacementBusyV344||dormPlanDraftV315||dormPlanBusyV315)throw Error('불러오기·PDF 검토를 마친 뒤 이동하세요.');
+ dormPlacementBusyV344=true;
+ try{
+  await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,changes:create?[{...room,members:[],token:'new',group:'미분류',corridor:target.corridor||'PDF 도면'}]:[],placement:{room:{building:room.building,floor:room.floor,room:room.room},target:{building:target.building,floor:target.floor,room:target.room},after,create}}));
+  await dormPlanRefreshLinksV315();await dormPlanLoadV315();toast(create?'공실 추가 완료':'방 위치 저장 완료');
+ }finally{dormPlacementBusyV344=false;}
+}
+function dormPlacementWireV344(layout){
+ const root=$('dormPlanHotspotsV315');
+ for(const button of root.querySelectorAll('[data-plan-room]')){
+  const room=layout[Number(button.dataset.planRoom)];button.draggable=!dormPlanDraftV315;
+  button.title='드래그하여 같은 관·층의 방 사이로 이동';
+  button.ondragstart=e=>{if(dormPlanDraftV315||dormPlacementBusyV344){e.preventDefault();return;}e.dataTransfer.setData('text/plain',String(button.dataset.planRoom));e.dataTransfer.effectAllowed='move';};
+  button.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move';};
+  button.ondrop=async e=>{e.preventDefault();const from=layout[Number(e.dataTransfer.getData('text/plain'))];if(!from||from===room)return;const rect=button.getBoundingClientRect();try{await dormPlacementSaveV344(from,room,e.clientX>rect.left+rect.width/2);}catch(error){toast(error.message);}};
+  const handle=document.createElement('span');handle.className='dorm-drag-v344';handle.textContent='↔ 이동';handle.style.touchAction='none';button.append(handle);
+  let start=null;
+  handle.onpointerdown=e=>{if(dormPlanDraftV315||dormPlacementBusyV344)return;e.stopPropagation();start={x:e.clientX,y:e.clientY};handle.setPointerCapture(e.pointerId);};
+  handle.onpointerup=async e=>{if(!start)return;const moved=Math.hypot(e.clientX-start.x,e.clientY-start.y)>8;start=null;if(!moved)return;e.preventDefault();dormPlacementSkipClickV344=true;const targetButton=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-plan-room]');if(!targetButton)return;const target=layout[Number(targetButton.dataset.planRoom)];if(target===room)return;const rect=targetButton.getBoundingClientRect();try{await dormPlacementSaveV344(room,target,e.clientX>rect.left+rect.width/2);}catch(error){toast(error.message);}};
+  handle.onpointercancel=()=>{start=null;};
+ }
+}
+function dormPlacementTargetsV344(){
+ const b=$('dormAddBuildingV344').value,f=$('dormAddFloorV344').value;
+ const rows=(dormPlanV315?.layout||[]).filter(r=>r.building===b&&r.floor===f&&!r.unplaced);
+ $('dormAddTargetV344').innerHTML=rows.map((r,i)=>'<option value="'+i+'">'+escapeH(r.room)+'호</option>').join('');
+ return rows;
+}
+function dormPlacementInitV344(){
+ $('dormAddOpenV344').onclick=async()=>{if(!mustEdit())return;if(dormPlanDraftV315)return toast('PDF 검토를 마친 뒤 추가하세요.');if(!dormPlanV315)await dormPlanLoadV315();if(!dormPlanV315)return;const page=Number($('dormPlanPageV315').value),r=dormPlanV315.layout.find(r=>r.page===page);if(r){$('dormAddBuildingV344').value=r.building;$('dormAddFloorV344').value=r.floor;}$('dormAddNumberV344').value='';$('dormAddErrorV344').textContent='';dormPlacementTargetsV344();$('dormAddDialogV344').showModal();};
+ for(const id of ['dormAddBuildingV344','dormAddFloorV344'])$(id).onchange=dormPlacementTargetsV344;
+ $('dormAddCloseV344').onclick=()=>$('dormAddDialogV344').close();
+ $('dormAddSaveV344').onclick=async()=>{
+  const button=$('dormAddSaveV344');if(button.disabled)return;
+  const room={building:$('dormAddBuildingV344').value,floor:$('dormAddFloorV344').value,room:$('dormAddNumberV344').value.normalize('NFKC').trim()};
+  const rows=dormPlanV315.layout.filter(r=>r.building===room.building&&r.floor===room.floor&&!r.unplaced),target=rows[Number($('dormAddTargetV344').value)];
+  if(!/^\d{3}(?:-[1-8])?$/.test(room.room))return $('dormAddErrorV344').textContent='호실을 입력하세요. 예: 110, 110-2';
+  if(dormPlanV315.rooms.some(r=>dormPlanKeyV315(r)===dormPlanKeyV315(room)))return $('dormAddErrorV344').textContent='이미 등록된 방입니다. 배치도에서 이동하세요.';
+  if(!target)return $('dormAddErrorV344').textContent='같은 관·층의 기준 방을 선택하세요.';
+  button.disabled=true;try{await dormPlacementSaveV344(room,target,$('dormAddAfterV344').value==='true',true);$('dormAddDialogV344').close();}catch(e){$('dormAddErrorV344').textContent=e.message;}finally{button.disabled=false;}
+ };
+}

@@ -35,7 +35,7 @@ function dormSyncScheduleV320(){
  dormSyncNeededV320=true;clearTimeout(dormSyncTimerV320);
  dormSyncTimerV320=setTimeout(async()=>{
   if(view!=='dorm'||!ready)return;
-  if(dormPendingV237.size||dormPlanBusyV315||dormBulkBusyV237||dormPlanDraftV315||$('dormPlanRoomDialogV315').open){dormSyncScheduleV320();return;}
+  if(dormPendingV237.size||dormPlanBusyV315||dormPlacementBusyV344||dormBulkBusyV237||dormPlanDraftV315||$('dormPlanRoomDialogV315').open||$('dormAddDialogV344').open){dormSyncScheduleV320();return;}
   dormSyncNeededV320=false;await dormReloadV234();await dormPlanLoadV315();
  },350);
 }
@@ -79,8 +79,8 @@ async function dormPlanRenderV315(){
   const room=dormPlanRoomV315(r),members=room.members||[],text=members.map(p=>[p.cohort,p.company,p.name].join('.')).join(' / ');
   return '<button type="button" class="dorm-plan-room" data-plan-room="'+index+'" aria-label="'+escapeH(room.room+' '+text)+'"><b>'+escapeH(room.room)+'</b>'+(live?(members.length?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'기 · '+(p.company||'?')+'중대')+'</small><span>'+escapeH(p.name||'미확인')+'</span></span>').join(''):'<span class="dorm-plan-empty">배정 확인 필요</span>'):'<span class="dorm-plan-empty">'+escapeH(room.group||'미분류')+'</span>')+'</button>';
  }).join('')+'</div></section>').join('');
- $('dormPlanHotspotsV315').onclick=e=>{const b=e.target.closest('[data-plan-room]');if(b)dormPlanEditV315(layout[Number(b.dataset.planRoom)]);};
- dormPlanSizeV316();
+ $('dormPlanHotspotsV315').onclick=e=>{if(dormPlacementSkipClickV344){dormPlacementSkipClickV344=false;return;}if(dormPlacementBusyV344)return;const b=e.target.closest('[data-plan-room]');if(b)dormPlanEditV315(layout[Number(b.dataset.planRoom)]);};
+ dormPlacementWireV344(layout);dormPlanSizeV316();
 }
 function dormPlanMemberRowV315(p,index){return '<tr><td>'+(index+1)+'</td><td><input class="field" aria-label="중대" data-plan-company maxlength="1" inputmode="numeric" value="'+escapeH(p.company||'')+'"></td><td><input class="field" aria-label="기수" data-plan-cohort maxlength="3" inputmode="numeric" value="'+escapeH(p.cohort||'')+'"></td><td><input class="field" aria-label="이름" data-plan-name maxlength="60" value="'+escapeH(p.name||'')+'"></td><td><button type="button" class="btn" data-plan-remove>제외</button></td></tr>';}
 function dormPlanEditV315(layout){
