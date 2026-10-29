@@ -27,8 +27,8 @@ export function assetPlanJs(js){js=js.replace('function assetInitV244(){',`funct
  $('assetPlanV332').addEventListener('click',e=>{const b=e.target.closest('[data-asset-plan-room]');if(b)assetPlanJumpV332(b.dataset.assetPlanRoom,b.dataset.assetPlanItem||'',b.dataset.assetPlanPosition||'');});`);
  js=js.replace("$('assetRoomCountV244').textContent=rooms.length+'개 호실';","$('assetRoomCountV244').textContent=rooms.length+'개 호실';assetPlanRenderV332();");
  const hook=js.lastIndexOf('})();');return js.slice(0,hook)+`
-const assetRoomHealthV332=${assetRoomHealth.toString()};
-const assetPlanBandsV332=${assetPlanBands.toString()};
+${assetRoomHealth.toString().replace('function assetRoomHealth(', 'function assetRoomHealthV332(')}
+${assetPlanBands.toString().replace('function assetPlanBands(', 'function assetPlanBandsV332(')}
 function assetPlanRenderV332(){
  const root=$('assetPlanV332'),open=new Set(qsa('details[open][data-asset-plan-building]',root).map(d=>d.dataset.assetPlanBuilding)),rooms=assetRoomsFilteredV244(),bands=assetPlanBandsV332(rooms,assetDataV244.layout),buildings=[...new Set(bands.map(g=>g.building))];
  $('assetPlanWarningV332').textContent=assetDataV244.layoutWarning||'';

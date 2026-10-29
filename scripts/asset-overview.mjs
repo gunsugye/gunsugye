@@ -25,7 +25,7 @@ export function assetOverviewJs(js){
  $('assetKindRowsV244').addEventListener('click',e=>{const button=e.target.closest('[data-asset-overview-toggle]');if(!button)return;const detail=$('assetOverviewDetailV327_'+button.dataset.assetOverviewToggle);detail.hidden=!detail.hidden;button.setAttribute('aria-expanded',String(!detail.hidden));});`);
  const hook=js.lastIndexOf('})();');
  const extra=`
-const assetOverviewGroupsV327=${assetOverviewGroups.toString()};
+${assetOverviewGroups.toString().replace('function assetOverviewGroups(', 'function assetOverviewGroupsV327(')}
 function assetOverviewChooseV328(mode){
  mode=mode==='company'?'company':'building';$('assetOverviewModeV327').value=mode;
  qsa('[data-asset-overview-mode]').forEach(input=>input.checked=input.value===mode);

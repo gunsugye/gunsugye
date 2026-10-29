@@ -16,6 +16,7 @@ await import('./dorm-plan.test.mjs');
 await import('./labor-interface.test.mjs');
 await import('./asset-overview.test.mjs');
 await import('./asset-plan.test.mjs');
+await import('./asset-initialization.test.mjs');
 await import('./personal.test.mjs');
 await import('./personal-session.test.mjs');
 await import('./asset-requests.test.mjs');

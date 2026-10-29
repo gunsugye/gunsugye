@@ -4415,7 +4415,7 @@ function laborSummaryV324(result){
  $('laborStatsV259').innerHTML=[['대상 인원',laborFmtV259(people)+'명'],['지급 기준',divisor+'명당 1개'],['총수량',laborFmtV259(quantity)+'개']].map(([label,value])=>'<div class="labor-answer-v324"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
 }
 
-const assetOverviewGroupsV327=function assetOverviewGroups(rooms,items,records,mode){
+function assetOverviewGroupsV327(rooms,items,records,mode){
  const itemIds=new Set(items.map(i=>i.id)),byRecord=new Map(records.filter(r=>itemIds.has(r.itemId)).map(r=>[r.roomId+'|'+r.itemId,r])),groups=new Map();
  const empty=()=>({quantity:0,normal:0,repair:0,unknown:0,unavailable:0});
  for(const room of rooms){
@@ -4431,7 +4431,7 @@ const assetOverviewGroupsV327=function assetOverviewGroups(rooms,items,records,m
  }
  const building=['정예 본관','정예 동관','정예 서관','별관'];
  return [...groups.values()].sort((a,b)=>mode==='company'?a.label.localeCompare(b.label,'ko',{numeric:true}):(building.includes(a.label)?building.indexOf(a.label):100)-(building.includes(b.label)?building.indexOf(b.label):100)||a.label.localeCompare(b.label,'ko'));
-};
+}
 function assetOverviewChooseV328(mode){
  mode=mode==='company'?'company':'building';$('assetOverviewModeV327').value=mode;
  qsa('[data-asset-overview-mode]').forEach(input=>input.checked=input.value===mode);
@@ -4446,7 +4446,7 @@ function assetOverviewRenderV327(){
  $('assetKindRowsV244').innerHTML=rows.map((r,i)=>'<tr><td><button type="button" class="btn btn-soft" data-asset-overview-toggle="'+i+'" aria-expanded="false" aria-controls="assetOverviewDetailV327_'+i+'">'+escapeH(r.label)+' · 품목 ▾</button></td><td>'+r.rooms+'</td>'+counts(r)+'<td>'+r.completed+' / '+r.rooms+'</td></tr><tr id="assetOverviewDetailV327_'+i+'" hidden><td colspan="8"><table class="asset-table"><thead><tr><th>품목</th><th>수량</th><th>정상</th><th>수리·교체</th><th>미점검</th><th>사용불가</th><th>관리</th></tr></thead><tbody>'+r.items.map(item=>'<tr><td>'+escapeH(item.name)+'</td>'+counts(item)+'<td>'+(canEdit?'<button type="button" class="btn btn-soft asset-owner" data-asset-hide="'+escapeH(item.id)+'">목록 삭제</button>':'—')+'</td></tr>').join('')+'</tbody></table></td></tr>').join('')||'<tr><td colspan="8">조회 결과 없음</td></tr>';
 }
 
-const assetRoomHealthV332=function assetRoomHealth(items,records){
+function assetRoomHealthV332(items,records){
  const issues=[];let unknown=0;
  for(const item of items){const rec=records.find(r=>r.itemId===item.id);if(!rec){unknown++;continue;}
   if(rec.slots){for(const slot of rec.slots){const status=String(slot.status||''),level=slot.unavailable||status==='교체 필요'?'red':/수리/.test(status)?'orange':null;if(level)issues.push({itemId:item.id,name:item.name,position:slot.position,level,label:slot.unavailable?'사용불가':status});if(!status)unknown++;}}
@@ -4454,8 +4454,8 @@ const assetRoomHealthV332=function assetRoomHealth(items,records){
  }
  const level=issues.some(i=>i.level==='red')?'red':issues.length?'orange':unknown||!items.length?'unknown':'blue';
  return {level,issues,unknown,label:level==='red'?'교체·사용불가':level==='orange'?'수리 필요':level==='unknown'?'미점검':'정상'};
-};
-const assetPlanBandsV332=function assetPlanBands(rooms,layout){
+}
+function assetPlanBandsV332(rooms,layout){
  const groups=[],used=new Set(),key=r=>[r.building,r.floor,String(r.room||'').split('-')[0]].join('|');
  for(const anchor of [...(layout||[])].sort((a,b)=>a.page-b.page||a.y-b.y||a.x-b.x)){
   let matches=anchor.roomId?rooms.filter(r=>String(r.id)===String(anchor.roomId)&&r.building===anchor.building&&r.floor===anchor.floor):[];
@@ -4467,7 +4467,7 @@ const assetPlanBandsV332=function assetPlanBands(rooms,layout){
  for(const room of rooms.filter(r=>!used.has(r.id)).sort((a,b)=>String(a.room).localeCompare(String(b.room),'ko',{numeric:true}))){let group=groups.find(g=>g.unplaced&&g.building===room.building&&g.floor===room.floor&&g.corridor===(room.corridor||''));if(!group){group={building:room.building,floor:room.floor,corridor:room.corridor||'',unplaced:true,rooms:[]};groups.push(group);}group.rooms.push(room);}
  for(const group of groups)if(!group.unplaced)group.rooms.sort((a,b)=>a.planX-b.planX);
  return groups;
-};
+}
 function assetPlanRenderV332(){
  const root=$('assetPlanV332'),open=new Set(qsa('details[open][data-asset-plan-building]',root).map(d=>d.dataset.assetPlanBuilding)),rooms=assetRoomsFilteredV244(),bands=assetPlanBandsV332(rooms,assetDataV244.layout),buildings=[...new Set(bands.map(g=>g.building))];
  $('assetPlanWarningV332').textContent=assetDataV244.layoutWarning||'';

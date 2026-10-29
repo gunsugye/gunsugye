@@ -17,7 +17,7 @@ function personalLoginV330_(input){
   if(clean){for(const [key,value] of Object.entries(props.getProperties()))if(key.startsWith('PAGES_PERSONAL_SESSION_')){let s;try{s=JSON.parse(value);}catch(_){}if(!s||s.expiresAt<=now)props.deleteProperty(key);}cache.put('personal:session-cleanup','1',900);}
   const sessionId=Utilities.getUuid(),expiresAt=now+15*60000,sub='personal:'+person.id;
   props.setProperty('PAGES_PERSONAL_SESSION_'+sessionId,JSON.stringify({personId:person.id,sub,expiresAt,fingerprint:personalFingerprintV330_(person)}));
-  let preview;try{preview=personalCoreV339_(person,ss);}catch(_){preview=personalPreviewV331_(person);}return {sessionId,expiresAt,sub,preview};
+  return {sessionId,expiresAt,sub,preview:personalPreviewV331_(person)};
 }
 function personalSessionV330_(){
  const id=pagesActor_.sessionId;let stored;
@@ -58,9 +58,9 @@ function personalCoreV339_(person,ss){
  try{const room=personalRoomV331_(ss,person);if(room){result.room={building:room.building,floor:room.floor,room:room.room,position:room.personalPosition};if(!room.personalPosition)warnings.push('자리 확인 필요 · 공용 비품만 표시');try{result.assets=personalAssetsV331_(ss,room,person.id);}catch(_){warnings.push('비품 조회 실패');}}}catch(_){warnings.push('생활실 배정 확인 필요');}
  result.detailsLoading=true;return result;
 }
-function personalDetailsV337_(){const {person,ss}=personalPersonV331_(),result={supplies:[],uniform:null,warnings:[],updatedAt:iso_()};personalAppendDetailsV337_(person,ss,result);return result;}
-function personalAppendDetailsV337_(person,ss,result){
+function personalDetailsV337_(section){const {person,ss}=personalPersonV331_(),result={supplies:[],uniform:null,warnings:[],updatedAt:iso_()};personalAppendDetailsV337_(person,ss,result,section);return result;}
+function personalAppendDetailsV337_(person,ss,result,section){
  const key=p=>smartPersonIdentityV322_(p).join('|'),identity=key(person),warnings=result.warnings;
- try{for(const item of supplyRegistryItems_(ss)){const one=supplyOne_(ss,item.id),rows=supplyRows_(one.sh,one.headers).filter(p=>p.id===person.id);if(rows.length>1){warnings.push('군수품 중복 기록 확인 필요');continue;}if(rows.length){const p=rows[0];result.supplies.push({name:item.name,status:p.status||'',fields:p.extra||{}});}}}catch(_){warnings.push('군수품 조회 실패');}
- try{if(rosterRows_(rosterRequired_(ss)).filter(p=>key(p)===identity).length!==1)throw Error('동명 명단');const rows=uniformRowsV278_(uniformTabV278_(ss,false)).filter(p=>key(p)===identity);if(rows.length===1)result.uniform=rows[0].sizes||{};else if(rows.length>1)warnings.push('피복 중복 기록 확인 필요');}catch(_){warnings.push('피복 조회 실패');}
+ if(section!=='uniform')try{for(const item of supplyRegistryItems_(ss)){const one=supplyOne_(ss,item.id),rows=supplyRows_(one.sh,one.headers).filter(p=>p.id===person.id);if(rows.length>1){warnings.push('군수품 중복 기록 확인 필요');continue;}if(rows.length){const p=rows[0];result.supplies.push({name:item.name,status:p.status||'',fields:p.extra||{}});}}}catch(_){warnings.push('군수품 조회 실패');}
+ if(section!=='supplies')try{if(rosterRows_(rosterRequired_(ss)).filter(p=>key(p)===identity).length!==1)throw Error('동명 명단');const rows=uniformRowsV278_(uniformTabV278_(ss,false)).filter(p=>key(p)===identity);if(rows.length===1)result.uniform=rows[0].sizes||{};else if(rows.length>1)warnings.push('피복 중복 기록 확인 필요');}catch(_){warnings.push('피복 조회 실패');}
 }
