@@ -11,13 +11,13 @@ function personalLoginV330_(input){
   cache.put(ipKey,String(byIp+1),900);
   return !cache.get('personal:session-cleanup');
  });
-  const people=rosterRows_(rosterRequired_(spreadsheet_())),matches=people.filter(p=>personalNormalizeV330_(p.name)===name&&personalNormalizeV330_(p.firearmNumber)===number);
+  const ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),matches=people.filter(p=>personalNormalizeV330_(p.name)===name&&personalNormalizeV330_(p.firearmNumber)===number);
   if(matches.length!==1){lockAndRun_(()=>cache.put(personKey,String(Number(cache.get(personKey)||0)+1),900));throw Error('이름과 총기번호를 확인하세요.');}
   const person=matches[0],props=PropertiesService.getScriptProperties(),now=Date.now();
   if(clean){for(const [key,value] of Object.entries(props.getProperties()))if(key.startsWith('PAGES_PERSONAL_SESSION_')){let s;try{s=JSON.parse(value);}catch(_){}if(!s||s.expiresAt<=now)props.deleteProperty(key);}cache.put('personal:session-cleanup','1',900);}
   const sessionId=Utilities.getUuid(),expiresAt=now+15*60000,sub='personal:'+person.id;
   props.setProperty('PAGES_PERSONAL_SESSION_'+sessionId,JSON.stringify({personId:person.id,sub,expiresAt,fingerprint:personalFingerprintV330_(person)}));
-  return {sessionId,expiresAt,sub,preview:personalPreviewV331_(person)};
+  let preview;try{preview=personalCoreV339_(person,ss);}catch(_){preview=personalPreviewV331_(person);}return {sessionId,expiresAt,sub,preview};
 }
 function personalSessionV330_(){
  const id=pagesActor_.sessionId;let stored;
@@ -51,9 +51,12 @@ function personalSaveAssetsV331_(input){
  return lockAndRun_(()=>{const {person,ss}=personalPersonV331_(),room=personalRoomV331_(ss,person);if(!room)throw Error('배정된 생활실이 없습니다.');return assetRequestCreateV336_(ss,person,room,input?.changes);});
 }
 function personalDashboardV330_(includeDetails){
- const {person,ss}=personalPersonV331_(),key=p=>smartPersonIdentityV322_(p).join('|'),identity=key(person),result=personalPreviewV331_(person),warnings=result.warnings;delete result.loading;
+ const {person,ss}=personalPersonV331_(),result=personalCoreV339_(person,ss);if(includeDetails!==false){delete result.detailsLoading;personalAppendDetailsV337_(person,ss,result);}return result;
+}
+function personalCoreV339_(person,ss){
+ const result=personalPreviewV331_(person),warnings=result.warnings;delete result.loading;
  try{const room=personalRoomV331_(ss,person);if(room){result.room={building:room.building,floor:room.floor,room:room.room,position:room.personalPosition};if(!room.personalPosition)warnings.push('자리 확인 필요 · 공용 비품만 표시');try{result.assets=personalAssetsV331_(ss,room,person.id);}catch(_){warnings.push('비품 조회 실패');}}}catch(_){warnings.push('생활실 배정 확인 필요');}
- if(includeDetails===false){result.detailsLoading=true;return result;}personalAppendDetailsV337_(person,ss,result);return result;
+ result.detailsLoading=true;return result;
 }
 function personalDetailsV337_(){const {person,ss}=personalPersonV331_(),result={supplies:[],uniform:null,warnings:[],updatedAt:iso_()};personalAppendDetailsV337_(person,ss,result);return result;}
 function personalAppendDetailsV337_(person,ss,result){
