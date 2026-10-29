@@ -4297,8 +4297,8 @@ async function dormPlanRenderV315(){
  $('dormPlanHotspotsV315').innerHTML=bands.map((band,i)=>'<section class="dorm-plan-band"><h3>'+dormPlanCorridorV334(i)+'</h3><div class="dorm-plan-grid">'+band.items.sort((a,b)=>a.r.x-b.r.x).map(({r,index})=>{
   const room=dormPlanRoomV315(r),members=room.members||[],text=members.map(p=>[p.cohort,p.company,p.name].join('.')).join(' / ');
   return '<button type="button" class="dorm-plan-room" data-plan-room="'+index+'" aria-label="'+escapeH(room.room+' '+text)+'"><b>'+escapeH(room.room)+'</b>'+(live?(members.length?members.map(p=>'<span class="dorm-plan-person" data-cohort="'+escapeH(p.cohort)+'"><small>'+escapeH((p.cohort||'?')+'기 · '+(p.company||'?')+'중대')+'</small><span>'+escapeH(p.name||'미확인')+'</span></span>').join(''):'<span class="dorm-plan-empty">'+(room.verified?'공실':'배정 확인 필요')+'</span>'):'<span class="dorm-plan-empty">'+escapeH(room.group||'미분류')+'</span>')+'</button>';
- }).join('')+'</div></section>').join('');
- $('dormPlanHotspotsV315').onclick=e=>{if(dormPlacementSkipClickV344){dormPlacementSkipClickV344=false;return;}if(dormPlacementBusyV344)return;const b=e.target.closest('[data-plan-room]');if(b)dormPlanEditV315(layout[Number(b.dataset.planRoom)]);};
+ }).join('')+'</div><button type="button" class="btn" data-plan-add-near="'+band.items[band.items.length-1].index+'">+ 방 추가</button></section>').join('');
+ $('dormPlanHotspotsV315').onclick=async e=>{if(dormPlacementSkipClickV344){dormPlacementSkipClickV344=false;return;}if(dormPlacementBusyV344)return;const add=e.target.closest('[data-plan-add-near]');if(add){const anchor=layout[Number(add.dataset.planAddNear)];await $('dormAddOpenV344').onclick();if(!$('dormAddDialogV344').open)return;$('dormAddBuildingV344').value=anchor.building;$('dormAddFloorV344').value=anchor.floor;const rows=dormPlacementTargetsV344();$('dormAddTargetV344').value=String(rows.findIndex(r=>dormPlanKeyV315(r)===dormPlanKeyV315(anchor)));$('dormAddAfterV344').value='true';return;}const b=e.target.closest('[data-plan-room]');if(b)dormPlanEditV315(layout[Number(b.dataset.planRoom)]);};
  dormPlacementWireV344(layout);dormPlanSizeV316();
 }
 function dormPlanMemberRowV315(p,index){return '<tr><td>'+(index+1)+'</td><td><input class="field" aria-label="중대" data-plan-company maxlength="1" inputmode="numeric" value="'+escapeH(p.company||'')+'"></td><td><input class="field" aria-label="기수" data-plan-cohort maxlength="3" inputmode="numeric" value="'+escapeH(p.cohort||'')+'"></td><td><input class="field" aria-label="이름" data-plan-name maxlength="60" value="'+escapeH(p.name||'')+'"></td><td><button type="button" class="btn" data-plan-remove>제외</button> <button type="button" class="btn" data-plan-single>독방</button></td></tr>';}
@@ -4436,8 +4436,11 @@ async function dormPlacementSaveV344(room,target,after,create=false){
  if(dormPlacementBusyV344||dormPlanDraftV315||dormPlanBusyV315)throw Error('불러오기·PDF 검토를 마친 뒤 이동하세요.');
  dormPlacementBusyV344=true;
  try{
-  await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,changes:create?[{...room,members:[],token:'new',group:'미분류',corridor:target.corridor||'PDF 도면'}]:[],placement:{room:{building:room.building,floor:room.floor,room:room.room},target:{building:target.building,floor:target.floor,room:target.room},after,create}}));
-  await dormPlanRefreshLinksV315();await dormPlanLoadV315();toast(create?'공실 추가 완료':'방 위치 저장 완료');
+  await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,changes:create?[{...room,members:[],token:'new',group:'미분류',corridor:target?.corridor||'PDF 도면',staffRoom:false}]:[],placement:{room:{building:room.building,floor:room.floor,room:room.room},target:target?{building:target.building,floor:target.floor,room:target.room}:null,after,create}}));
+  if(create){dormResetFiltersV251_();$('dormBuilding').value=room.building;$('dormFloor').value=room.floor;}
+  await dormPlanRefreshLinksV315();await dormPlanLoadV315();
+  const anchor=dormPlanV315.layout.find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(room));if(anchor){$('dormPlanPageV315').value=String(anchor.page);await dormPlanRenderV315();const card=Array.from($('dormPlanHotspotsV315').querySelectorAll('[data-plan-room]')).find(b=>b.querySelector('b')?.textContent===room.room);card?.scrollIntoView({block:'nearest',inline:'center'});}
+  toast(create?'공실 추가 완료 · 배치도·호실별 인원 관리 반영':'방 위치 저장 완료');
  }finally{dormPlacementBusyV344=false;}
 }
 function dormPlacementWireV344(layout){
@@ -4458,7 +4461,7 @@ function dormPlacementWireV344(layout){
 function dormPlacementTargetsV344(){
  const b=$('dormAddBuildingV344').value,f=$('dormAddFloorV344').value;
  const rows=(dormPlanV315?.layout||[]).filter(r=>r.building===b&&r.floor===f&&!r.unplaced);
- $('dormAddTargetV344').innerHTML=rows.map((r,i)=>'<option value="'+i+'">'+escapeH(r.room)+'호</option>').join('');
+ $('dormAddTargetV344').innerHTML='<option value="">맨 뒤에 추가</option>'+rows.map((r,i)=>'<option value="'+i+'">'+escapeH(r.room)+'호</option>').join('');
  return rows;
 }
 function dormPlacementInitV344(){
@@ -4468,10 +4471,9 @@ function dormPlacementInitV344(){
  $('dormAddSaveV344').onclick=async()=>{
   const button=$('dormAddSaveV344');if(button.disabled)return;
   const room={building:$('dormAddBuildingV344').value,floor:$('dormAddFloorV344').value,room:$('dormAddNumberV344').value.normalize('NFKC').trim()};
-  const rows=dormPlanV315.layout.filter(r=>r.building===room.building&&r.floor===room.floor&&!r.unplaced),target=rows[Number($('dormAddTargetV344').value)];
+  const rows=dormPlanV315.layout.filter(r=>r.building===room.building&&r.floor===room.floor&&!r.unplaced),target=$('dormAddTargetV344').value===''?null:rows[Number($('dormAddTargetV344').value)];
   if(!/^\d{3}(?:-[1-8])?$/.test(room.room))return $('dormAddErrorV344').textContent='호실을 입력하세요. 예: 110, 110-2';
   if(dormPlanV315.rooms.some(r=>dormPlanKeyV315(r)===dormPlanKeyV315(room)))return $('dormAddErrorV344').textContent='이미 등록된 방입니다. 배치도에서 이동하세요.';
-  if(!target)return $('dormAddErrorV344').textContent='같은 관·층의 기준 방을 선택하세요.';
   button.disabled=true;try{await dormPlacementSaveV344(room,target,$('dormAddAfterV344').value==='true',true);$('dormAddDialogV344').close();}catch(e){$('dormAddErrorV344').textContent=e.message;}finally{button.disabled=false;}
  };
 }

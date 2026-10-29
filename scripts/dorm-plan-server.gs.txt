@@ -128,10 +128,12 @@ function saveDormPlanV315(payload){
   if(!next)next={...current,layout:current.layout.map(r=>({...r})),version:Utilities.getUuid()};
   if(payload.placement){
    const place=payload.placement,key=dormPlanKeyV315_(place.room||{}),targetKey=dormPlanKeyV315_(place.target||{});
-   const room=canonical.find(r=>dormPlanKeyV315_(r)===key),target=canonical.find(r=>dormPlanKeyV315_(r)===targetKey);
-   if(!room||!target||typeof place.after!=='boolean')throw Error('이동할 방과 기준 방을 확인하세요.');
+   const room=canonical.find(r=>dormPlanKeyV315_(r)===key);let target=canonical.find(r=>dormPlanKeyV315_(r)===targetKey);
+   if(!room||(!target&&!(place.create&&place.target===null))||typeof place.after!=='boolean')throw Error('이동할 방과 기준 방을 확인하세요.');
    if(place.create&&(!pending.some(p=>p.key===key)||books.some(b=>b.rows.some(r=>dormPlanKeyV315_(r)===key))))throw Error('이미 등록된 방입니다. 기존 방을 이동하세요.');
-   next.layout=dormPlaceRoomV344(next.layout,room,target,place.after);
+   if(!target){const anchors=next.layout.filter(r=>r.building===room.building&&r.floor===room.floor).sort((a,b)=>a.page-b.page||a.y-b.y||a.x-b.x);target=anchors[anchors.length-1];}
+   if(target)next.layout=dormPlaceRoomV344(next.layout,room,target,place.target===null?true:place.after);
+   else next.layout.push({building:room.building,floor:room.floor,room:room.room,page:Math.max(0,...next.layout.map(r=>r.page))+1,x:.5,y:.1,width:.05,height:.1});
   }
   next.layout=dormPlanBindLayoutV321_(next.layout,canonical);
   // 모든 대조를 마친 뒤 각 파일의 원본 시트를 백업합니다. 비품 기록과 호실 ID는 유지합니다.

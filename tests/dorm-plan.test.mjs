@@ -164,6 +164,13 @@ test('방 추가는 공실과 배치 위치를 함께 저장하고 재배치는 
  move.c.saveDormPlanV315({version:before.version,changes:[],placement:{room:r,target:{...r,room:'345'},after:true}});
  assert.equal(move.writes.length,0);assert.deepEqual(move.savedPlans[0].layout.sort((a,b)=>a.x-b.x).map(r=>r.room),['345','343-3']);
 });
+test('기준 방 없는 첫 공실도 호실 원본과 배치에 함께 기록한다',()=>{
+ const f=fixture(),plan=f.c.getDormPlanV315(),room={building:'정예 동관',floor:'1층',room:'110',token:'new',members:[],group:'미분류',staffRoom:false};
+ f.c.saveDormPlanV315({version:plan.version,changes:[room],placement:{room,target:null,after:true,create:true}});
+ assert.equal(f.writes.filter(w=>w.members).length,2);assert.ok(f.writes.filter(w=>w.members).every(w=>w.members.length===0));
+ const anchor=f.savedPlans[0].layout.find(r=>r.room==='110');assert.equal(anchor.building,'정예 동관');assert.equal(anchor.floor,'1층');assert.equal(anchor.roomId,'new-room');
+ const source=f.writes.find(w=>w.col===1).values[0];assert.equal(source[4],'110');assert.deepEqual(JSON.parse(source[6]).map(s=>s.occupied),[false,false]);assert.equal(source[8],'Y');
+});
 test('확인한 두 사람의 원본 정정만 적용하며 다른 호실의 동명이인은 바꾸지 않는다',()=>{
  const fix={building:'정예 동관',floor:'3층',fromRoom:'343-4',room:'343-3',cohort:'75',company:'3',group:'3중대',names:['검증가','검증나']};
  const rows=[['정예 동관','3층','복도','343-4','76','4','검증나','N','확인'],['정예 본관','2층','복도','259','76','4','검증나','N','확인']];

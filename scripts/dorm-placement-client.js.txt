@@ -3,8 +3,11 @@ async function dormPlacementSaveV344(room,target,after,create=false){
  if(dormPlacementBusyV344||dormPlanDraftV315||dormPlanBusyV315)throw Error('불러오기·PDF 검토를 마친 뒤 이동하세요.');
  dormPlacementBusyV344=true;
  try{
-  await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,changes:create?[{...room,members:[],token:'new',group:'미분류',corridor:target.corridor||'PDF 도면'}]:[],placement:{room:{building:room.building,floor:room.floor,room:room.room},target:{building:target.building,floor:target.floor,room:target.room},after,create}}));
-  await dormPlanRefreshLinksV315();await dormPlanLoadV315();toast(create?'공실 추가 완료':'방 위치 저장 완료');
+  await enqueue(()=>server('saveDormPlanV315',{version:dormPlanV315.version,changes:create?[{...room,members:[],token:'new',group:'미분류',corridor:target?.corridor||'PDF 도면',staffRoom:false}]:[],placement:{room:{building:room.building,floor:room.floor,room:room.room},target:target?{building:target.building,floor:target.floor,room:target.room}:null,after,create}}));
+  if(create){dormResetFiltersV251_();$('dormBuilding').value=room.building;$('dormFloor').value=room.floor;}
+  await dormPlanRefreshLinksV315();await dormPlanLoadV315();
+  const anchor=dormPlanV315.layout.find(r=>dormPlanKeyV315(r)===dormPlanKeyV315(room));if(anchor){$('dormPlanPageV315').value=String(anchor.page);await dormPlanRenderV315();const card=Array.from($('dormPlanHotspotsV315').querySelectorAll('[data-plan-room]')).find(b=>b.querySelector('b')?.textContent===room.room);card?.scrollIntoView({block:'nearest',inline:'center'});}
+  toast(create?'공실 추가 완료 · 배치도·호실별 인원 관리 반영':'방 위치 저장 완료');
  }finally{dormPlacementBusyV344=false;}
 }
 function dormPlacementWireV344(layout){
@@ -25,7 +28,7 @@ function dormPlacementWireV344(layout){
 function dormPlacementTargetsV344(){
  const b=$('dormAddBuildingV344').value,f=$('dormAddFloorV344').value;
  const rows=(dormPlanV315?.layout||[]).filter(r=>r.building===b&&r.floor===f&&!r.unplaced);
- $('dormAddTargetV344').innerHTML=rows.map((r,i)=>'<option value="'+i+'">'+escapeH(r.room)+'호</option>').join('');
+ $('dormAddTargetV344').innerHTML='<option value="">맨 뒤에 추가</option>'+rows.map((r,i)=>'<option value="'+i+'">'+escapeH(r.room)+'호</option>').join('');
  return rows;
 }
 function dormPlacementInitV344(){
@@ -35,10 +38,9 @@ function dormPlacementInitV344(){
  $('dormAddSaveV344').onclick=async()=>{
   const button=$('dormAddSaveV344');if(button.disabled)return;
   const room={building:$('dormAddBuildingV344').value,floor:$('dormAddFloorV344').value,room:$('dormAddNumberV344').value.normalize('NFKC').trim()};
-  const rows=dormPlanV315.layout.filter(r=>r.building===room.building&&r.floor===room.floor&&!r.unplaced),target=rows[Number($('dormAddTargetV344').value)];
+  const rows=dormPlanV315.layout.filter(r=>r.building===room.building&&r.floor===room.floor&&!r.unplaced),target=$('dormAddTargetV344').value===''?null:rows[Number($('dormAddTargetV344').value)];
   if(!/^\d{3}(?:-[1-8])?$/.test(room.room))return $('dormAddErrorV344').textContent='호실을 입력하세요. 예: 110, 110-2';
   if(dormPlanV315.rooms.some(r=>dormPlanKeyV315(r)===dormPlanKeyV315(room)))return $('dormAddErrorV344').textContent='이미 등록된 방입니다. 배치도에서 이동하세요.';
-  if(!target)return $('dormAddErrorV344').textContent='같은 관·층의 기준 방을 선택하세요.';
   button.disabled=true;try{await dormPlacementSaveV344(room,target,$('dormAddAfterV344').value==='true',true);$('dormAddDialogV344').close();}catch(e){$('dormAddErrorV344').textContent=e.message;}finally{button.disabled=false;}
  };
 }
