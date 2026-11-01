@@ -29,6 +29,6 @@ html[data-session-restoring="true"] .pages-login{display:none}
 .pages-login .pages-email-form button{width:100%;min-height:52px;font-size:18px;font-weight:650;background:#edf4ff}
 .pages-login #pagesRetry{min-height:48px;font-size:18px}
 .pages-login button,.pages-session button{border:1px solid #bccbdc;border-radius:7px;background:#fff;padding:8px 12px;color:#172b43;cursor:pointer}
-.pages-session{position:fixed;right:12px;bottom:12px;z-index:10000;display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid #d9e2ed;border-radius:10px;background:#fffffff2;box-shadow:0 3px 16px #13243a14;font:12px system-ui,sans-serif}
-@media(max-width:560px){.pages-login{padding:16px}.pages-session{max-width:calc(100vw - 24px)}#pagesAccount{max-width:180px;overflow:hidden;text-overflow:ellipsis}.pages-login-card{padding:28px 22px}.pages-login h1{font-size:28px}}
+.pages-session{position:static;display:flex;align-items:center;justify-content:flex-end;gap:8px;max-width:100%;min-width:0;margin:6px 0;padding:4px 0;font:12px system-ui,sans-serif;color:#62758a}#pagesAccount{min-width:0;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pages-session button{flex:none;min-height:40px}
+@media(max-width:560px){.pages-login{padding:16px}.pages-session{width:100%;margin:4px 0;gap:6px}#pagesAccount{max-width:calc(100% - 84px)}.pages-session button{min-height:44px;padding:7px 10px}.pages-login-card{padding:28px 22px}.pages-login h1{font-size:28px}}
 @media print{.pages-session,.pages-login{display:none!important}}

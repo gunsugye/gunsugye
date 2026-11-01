@@ -91,6 +91,10 @@ html = html.replace(/<body([^>]*)>/, `<body$1>
  </div>
 </section>
 <div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>`);
+// 로그인 상태는 본문 흐름 안의 상단 계정 줄에 둡니다.
+const accountMarkup=html.match(/<div id="pagesSession"[\s\S]*?<\/div>/)?.[0];
+if(!accountMarkup)throw Error('계정 표시 영역을 확인하세요.');
+html=html.replace(accountMarkup,'').replace('</header>','</header>'+accountMarkup);
 html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" hidden>업데이트 안내</button>
 <div id="notificationDockV309" class="notification-dock"><aside class="pages-update-notice" id="pagesUpdateNotice" role="region" aria-label="새 업데이트 안내" hidden>
  <div class="pages-update-head"><strong>업데이트</strong><button id="pagesUpdateClose" type="button" aria-label="업데이트 알림 닫기">×</button></div><p>새 업데이트 사항이 있습니다</p>
