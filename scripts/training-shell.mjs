@@ -18,11 +18,7 @@ export function trainingShellHtml(html){
  html=html.replace('</main>',panels+'</main>');
  html=html.replace(/<button class="v294-mobile-training hidden"[^>]*data-training-quick="train">예비 명단<\/button>/,'');
  const mobile=placeholders.map(([id,title])=>'<button class="v294-mobile-training hidden" type="button" data-training-quick="'+id+'">'+title+'</button>').join('');
- return html.replace(/(<nav class="mobile-nav"[^>]*>)/,'$1'+mobile)
- .replace('data-train-nav="train">성무기초군사훈련','data-train-nav="train">00기 성무기초군사훈련')
- .replace('<h2>성무기초군사훈련</h2>','<h2>00기 성무기초군사훈련</h2>')
- .replace('aria-label="성무기초군사훈련 메뉴"','aria-label="00기 성무기초군사훈련 메뉴"')
- .replace('<button data-view="train">성무훈련</button>','<button data-view="train">00기 성무훈련</button>');
+ return html.replace(/(<nav class="mobile-nav"[^>]*>)/,'$1'+mobile);
 }
 export function trainingShellJs(js){
  const ids=['train','trainJournal','trainCalendar',...placeholders.map(([id])=>id)],literal=JSON.stringify(ids);
@@ -34,8 +30,6 @@ export function trainingShellJs(js){
  js=js.replace('const viewNames={','const viewNames={'+names)
  .replace("['uniformRequests','assetRequests','departures','today'",JSON.stringify(placeholders.map(([id])=>id)).slice(0,-1)+",'uniformRequests','assetRequests','departures','today'")
  .replace("v==='uniformRequests'||v==='assetRequests'",placeholders.map(([id])=>"v==='"+id+"'").join('||')+"||v==='uniformRequests'||v==='assetRequests'");
- return js.replace("train:['BASIC MILITARY TRAINING','성무기초군사훈련'","train:['BASIC MILITARY TRAINING','00기 성무기초군사훈련'")
- .replace("'성무기초군사훈련 · 업무일지'","'00기 성무기초군사훈련 · 업무일지'")
- .replace("'성무기초군사훈련 · 캘린더'","'00기 성무기초군사훈련 · 캘린더'")
- .replace("training?'훈련 업무 메뉴':'일반학기 메뉴'","training?'00기 성무기초군사훈련':'일반학기 메뉴'");
+ return js.replace("badge.textContent='현재 근무: '+(v288ActiveTerm||'미설정');", "badge.textContent='현재 근무: '+(document.body.classList.contains('v294-training-mode')?'00기 성무기초군사훈련':v288ActiveTerm||'미설정');")
+ .replace("document.body.classList.toggle('v294-training-mode',training);", "document.body.classList.toggle('v294-training-mode',training);v288ShowActiveTerm(v288ActiveTerm);");
 }
