@@ -1,0 +1,11 @@
+export function uniformRequestNavSource(source){source=source.replace("{id:'uniform',title:'피복',items:['uniform']}","{id:'uniform',title:'피복',items:['uniform','uniformRequests']}");return source.match(/const NAV_FIXED_V233=\[([^\]]*)\]/)?.[1].includes("'uniformRequests'")?source:source.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['uniformRequests',");}
+export function uniformRequestNavJs(js){
+ js=uniformRequestNavSource(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['uniformRequests',").replace('const viewNames={',"const viewNames={uniformRequests:['UNIFORM SIZE REQUESTS','피복 사이즈 수정 요청','현재 사이즈와 요청 내용을 비교하고 검토·반영합니다.'],");
+ js=js.replace('function navInitV220(){',`function navInitV220(){const uniformRequestButton=document.createElement('button');uniformRequestButton.type='button';uniformRequestButton.className='nav-btn';uniformRequestButton.dataset.view='uniformRequests';uniformRequestButton.textContent='피복 사이즈 수정 요청';$('sidebarMenu').appendChild(uniformRequestButton);`)
+ .replace("['assetRequests','departures','today'","['uniformRequests','assetRequests','departures','today'")
+ .replace("v==='assetRequests'||v==='departures'","v==='uniformRequests'||v==='assetRequests'||v==='departures'")
+ .replace("if(v==='assetRequests')assetRequestsLoadV336();","if(v==='assetRequests')assetRequestsLoadV336();if(v==='uniformRequests')uniformRequestsLoadV350();")
+ .replace("if(view==='assetRequests'&&v!==view", "if((view==='assetRequests'||view==='uniformRequests')&&v!==view");
+ return js;
+}
+export function uniformRequestNavHtml(html){return html.replace('</main>',`<section id="uniformRequestsView" class="hidden"><div class="panel"><div class="panel-head"><h2>피복 사이즈 수정 요청</h2><button id="uniformRequestsRefreshV351" class="btn" type="button">새로고침</button></div><p class="panel-sub">확인 완료: 기록 유지 · 수정 반영: 검토한 사이즈 저장</p><label>처리상태 <select id="uniformRequestsFilterV351" class="field"><option value="대기">대기</option><option value="전체">전체</option></select></label><p id="uniformRequestsStatusV351" role="status"></p><div id="uniformRequestsListV350"></div></div></section></main>`).replace('<button data-view="uniform">사이즈표</button>','<button data-view="uniform">사이즈표</button><button data-view="uniformRequests">피복 요청</button>').replace('>비품·피복 요청</button>','>비품 요청</button>');}

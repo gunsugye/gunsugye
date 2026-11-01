@@ -18,6 +18,7 @@ import {laborInterfaceJs,laborInterfaceCSS} from './labor-interface.mjs';
 import {assetOverviewJs} from './asset-overview.mjs';
 import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} from './asset-plan.mjs';
 import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} from './asset-requests.mjs';
+import {uniformRequestNavSource,uniformRequestNavJs,uniformRequestNavHtml} from './uniform-request-navigation.mjs';
 import {personalSessionStore} from './personal-session.mjs';
 import {dormMemberCohortsV343} from './dorm-members.mjs';
 import {dormPlaceRoomV344} from './dorm-placement.mjs';
@@ -42,7 +43,7 @@ js=laborInterfaceJs(js);
 js=assetOverviewJs(js);
 js=assetPlanJs(js);
 js=assetRequestsJs(js,read('scripts/asset-requests-client.js.txt'));
-js=js.replaceAll('생활실 비품 관리 수정 요청','비품·피복 수정 요청');
+js=uniformRequestNavJs(js);
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+read('scripts/uniform-requests-client.js.txt')+'\n'+js.slice(end);}
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
@@ -106,6 +107,7 @@ for (const [path, contents] of assets) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
 write('docs/index.html', assetRequestsHtml(assetPlanHtml(dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html)))))))));
+write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
@@ -114,6 +116,7 @@ const privatePlan=JSON.parse(read('.deploy/dorm-plan-source.json'));
 let legacy = roomAssetServer(repairServer(correctDormSource(read('Code.gs.txt'),privatePlan.correction)+'\n'+read('scripts/departures-server.gs.txt')),read('scripts/room-assets-server.gs.txt'),read('scripts/room-assets-bulk.gs.txt'));
 legacy=assetPlanServer(legacy);
 legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.txt');
+legacy=uniformRequestNavSource(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
 legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
