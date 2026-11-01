@@ -42,6 +42,8 @@ js=laborInterfaceJs(js);
 js=assetOverviewJs(js);
 js=assetPlanJs(js);
 js=assetRequestsJs(js,read('scripts/asset-requests-client.js.txt'));
+js=js.replaceAll('생활실 비품 관리 수정 요청','비품·피복 수정 요청');
+{const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+read('scripts/uniform-requests-client.js.txt')+'\n'+js.slice(end);}
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
  .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;
@@ -93,7 +95,8 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 </aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+read('scripts/personal-portal.js'),personalCss=read('scripts/personal-portal.css')+assetPlanCSS,personalHtml=read('scripts/personal-portal.html').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
+const personalSource=read('scripts/personal-portal.js').replace('function fields(id,values){','function plainFields(id,values){').replace("if(result.uniform)fields('uniform',result.uniform.uniform);","if(result.uniform){uniformEditV350=result.uniform.uniformEdit||null;fields('uniform',result.uniform.uniform);}").replace('function clear(message=\'\'){',"function clear(message=''){uniformEditV350=null;uniformDirtyV350=false;").replaceAll('if(dirty&&','if((dirty||uniformDirtyV350)&&').replace('return;load().catch', 'return;uniformDirtyV350=false;uniformEditV350=null;load().catch').replace('})();',read('scripts/personal-uniform.js.txt')+'\n})();');
+const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+personalSource,personalCss=read('scripts/personal-portal.css')+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}',personalHtml=read('scripts/personal-portal.html').replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','비품·피복 변경은 관리자 확인 후 반영').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
 write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
@@ -113,6 +116,7 @@ legacy=assetPlanServer(legacy);
 legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.txt');
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
+legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
@@ -152,6 +156,7 @@ return {
   if(action==='details')return personalDetailsV337_();
   if(action==='supplies'||action==='uniform')return personalDetailsV337_(action);
   if(action==='assets')return personalSaveAssetsV331_(input);
+  if(action==='uniform-request')return personalUniformRequestV350_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();
  },

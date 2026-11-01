@@ -20,6 +20,7 @@ await import('./asset-initialization.test.mjs');
 await import('./personal.test.mjs');
 await import('./personal-session.test.mjs');
 await import('./asset-requests.test.mjs');
+await import('./uniform-requests.test.mjs');
 await import('./dorm-corrections.test.mjs');
 if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
   await import('./apps-script.test.mjs');

@@ -20,5 +20,6 @@ test('개인 API는 요청의 타인 ID와 명령을 전달하지 않고 검증�
  await call('/personal/details',{personId:'other',method:'removeRosterMember'},token);assert.equal(envelope.method,'pagesPersonalDetails');assert.deepEqual(envelope.args,[]);
  for(const [path,method] of [['supplies','pagesPersonalSupplies'],['uniform','pagesPersonalUniform']]){await call('/personal/'+path,{personId:'other',method:'removeRosterMember'},token);assert.equal(envelope.method,method);assert.deepEqual(envelope.args,[]);}
  await call('/personal/assets',{roomId:'other',personId:'other',method:'removeRosterMember',changes:[{itemId:'desk'}]},token);assert.equal(envelope.method,'pagesPersonalAssets');assert.deepEqual(envelope.args,[{changes:[{itemId:'desk'}]}]);
+ await call('/personal/uniform-request',{personId:'other',method:'removeRosterMember',changes:[{item:'전투복',size:'105'}],expectedUpdatedAt:'old'},token);assert.equal(envelope.method,'pagesPersonalUniformRequest');assert.deepEqual(envelope.args,[{changes:[{item:'전투복',size:'105'}],expectedUpdatedAt:'old'}]);assert.equal((await call('/personal/uniform-request',{})).status,401);
  const admin=await sessionToken({email:'admin@gmail.com',sub:'google123',sessionId:randomUUID(),expiresAt:Date.now()+600000},env.API_SHARED_SECRET);assert.equal((await call('/personal/me',{},admin)).status,403);assert.equal((await call('/personal/me',{})).status,401);
 });

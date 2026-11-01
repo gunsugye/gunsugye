@@ -23,3 +23,5 @@ html[data-personal-restoring] #login{display:none}
 #assetPlanV332 .asset-plan-card>.asset-plan-pending{display:flex;align-items:center;justify-content:center;border-top:1px solid var(--plan-border);font-size:10px;white-space:nowrap}
 #assetPlanV332 .asset-plan-clear{display:grid;place-items:center;flex:1;font-size:12px;opacity:.8}
 #assetPlanV332 .asset-plan-band{padding:5px 10px}#assetPlanV332 .asset-plan-scroll{padding-bottom:8px}
+
+.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}
