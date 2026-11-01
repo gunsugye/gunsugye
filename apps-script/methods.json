@@ -21,6 +21,7 @@
   "createSupplyItem",
   "createWorkspacePageV221",
   "deleteCalendarEventV221",
+  "deleteDormInventoryRequestV349",
   "deleteDormV234",
   "deleteLaborRecordDraftV266",
   "deleteUniformCohortV278",

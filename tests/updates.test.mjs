@@ -7,7 +7,7 @@ const tick=()=>new Promise(r=>setImmediate(r));
 
 function noticeFixture(){
  const elements=new Map(),events=new Map(),stored=new Map();let clock=100000,reloads=0,requests=0,release={id:'aaaaaaaaaaaaaaaa',version:'3.08',title:'검증 업데이트',notes:['첫 번째 변경']};
- const element=id=>{if(!elements.has(id))elements.set(id,{hidden:true,textContent:'',children:[],addEventListener:(n,f)=>events.set(id+':'+n,f),replaceChildren(...nodes){this.children=nodes;},append(){}});return elements.get(id);};
+ const element=id=>{if(!elements.has(id))elements.set(id,{id,hidden:true,textContent:'',children:[],addEventListener:(n,f)=>events.set(id+':'+n,f),replaceChildren(...nodes){this.children=nodes;},append(){}});return elements.get(id);};
  const context=vm.createContext({
   document:{documentElement:{dataset:{releaseId:'aaaaaaaaaaaaaaaa'}},visibilityState:'visible',getElementById:element,createElement:()=>({textContent:''}),querySelector:()=>({append(){}}),addEventListener:(n,f)=>events.set(n,f)},
   window:{addEventListener:(n,f)=>events.set(n,f),logbookReloadState:()=>({dirty:false}),confirm:()=>false},URL,
@@ -35,6 +35,15 @@ test('새 버전 적용은 저장 중을 차단하고 미저장 확인 및 오�
  f.context.window.logbookReloadState=()=>({busy:true,dirty:false});f.events.get('pagesUpdateApply:click')();assert.equal(f.reloads,0);assert.match(f.element('pagesUpdateHelp').textContent,/저장 중/);
  f.context.window.logbookReloadState=()=>({dirty:true});f.context.window.confirm=()=>true;f.events.get('pagesUpdateApply:click')();assert.equal(f.reloads,1);
  f.context.window.logbookReloadState=()=>{throw Error('검증 오류');};f.events.get('pagesUpdateApply:click')();assert.match(f.element('pagesUpdateHelp').textContent,/적용 실패: 검증 오류/);
+});
+test('업무 화면 초기화를 기다리지 않고 교체된 업데이트 버튼과 내역 메뉴 클릭을 처리한다',async()=>{
+ const f=noticeFixture();await tick();assert.equal(f.requests,1);
+ f.setRelease({id:'bbbbbbbbbbbbbbbb',version:'3.48',title:'클릭',notes:[]});f.advance();f.events.get('focus')();await tick();
+ let stopped=0,opened=0;f.context.window.LOGBOOK_OPEN_UPDATES=()=>{opened++;return true;};
+ const click=button=>f.events.get('click')({target:{closest:()=>button},preventDefault(){},stopImmediatePropagation(){stopped++;}});
+ click({id:'replacement',dataset:{view:'updates'}});assert.equal(opened,1);
+ f.element('pagesUpdateNotice').hidden=true;click({id:'pagesUpdateLauncher'});assert.equal(f.element('pagesUpdateNotice').hidden,false);
+ click({id:'pagesUpdateApply'});assert.equal(f.reloads,1);assert.equal(stopped,3);
 });
 
 test('생성된 배포 정보와 첫 화면 버전이 같고 새로고침 전에 로그인 덮개를 숨길 수 있다',()=>{

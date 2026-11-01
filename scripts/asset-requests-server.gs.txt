@@ -1,6 +1,6 @@
 const ASSET_REQUEST_TAB_V336_='생활실비품_수정요청';
 function assetRequestTabV336_(ss,create){let sh=ss.getSheetByName(ASSET_REQUEST_TAB_V336_);if(!sh&&create){sh=ss.insertSheet(ASSET_REQUEST_TAB_V336_);setupTab_(sh,['요청ID','요청시각','처리상태','요청JSON','처리시각','처리자','처리메모']);}return sh;}
-function assetRequestRowsV336_(ss){const sh=assetRequestTabV336_(ss,false);if(!sh||sh.getLastRow()<2)return [];return sh.getRange(2,1,sh.getLastRow()-1,7).getDisplayValues().map((r,i)=>{let data;try{data=JSON.parse(r[3]);}catch(_){throw Error('수정 요청 기록이 손상되었습니다.');}return {...data,id:r[0],createdAt:r[1],status:r[2],resolvedAt:r[4],resolvedBy:r[5],note:r[6],row:i+2};});}
+function assetRequestRowsV336_(ss){const sh=assetRequestTabV336_(ss,false);if(!sh||sh.getLastRow()<2)return [];return sh.getRange(2,1,sh.getLastRow()-1,7).getDisplayValues().map((r,i)=>{let data;try{data=JSON.parse(r[3]);}catch(_){throw Error('수정 요청 기록이 손상되었습니다.');}return {...data,id:r[0],createdAt:r[1],status:r[2],resolvedAt:r[4],resolvedBy:r[5],note:r[6],row:i+2};}).filter(r=>r.status!=='삭제');}
 function assetRequestCreateV336_(ss,person,room,changes){
  if(!Array.isArray(changes)||!changes.length||changes.length>100)throw Error('요청할 품목을 확인하세요.');
  const available=personalAssetsV331_(ss,room),used=new Set();
@@ -14,6 +14,15 @@ function assetRequestCreateV336_(ss,person,room,changes){
  const json=JSON.stringify(data);if(json.length>20000)throw Error('요청 내용이 너무 깁니다. 품목을 나누어 요청하세요.');const sh=assetRequestTabV336_(ss,true),id=Utilities.getUuid();sh.appendRow([id,iso_(),'대기',json,'','','']);return {requested:true,requestId:id,assets:personalAssetsV331_(ss,room,person.id)};
 }
 function assetRequestAdminV336_(){const c=requireOwner_();if(!c.canManageUsers&&c.role!=='전체 편집자')throw Error('관리자만 수정 요청을 처리할 수 있습니다.');}
+function deleteDormInventoryRequestV349(id,expectedStatus,expectedResolvedAt){
+ assetRequestAdminV336_();return lockAndRun_(()=>{
+  const ss=spreadsheet_(),request=assetRequestRowsV336_(ss).find(r=>r.id===id);
+  if(!request||request.status==='삭제')throw Error('요청이 이미 삭제되었습니다. 다시 불러오세요.');
+  if(request.status!==expectedStatus||String(request.resolvedAt||'')!==String(expectedResolvedAt||''))throw Error('요청이 다른 화면에서 처리되었습니다. 다시 불러오세요.');
+  const saved={...request,deletedAt:iso_(),deletedBy:config_().email,previousStatus:request.status};delete saved.row;
+  assetRequestTabV336_(ss,false).getRange(request.row,3,1,2).setValues([['삭제',JSON.stringify(saved)]]);return {ok:true};
+ });
+}
 function getDormInventoryRequestsV336(){assetRequestAdminV336_();const ss=spreadsheet_(),records=assetV244Records_(ss.getSheetByName(ROOM_ASSET_V244.RECORDS));return {requests:assetRequestRowsV336_(ss).filter((r,i,all)=>r.status==='대기'||i>=all.length-100).reverse().map(r=>({...r,changes:r.changes.map(c=>({...c,currentSlots:records.find(x=>x.roomId===r.roomId&&x.itemId===c.itemId)?.slots||[]}))}))};}
 function resolveDormInventoryRequestV336(id,action,edits,note){
  assetRequestAdminV336_();return lockAndRun_(()=>{const ss=spreadsheet_(),request=assetRequestRowsV336_(ss).find(r=>r.id===id);if(!request)throw Error('요청을 찾을 수 없습니다.');if(request.status!=='대기')throw Error('이미 처리한 요청입니다. 새로고침하세요.');if(!['confirm','apply'].includes(action))throw Error('처리 방법을 확인하세요.');

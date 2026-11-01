@@ -1,4 +1,12 @@
 let assetRequestsV336=[],assetRequestBusyV336=false;
+document.addEventListener('click',async e=>{
+ const button=e.target.closest('[data-request-delete]');if(!button||assetRequestBusyV336)return;
+ const card=button.closest('[data-request-id]'),r=assetRequestsV336.find(x=>x.id===card.dataset.requestId);if(!r)return;
+ if(!confirm('이 요청 내역을 삭제할까요? 이미 반영한 비품 기록은 유지됩니다.'))return;
+ assetRequestBusyV336=true;card.inert=true;
+ try{await server('deleteDormInventoryRequestV349',r.id,r.status,r.resolvedAt||'');card.removeAttribute('data-request-edited');assetRequestBusyV336=false;await assetRequestsLoadV336();toast('요청 삭제 완료');}
+ catch(error){$('assetRequestsStatusV336').textContent=error.message;}finally{assetRequestBusyV336=false;card.inert=false;}
+});
 function assetRequestsTextV336(slot){return slot?[slot.status||'미점검',slot.unavailable?'사용불가':'',slot.details||''].filter(Boolean).join(' · '):'미점검';}
 async function assetRequestsLoadV336(){if(assetRequestBusyV336)return;$('assetRequestsStatusV336').textContent='불러오는 중…';try{const data=await server('getDormInventoryRequestsV336');assetRequestsV336=data.requests||[];assetRequestsRenderV336();$('assetRequestsStatusV336').textContent='대기 '+assetRequestsV336.filter(r=>r.status==='대기').length+'건';}catch(e){$('assetRequestsStatusV336').textContent=e.message;}}
 function assetRequestsRenderV336(){

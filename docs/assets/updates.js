@@ -26,9 +26,8 @@
   }catch(_){/* 업무 화면을 방해하지 않고 다음 주기에 재확인합니다. */}
   finally{busy=false;}
  }
- $('pagesUpdateClose').addEventListener('click',dismiss);
- $('pagesUpdateLauncher').addEventListener('click',()=>{if(latest)render(true);check(true);});
- $('pagesUpdateApply').addEventListener('click',()=>{
+ const openNotice=()=>{if(latest)render(true);check(true);};
+ const applyUpdate=()=>{
   if(!latest)return;if(latest.id===running){dismiss();return;}
   try{
    const state=window.logbookReloadState?.();
@@ -37,6 +36,26 @@
    $('pagesUpdateHelp').textContent='새 버전을 불러오는 중…';
    const url=new URL(location.href);url.searchParams.set('appUpdate',latest.id);location.assign(url.href);
   }catch(error){$('pagesUpdateHelp').textContent='적용 실패: '+String(error.message||error)+' · 브라우저 새로고침으로 다시 불러와 주세요.';}
- });
- window.LOGBOOK_UPDATES={start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check();setInterval(()=>check(),60000);document.addEventListener('visibilitychange',()=>check());window.addEventListener('focus',()=>check());}};
+ };
+ $('pagesUpdateClose').addEventListener('click',dismiss);
+ $('pagesUpdateLauncher').addEventListener('click',openNotice);
+ $('pagesUpdateApply').addEventListener('click',applyUpdate);
+ // 메뉴 재구성·버튼 교체 이후에도 같은 클릭 경로를 사용합니다.
+ document.addEventListener('click',event=>{
+  const button=event.target.closest?.('#pagesUpdateClose,#pagesUpdateLauncher,#pagesUpdateApply,[data-view="updates"]');if(!button)return;
+  if(button.dataset?.view==='updates'){
+   if(!window.LOGBOOK_OPEN_UPDATES)return;
+   const handled=window.LOGBOOK_OPEN_UPDATES();if(handled===null)return;
+   event.preventDefault();event.stopImmediatePropagation();return;
+  }
+  event.preventDefault();event.stopImmediatePropagation();
+  if(button.id==='pagesUpdateClose')dismiss();
+  else if(button.id==='pagesUpdateLauncher')openNotice();
+  else if(latest)applyUpdate();
+  else{check(true).then(()=>{if(latest)applyUpdate();else $('pagesUpdateHelp').textContent='업데이트 정보를 불러오지 못했습니다. 다시 눌러 주세요.';});}
+ },true);
+ function start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check();setInterval(()=>check(),60000);document.addEventListener('visibilitychange',()=>check());window.addEventListener('focus',()=>check());}
+ window.LOGBOOK_UPDATES={start};
+ // 업무 화면의 API 조회·초기화가 늦어져도 업데이트 클릭을 연결합니다.
+ start();
 })();

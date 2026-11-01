@@ -1,5 +1,15 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash,randomUUID} from 'node:crypto';
 const requests=readFileSync(new URL('../scripts/asset-requests-server.gs.txt',import.meta.url),'utf8'),assets=readFileSync(new URL('../scripts/room-assets-server.gs.txt',import.meta.url),'utf8');
+test('요청 삭제는 관리자만 가능하며 처리된 비품과 요청 원문은 유지한다',()=>{
+ const f=fixture(),r=f.create();f.c.resolveDormInventoryRequestV336(r.requestId,'apply',f.changes(),'확인');const writes=f.writes(),request=f.c.getDormInventoryRequestsV336().requests[0];
+ f.c.deleteDormInventoryRequestV349(r.requestId,request.status,request.resolvedAt);assert.equal(f.writes(),writes);assert.equal(f.values[0][2],'삭제');assert.equal(f.c.getDormInventoryRequestsV336().requests.length,0);
+ const saved=JSON.parse(f.values[0][3]);assert.ok(saved.deletedAt);assert.equal(saved.deletedBy,'admin@example.com');assert.equal(saved.previousStatus,'반영 완료');assert.equal(saved.changes[0].slots[0].details,'교체 요청');assert.ok(saved.appliedEdits);
+ assert.throws(()=>f.c.deleteDormInventoryRequestV349(r.requestId,request.status,request.resolvedAt),/이미 삭제/);
+});
+test('삭제 시 권한과 다른 화면의 처리 상태 변경을 검사한다',()=>{
+ const f=fixture(),r=f.create();f.setRole({role:'범위 편집자',canManageUsers:false});assert.throws(()=>f.c.deleteDormInventoryRequestV349(r.requestId,'대기',''),/관리자/);assert.equal(f.values[0][2],'대기');
+ f.setRole({canManageUsers:true,email:'admin@example.com'});f.c.resolveDormInventoryRequestV336(r.requestId,'confirm',[],'');assert.throws(()=>f.c.deleteDormInventoryRequestV349(r.requestId,'대기',''),/다른 화면/);assert.equal(f.values[0][2],'확인 완료');
+});
 function fixture(){const values=[],person={id:'p1',name:'검증가',cohort:'77',company:'1'},room={id:'room',building:'본관',floor:'1층',room:'156-1',personalPosition:'1'},records=[{roomId:'room',itemId:'desk',updatedAt:'old',slots:[{position:'1',status:'정상',details:'본인',unavailable:false},{position:'2',status:'정상',details:'동료',unavailable:false}]}];let writes=0,locked=false,role={canManageUsers:true,email:'admin@example.com'};
  const sh={getLastRow:()=>values.length+1,appendRow:r=>values.push(r),getRange:(row,col,n=1,width=1)=>({getDisplayValues:()=>values.slice(row-2,row-2+n).map(r=>r.slice(col-1,col-1+width)),setValues:rows=>rows.forEach((r,i)=>{values[row-2+i]??=[];r.forEach((v,j)=>values[row-2+i][col-1+j]=v);})})},ss={getSheetByName:()=>sh};
  const c=vm.createContext({JSON,Utilities:{getUuid:randomUUID},requireOwner_:()=>role,config_:()=>role,spreadsheet_:()=>ss,lockAndRun_:fn=>{assert.equal(locked,false);locked=true;try{return fn();}finally{locked=false;}},safeCell_:v=>v,iso_:()=>new Date().toISOString(),personalHashV330_:v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),ROOM_ASSET_V244:{CATALOG:'cat',RECORDS:'records'},ROOM_ASSET_STATUSES_V246:['정상','수리 필요(보고)','수리 필요(미보고)','교체 필요'],canonicalRepairStateV216_:s=>s,assetV244Catalog_:()=>[{id:'desk',name:'책상'}],assetV244Records_:()=>records,rosterRows_:()=>[person],rosterRequired_:()=>({}),personalRoomV331_:()=>room});vm.runInContext(assets+'\n'+requests,c);
