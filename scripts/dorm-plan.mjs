@@ -1,4 +1,4 @@
-import {dormMemberCohortsV343,dormPdfNamesV343,dormPdfMembersV343} from './dorm-members.mjs';
+import {dormMemberCohortsV343,dormPdfNamesV343,dormPdfMembersV343,dormPdfPeopleV365} from './dorm-members.mjs';
 export function dormPlanHtml(html){
  const panel=`<section class="panel dorm-edit-only dorm-plan-panel" aria-label="생활실 편성안 도면">
  <div class="panel-head"><div><h2 class="panel-title">생활실 편성안 · 간편 배치도</h2><p class="panel-sub">PDF의 배치 순서에 따라 호실을 간결하게 정리합니다. 호실을 눌러 번호·중대·기수·이름을 수정하세요.</p></div><button class="btn btn-primary" id="dormPlanLoadV315" type="button">배치도 불러오기</button></div>
@@ -24,7 +24,7 @@ export function dormPlanClient(js,client){
  if(!js.includes(rowHook))throw Error('생활실 명단 편집 위치를 확인하세요.');
  js=js.replace(rowHook,"+'</td><td>'+membersHTML+(canChange?'<button type=\"button\" class=\"btn\" data-dorm-members-edit>배정 편집</button>':'')+'</td><td>'");
  const hook=js.lastIndexOf('})();');if(hook<0)throw Error('도면 편집 초기화 위치를 확인하세요.');
- return js.slice(0,hook)+'\n'+dormMemberCohortsV343.toString()+'\n'+dormPdfNamesV343.toString()+'\n'+dormPdfMembersV343.toString()+'\n'+client+'\ndormPlanInitV315();\n'+js.slice(hook);
+ return js.slice(0,hook)+'\n'+dormMemberCohortsV343.toString()+'\n'+dormPdfPeopleV365.toString()+'\n'+dormPdfNamesV343.toString()+'\n'+dormPdfMembersV343.toString()+'\n'+client+'\ndormPlanInitV315();\n'+js.slice(hook);
 }
 export const dormPlanCSS=`
 .dorm-moving-v346{opacity:.55}.dorm-drop-before-v346{box-shadow:-6px 0 #f28a20!important}.dorm-drop-after-v346{box-shadow:6px 0 #f28a20!important}.dorm-drag-v344{user-select:none;-webkit-user-select:none;-webkit-user-drag:none}

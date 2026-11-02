@@ -1,0 +1,31 @@
+let dutyCadetsBusyV365=false,dutyCadetsDataV365=[],dutyCadetsCacheV365=null,dutyCadetsMetaV365=null,dutyCadetsWarningsV365=0;
+function dutyCadetsRenderV365(){
+ const query=$('dutyCadetsSearchV365').value.trim().toLowerCase(),building=$('dutyCadetsBuildingV365').value,list=dutyCadetsDataV365.filter(p=>(!building||p.building===building)&&(!query||Object.values(p).join(' ').toLowerCase().includes(query)));
+ $('dutyCadetsRowsV365').innerHTML=list.map(p=>'<tr><td>'+escapeH(p.cohort?p.cohort+'기':'확인 필요')+'</td><td>'+escapeH(p.company?p.company+'중대':'확인 필요')+'</td><td><strong>'+escapeH(p.name)+'</strong></td><td>'+escapeH(p.duty)+'</td><td>'+escapeH([p.building,p.floor,p.room+'호'].join(' '))+'</td><td>'+p.page+'쪽</td><td>'+escapeH(p.review)+'</td></tr>').join('')||'<tr><td colspan="7">표시할 근무생도가 없습니다.</td></tr>';
+ $('dutyCadetsStatusV365').textContent=(dutyCadetsMetaV365?.filename||'편성안')+' · 근무생도 '+dutyCadetsDataV365.length+'명 · 표시 '+list.length+'명'+(dutyCadetsWarningsV365?' · 판독 범위 확인 '+dutyCadetsWarningsV365+'호':'');
+}
+async function dutyCadetsLoadV365(){
+ if(dutyCadetsBusyV365)return;dutyCadetsBusyV365=true;$('dutyCadetsReloadV365').disabled=true;$('dutyCadetsStatusV365').textContent='등록된 편성안 확인 중…';let pdf;
+ try{
+  const meta=await server('getDormDutyCadetsV365',false);let parsed;
+  if(meta.indexed)parsed=meta.layout.map(anchor=>({anchor,people:anchor.pdfMembers}));
+  else if(dutyCadetsCacheV365?.version===meta.version)parsed=dutyCadetsCacheV365.parsed;
+  else{
+   const source=await server('getDormDutyCadetsV365',true);if(source.version!==meta.version)throw Error('편성안이 변경되었습니다. 다시 조회하세요.');if(!source.base64)throw Error('등록된 PDF가 없습니다.');
+   await loadPdfJsV273();pdf=await pdfjsLib.getDocument({data:Uint8Array.from(atob(source.base64),c=>c.charCodeAt(0)),isEvalSupported:false}).promise;if(pdf.numPages>50)throw Error('PDF 페이지를 확인하세요.');
+   parsed=[];let skipped=0;const skippedRooms=[];
+   for(const n of [...new Set(meta.layout.map(a=>a.page))]){
+    $('dutyCadetsStatusV365').textContent='근무 표시 판독 중 · '+n+' / '+pdf.numPages+'쪽';const page=await pdf.getPage(n),vp=page.getViewport({scale:1}),text=await page.getTextContent(),op=await page.getOperatorList();
+    const tokens=text.items.filter(t=>t.str?.trim()).map(t=>{const point=vp.convertToViewportPoint(t.transform[4],t.transform[5]);return {str:t.str.trim(),x:point[0],y:point[1],width:t.width,height:t.height};}),boxes=[];
+    for(let i=0;i<op.fnArray.length;i++)if(op.fnArray[i]===pdfjsLib.OPS.constructPath){const a=op.argsArray[i][2];if(a?.length===4){const rect=vp.convertToViewportRectangle([a[0],a[2],a[1],a[3]]),w=Math.abs(rect[2]-rect[0]),h=Math.abs(rect[3]-rect[1]);if(w>20&&w<100&&h>8&&h<160)boxes.push({x:Math.min(rect[0],rect[2]),y:Math.min(rect[1],rect[3]),width:w,height:h});}}
+    for(const anchor of meta.layout.filter(a=>a.page===n)){const region=dormPdfDutyRegionV365(tokens,boxes,anchor.sourceRoom||anchor.room);if(!region){skipped++;skippedRooms.push([anchor.building,anchor.floor,anchor.room+'호',anchor.page+'쪽'].join(' · '));continue;}parsed.push({anchor,people:dormPdfPeopleV365(region,anchor.building==='별관'?4:2)});}
+   }
+   dutyCadetsCacheV365={version:meta.version,parsed,skipped,skippedRooms};
+  }
+  dutyCadetsMetaV365=meta;dutyCadetsWarningsV365=meta.indexed?0:dutyCadetsCacheV365?.skipped||0;dutyCadetsDataV365=dutyCadetRowsV365(parsed,meta.rooms);
+  $('dutyCadetsWarningsV365').hidden=!dutyCadetsWarningsV365;$('dutyCadetsWarningRoomsV365').innerHTML=(meta.indexed?[]:dutyCadetsCacheV365?.skippedRooms||[]).map(room=>'<li>'+escapeH(room)+'</li>').join('');
+  const select=$('dutyCadetsBuildingV365'),old=select.value,buildings=[...new Set(dutyCadetsDataV365.map(p=>p.building))];select.innerHTML='<option value="">전체 관</option>'+buildings.map(b=>'<option value="'+escapeH(b)+'">'+escapeH(b)+'</option>').join('');select.value=buildings.includes(old)?old:'';dutyCadetsRenderV365();
+ }catch(e){$('dutyCadetsStatusV365').textContent='근무생도 조회 실패: '+e.message;}
+ finally{if(pdf)await pdf.destroy().catch(()=>{});dutyCadetsBusyV365=false;$('dutyCadetsReloadV365').disabled=false;}
+}
+$('dutyCadetsReloadV365').addEventListener('click',dutyCadetsLoadV365);$('dutyCadetsSearchV365').addEventListener('input',dutyCadetsRenderV365);$('dutyCadetsBuildingV365').addEventListener('change',dutyCadetsRenderV365);

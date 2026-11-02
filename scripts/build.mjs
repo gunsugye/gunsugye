@@ -25,6 +25,7 @@ import {trainingShellJs,trainingShellHtml} from './training-shell.mjs';
 import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,personalInterfaceCSS} from './personal-interface.mjs';
 import {personalInterfacePreview} from './personal-interface-preview.mjs';
 import {staffAccessHtml,staffAccessJs} from './staff-access.mjs';
+import {dutyCadetsJs,dutyCadetsHtml} from './duty-cadets.mjs';
 import {personalSessionStore} from './personal-session.mjs';
 import {dormMemberCohortsV343} from './dorm-members.mjs';
 import {dormPlaceRoomV344} from './dorm-placement.mjs';
@@ -59,6 +60,8 @@ js=trainingShellJs(js);
 js=staffAccessJs(js);
 html=staffAccessHtml(html);
 js=personalInterfaceJs(js,'const PERSONAL_PREVIEW_HTML_V360='+JSON.stringify(personalInterfacePreview(read('scripts/personal-portal.html'),read('scripts/personal-portal.css'),read('scripts/personal-interface-preview.js.txt')))+';\n'+read('scripts/personal-interface-client.js.txt'));
+js=dutyCadetsJs(js,read('scripts/duty-cadets-client.js.txt'));
+html=dutyCadetsHtml(html);
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
  .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;
@@ -142,6 +145,7 @@ legacy=personalInterfaceNavSource(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
 legacy+='\n'+read('scripts/personal-interface-server.gs.txt');
+legacy+='\n'+read('scripts/duty-cadets-server.gs.txt');
 legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();

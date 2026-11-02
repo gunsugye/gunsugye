@@ -34,6 +34,7 @@
   "getBootstrap",
   "getChangesV283",
   "getDepartureDashboardV305",
+  "getDormDutyCadetsV365",
   "getDormInventoryRequestsV336",
   "getDormInventoryResetV313",
   "getDormInventoryV244",

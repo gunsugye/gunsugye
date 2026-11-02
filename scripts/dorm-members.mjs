@@ -6,17 +6,22 @@ export function dormMemberCohortsV343(members){
  return rows;
 }
 export function dormPdfNamesV343(tokens,limit){
+ return dormPdfPeopleV365(tokens,limit).map(p=>p.name);
+}
+export function dormPdfPeopleV365(tokens,limit){
  const lines=[];
  for(const t of [...tokens].sort((a,b)=>a.y-b.y||a.x-b.x)){
   let line=lines.find(l=>Math.abs(l.y-t.y)<3);if(!line){line={y:t.y,items:[]};lines.push(line);}line.items.push(t);
  }
- const names=[];
- for(const line of lines){
-  // 괄호가 여러 PDF 토큰으로 나뉘어도 근무 문구 전체를 제외합니다.
-  const text=line.items.sort((a,b)=>a.x-b.x).map(t=>t.str).join(' ').normalize('NFKC').replace(/\([^)]*\)/g,' ').replace(/\([^)]*$/g,' ');
-  for(const name of text.split(/\s+/))if(/^[가-힣]{2,4}[A-D]?$/.test(name)&&!/(공실|독방|근무|중대|훈육|위원|동기|회장|총무|생도|화장|계단|보좌|문화|교육|명예|편집|사무)/.test(name)&&!names.includes(name))names.push(name);
+ const people=[],text=lines.map(line=>line.items.sort((a,b)=>a.x-b.x).map(t=>t.str).join(' ')).join('\n').normalize('NFKC');let depth=0,owner=null,duty='';
+ const finish=review=>{if(owner){owner.isDuty=true;const label=duty.replace(/\s+/g,'').trim();owner.duty=[owner.duty,label].filter(Boolean).join(' · ');if(review)owner.dutyReview=true;}duty='';};
+ for(const part of text.match(/[^()]+|[()]/g)||[]){
+  if(part==='('){if(depth===0){owner=people[people.length-1]||null;duty='';}else duty+='(';depth++;continue;}
+  if(part===')'){if(depth){depth--;if(!depth)finish(false);else duty+=')';}continue;}
+  if(depth){duty+=part;continue;}
+  for(const name of part.split(/\s+/))if(/^[가-힣]{2,4}[A-D]?$/.test(name)&&!/(공실|독방|근무|중대|훈육|위원|동기|회장|총무|생도|화장|계단|보좌|문화|교육|명예|편집|사무)/.test(name)&&!people.some(p=>p.name===name)&&people.length<limit)people.push({name,isDuty:false,duty:''});
  }
- return names.slice(0,limit);
+ if(depth)finish(true);return people;
 }
 export function dormPdfMembersV343(names,oldMembers,reference,company){
  return dormMemberCohortsV343(names.map(name=>{

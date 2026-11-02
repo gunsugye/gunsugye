@@ -112,7 +112,7 @@ function saveDormPlanV315(payload){
    if(typeof pdf.base64!=='string'||pdf.base64.length>10*1024*1024||!pdf.base64.startsWith('JVBERi0')||!Array.isArray(pdf.layout)||pdf.layout.length>1000)throw Error('PDF 파일과 호실 좌표를 확인하세요. (7MB 이하)');
    const layout=pdf.layout.map(r=>{
     if(!['정예 본관','정예 동관','정예 서관','별관'].includes(r.building)||!['1층','2층','3층'].includes(r.floor)||!/^\d{3}(?:-[1-8동생명여])?$/.test(r.room)||!Number.isInteger(r.page)||r.page<1||r.page>50||['x','y','width','height'].some(k=>!Number.isFinite(r[k])||r[k]<0||r[k]>1)||r.width===0||r.height===0)throw Error('PDF의 호실 좌표를 확인하세요.');
-    return {building:r.building,floor:r.floor,room:r.room,sourceRoom:r.sourceRoom||r.room,page:r.page,x:r.x,y:r.y,width:r.width,height:r.height,fullBox:!!r.fullBox,pdfMembers:Array.isArray(r.pdfMembers)?r.pdfMembers.slice(0,4).map(p=>({name:text_(p.name,60),cohort:text_(p.cohort,24),company:text_(p.company,12)})):[]};
+    return {building:r.building,floor:r.floor,room:r.room,sourceRoom:r.sourceRoom||r.room,page:r.page,x:r.x,y:r.y,width:r.width,height:r.height,fullBox:!!r.fullBox,pdfMembers:Array.isArray(r.pdfMembers)?r.pdfMembers.slice(0,4).map(p=>({name:text_(p.name,60),cohort:text_(p.cohort,24),company:text_(p.company,12),duty:text_(p.duty,160),isDuty:!!p.isDuty,dutyReview:!!p.dutyReview})):[]};
    });
    if(new Set(layout.map(dormPlanKeyV315_)).size!==layout.length)throw Error('PDF에 중복 호실 좌표가 있습니다.');
    next={filename:text_(pdf.filename,150),base64:pdf.base64,layout,version:Utilities.getUuid()};

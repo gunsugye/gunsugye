@@ -154,7 +154,7 @@ async function dormPlanUploadV315(){
     if(!old&&!names.length&&region.some(t=>/훈육관|중대장|화장실|샤워|세탁|건조|계단|휴게실|창고/.test(t.str)))continue;
     layout.push(r);
     const members=dormPdfMembersV343(names,old?.members||[],dormPlanV315.rooms.flatMap(room=>room.members||[]),(a.str.match(/-([1-8])$/)||[])[1]||'');
-    r.pdfMembers=members.map(p=>({...p}));
+    const dutyPeople=dormPdfPeopleV365(region,r.building==='별관'?4:2);r.pdfMembers=members.map(p=>({...p,...Object.fromEntries(Object.entries(dutyPeople.find(d=>d.name===p.name)||{}).filter(([key])=>['duty','isDuty','dutyReview'].includes(key)))}));
     changes.push({...old,...r,members,group:old?.group||((a.str.match(/-([1-8])$/)||[])[1]||'')+'중대',corridor:old?.corridor||'PDF 도면',femaleRoom:old?.femaleRoom||/-여$/.test(a.str),token:old?.token||'new',reviewed:true});
    }
   }
