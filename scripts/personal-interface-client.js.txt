@@ -1,0 +1,24 @@
+const PERSONAL_INTERFACE_ITEMS_V359={room:'생활실 위치',assets:'생활실 비품',firearm:'총기',uniform:'피복 사이즈',supplies:'군수품'};
+let personalInterfaceOrderV359=[],personalInterfaceOriginalV359='[]',personalInterfaceVersionV359='',personalInterfaceDirtyV359=false,personalInterfaceBusyV359=false;
+function personalInterfaceRenderV359(){
+ personalInterfaceDirtyV359=JSON.stringify(personalInterfaceOrderV359)!==personalInterfaceOriginalV359;
+ $('personalInterfaceRowsV359').innerHTML=personalInterfaceOrderV359.map((id,i)=>'<li><strong>'+escapeH(PERSONAL_INTERFACE_ITEMS_V359[id])+'</strong><div class="asset-actions"><button class="btn" type="button" data-personal-move="'+i+'" data-direction="-1" aria-label="'+escapeH(PERSONAL_INTERFACE_ITEMS_V359[id])+' 위로" '+(!i||personalInterfaceBusyV359?'disabled':'')+'>↑</button><button class="btn" type="button" data-personal-move="'+i+'" data-direction="1" aria-label="'+escapeH(PERSONAL_INTERFACE_ITEMS_V359[id])+' 아래로" '+(i===personalInterfaceOrderV359.length-1||personalInterfaceBusyV359?'disabled':'')+'>↓</button></div></li>').join('');
+ $('personalInterfaceSaveV359').disabled=personalInterfaceBusyV359||!personalInterfaceDirtyV359||!canManageUsersV281;
+ ['personalInterfaceResetV359','personalInterfaceReloadV359'].forEach(id=>$(id).disabled=personalInterfaceBusyV359||!canManageUsersV281);
+}
+async function personalInterfaceLoadV359(){
+ if(personalInterfaceBusyV359||personalInterfaceDirtyV359)return;
+ if(!canManageUsersV281){personalInterfaceOrderV359=[];personalInterfaceOriginalV359='[]';$('personalInterfaceStatusV359').textContent='관리자만 설정할 수 있습니다.';personalInterfaceRenderV359();return;}
+ personalInterfaceBusyV359=true;personalInterfaceRenderV359();$('personalInterfaceStatusV359').textContent='불러오는 중…';
+ try{const value=await server('getPersonalInterfaceV359');personalInterfaceOrderV359=value.order;personalInterfaceVersionV359=value.version;personalInterfaceOriginalV359=JSON.stringify(value.order);$('personalInterfaceStatusV359').textContent='개인 조회앱 표시 순서';}
+ catch(e){$('personalInterfaceStatusV359').textContent='조회 실패: '+e.message;}finally{personalInterfaceBusyV359=false;personalInterfaceRenderV359();}
+}
+$('personalInterfaceRowsV359').addEventListener('click',e=>{const b=e.target.closest('[data-personal-move]');if(!b||personalInterfaceBusyV359||!canManageUsersV281)return;const from=Number(b.dataset.personalMove),to=from+Number(b.dataset.direction);if(to<0||to>=personalInterfaceOrderV359.length)return;[personalInterfaceOrderV359[from],personalInterfaceOrderV359[to]]=[personalInterfaceOrderV359[to],personalInterfaceOrderV359[from]];personalInterfaceRenderV359();$('personalInterfaceStatusV359').textContent='저장 전 · 순서 변경 중';qsa('[data-personal-move]',$('personalInterfaceRowsV359')).find(el=>Number(el.dataset.personalMove)===to&&el.dataset.direction===b.dataset.direction)?.focus();});
+$('personalInterfaceResetV359').addEventListener('click',()=>{if(personalInterfaceBusyV359||!canManageUsersV281)return;personalInterfaceOrderV359=Object.keys(PERSONAL_INTERFACE_ITEMS_V359);personalInterfaceRenderV359();$('personalInterfaceStatusV359').textContent='기본 순서 · 저장 후 반영';});
+$('personalInterfaceReloadV359').addEventListener('click',()=>{if(personalInterfaceDirtyV359&&!confirm('저장하지 않은 순서 변경을 버리고 새로고침할까요?'))return;personalInterfaceDirtyV359=false;personalInterfaceLoadV359();});
+$('personalInterfaceSaveV359').addEventListener('click',async()=>{
+ if(personalInterfaceBusyV359||!personalInterfaceDirtyV359||!canManageUsersV281)return;personalInterfaceBusyV359=true;personalInterfaceRenderV359();$('personalInterfaceStatusV359').textContent='저장 중…';
+ try{const value=await enqueue(()=>server('savePersonalInterfaceV359',personalInterfaceOrderV359,personalInterfaceVersionV359));personalInterfaceOrderV359=value.order;personalInterfaceVersionV359=value.version;personalInterfaceOriginalV359=JSON.stringify(value.order);$('personalInterfaceStatusV359').textContent='저장 완료 · 개인 조회 시 반영';}
+ catch(e){$('personalInterfaceStatusV359').textContent='저장 실패: '+e.message;}finally{personalInterfaceBusyV359=false;personalInterfaceRenderV359();}
+});
+window.addEventListener('beforeunload',e=>{if(personalInterfaceDirtyV359){e.preventDefault();e.returnValue='';}});

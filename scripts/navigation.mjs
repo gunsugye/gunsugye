@@ -28,6 +28,7 @@ export function normalizeNavigation(value, defaults, available) {
     }
   }
   const labels = {};
+  if(valid&&!value.personalInterfaceAddedV359&&allowed.has('personalInterface')&&!used.has('personalInterface')){const def=defaults.find(g=>g.id==='personalInfo');if(def){let group=groups.find(g=>g.id==='personalInfo');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('personalInterface');used.add('personalInterface');}}
   if(valid&&!value.uniformRequestsAddedV351&&allowed.has('uniformRequests')&&!used.has('uniformRequests')){const def=defaults.find(g=>g.id==='uniform');if(def){let group=groups.find(g=>g.id==='uniform');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('uniformRequests');used.add('uniformRequests');}}
   if(valid&&!value.assetRequestsAddedV336&&allowed.has('assetRequests')&&!used.has('assetRequests')){const def=defaults.find(g=>g.id==='facility');if(def){let group=groups.find(g=>g.id==='facility');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('assetRequests');used.add('assetRequests');}}
   if(valid&&!value.saberRestoredV326&&allowed.has('saber')&&!used.has('saber')){
@@ -41,7 +42,7 @@ export function normalizeNavigation(value, defaults, available) {
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = label.trim().slice(0, 50);
   }
-  return { schemaVersion: 2, groups, labels, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true };
+  return { schemaVersion: 2, groups, labels, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true };
 }
 
 export function updateNavigationJs(js) {

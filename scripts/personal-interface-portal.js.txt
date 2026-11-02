@@ -1,0 +1,4 @@
+function personalInterfaceOrderV359(order){
+ const defaults=['room','assets','firearm','uniform','supplies'],known=new Set(defaults),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
+ for(const id of [...(Array.isArray(order)?order:defaults),...defaults]){if(!known.has(id)||seen.has(id))continue;seen.add(id);const card=$(id)?.closest('section.card');if(card)grid.appendChild(card);}
+}

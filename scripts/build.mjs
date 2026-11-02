@@ -22,6 +22,7 @@ import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} 
 import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} from './asset-requests.mjs';
 import {uniformRequestNavSource,uniformRequestNavJs,uniformRequestNavHtml} from './uniform-request-navigation.mjs';
 import {trainingShellJs,trainingShellHtml} from './training-shell.mjs';
+import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,personalInterfaceCSS} from './personal-interface.mjs';
 import {personalSessionStore} from './personal-session.mjs';
 import {dormMemberCohortsV343} from './dorm-members.mjs';
 import {dormPlaceRoomV344} from './dorm-placement.mjs';
@@ -53,6 +54,7 @@ js=assetRequestsJs(js,read('scripts/asset-requests-client.js.txt'));
 js=uniformRequestNavJs(js);
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+read('scripts/uniform-requests-client.js.txt')+'\n'+js.slice(end);}
 js=trainingShellJs(js);
+js=personalInterfaceJs(js,read('scripts/personal-interface-client.js.txt'));
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
  .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;
@@ -66,8 +68,9 @@ const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');\n`+js.slice(hook);
-js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||settingsDirtyV258||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + assetPlanCSS + assetRequestsCSS;
+js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS;
+html=personalInterfaceHtml(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -108,7 +111,8 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 </aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-const personalSource=read('scripts/personal-portal.js').replace('function fields(id,values){','function plainFields(id,values){').replace("if(result.uniform)fields('uniform',result.uniform.uniform);","if(result.uniform){uniformEditV350=result.uniform.uniformEdit||null;fields('uniform',result.uniform.uniform);}").replace('function clear(message=\'\'){',"function clear(message=''){uniformEditV350=null;uniformDirtyV350=false;").replaceAll('if(dirty&&','if((dirty||uniformDirtyV350)&&').replace('return;load().catch', 'return;uniformDirtyV350=false;uniformEditV350=null;load().catch').replace('})();',read('scripts/personal-uniform.js.txt')+'\n})();');
+let personalSource=read('scripts/personal-portal.js').replace('function fields(id,values){','function plainFields(id,values){').replace("if(result.uniform)fields('uniform',result.uniform.uniform);","if(result.uniform){uniformEditV350=result.uniform.uniformEdit||null;fields('uniform',result.uniform.uniform);}").replace('function clear(message=\'\'){',"function clear(message=''){uniformEditV350=null;uniformDirtyV350=false;").replaceAll('if(dirty&&','if((dirty||uniformDirtyV350)&&').replace('return;load().catch', 'return;uniformDirtyV350=false;uniformEditV350=null;load().catch').replace('})();',read('scripts/personal-uniform.js.txt')+'\n})();');
+personalSource=personalSource.replace('function render(data){','function render(data){personalInterfaceOrderV359(data.interfaceOrder);').replace('})();',read('scripts/personal-interface-portal.js.txt')+'\n})();');
 const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+personalSource,personalCss=read('scripts/personal-portal.css')+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}',personalHtml=read('scripts/personal-portal.html').replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','비품·피복 변경은 관리자 확인 후 반영').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
 write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
@@ -130,8 +134,10 @@ let legacy = roomAssetServer(repairServer(correctDormSource(read('Code.gs.txt'),
 legacy=assetPlanServer(legacy);
 legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.txt');
 legacy=uniformRequestNavSource(legacy);
+legacy=personalInterfaceNavSource(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
+legacy+='\n'+read('scripts/personal-interface-server.gs.txt');
 legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();

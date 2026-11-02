@@ -23,9 +23,9 @@ test('예전 숨김 메뉴는 구성에서 제거하고 반복 조회해도 다�
   assert.equal('hiddenGroups' in current, false);
 });
 test('상위 메뉴와 하위 메뉴를 실제 제거한 구성, 빈 구성도 그대로 유지한다', () => {
-  const current = normalizeNavigation({ schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true, groups: [{ id: 'journal', title: '일지', items: ['today'] }], labels: { all: '삭제된 이름' } }, defaults, allowed);
+  const current = normalizeNavigation({ schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true, groups: [{ id: 'journal', title: '일지', items: ['today'] }], labels: { all: '삭제된 이름' } }, defaults, allowed);
   assert.equal(current.groups.length, 1); assert.deepEqual(current.groups[0].items, ['today']); assert.deepEqual(current.labels, {});
-  assert.deepEqual(normalizeNavigation({ schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true, groups: [], labels: {} }, defaults, allowed).groups, []);
+  assert.deepEqual(normalizeNavigation({ schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true, groups: [], labels: {} }, defaults, allowed).groups, []);
 });
 
 const sourceUrl = new URL('../Code.gs.txt', import.meta.url);
@@ -39,11 +39,11 @@ if (existsSync(sourceUrl)) test('화면과 서버 메뉴 목록이 같고 행정
   const fragment = source.slice(source.indexOf("const NAV_PROP_V233="), source.indexOf('/** v2.38: suffix'));
   new vm.Script(fragment + '\nglobalThis.allowed=NAV_FIXED_V233;').runInContext(context);
   assert.deepEqual(Array.from(context.allowed).sort(), allowed.slice().sort());
-  const restored = { schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true, groups: [{ id: 'admin', title: '행정', items: ['surveys'] }, { id: 'uniform', title: '피복', items: ['uniform'] }, { id: 'other', title: '기타', items: ['updates'] }], labels: {} };
+  const restored = { schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true, groups: [{ id: 'admin', title: '행정', items: ['surveys'] }, { id: 'uniform', title: '피복', items: ['uniform'] }, { id: 'other', title: '기타', items: ['updates'] }], labels: {} };
   const saved = context.saveNavTreeV233(restored);
   assert.deepEqual(JSON.parse(JSON.stringify(saved.groups)), restored.groups);
   assert.throws(() => context.saveNavTreeV233({ ...restored, groups: [...restored.groups, { id: 'journal', items: ['surveys'] }] }), /중복/);
-  const removed = context.saveNavTreeV233({ schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true, groups: [], labels: {} });
+  const removed = context.saveNavTreeV233({ schemaVersion: 2, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true, groups: [], labels: {} });
   assert.equal(removed.groups.length, 0); assert.equal(context.navTreeV233_().groups.length, 0);
 });
 
