@@ -2803,7 +2803,7 @@ function assetRenderV244(){
  $('assetRoomCountV244').textContent=rooms.length+'개 호실';assetPlanRenderV332();
  const bulkNote=$('assetBulkScopeV245');if(bulkNote)bulkNote.textContent='현재 조회 범위 '+rooms.length+'호 · 일괄처리 시 선택한 품목·자리에 상태를 적용합니다. 세부사항 미입력 시 기존 내용은 보존합니다.';
  // 렌더링 중 기존 편집 DOM이 제거되지 않게 먼저 안전한 위치로 옮김.
- const park=$('assetEditorParkingV245'),editor=$('assetRoomEditorV244');if(park&&editor&&editor.parentElement!==park)park.appendChild(editor);
+ const park=$('assetEditorParkingV245'),editor=$('assetRoomEditorV244');if(park&&editor&&editor.parentElement!==park&&editor.parentElement?.id!=='assetDialogV356')park.appendChild(editor);
  if(assetResetGroupsV245){assetOpenGroupsV245=null;assetResetGroupsV245=false;}else assetRememberOpenGroupsV245();
  const mode=$('assetGroupModeV245').value;
  const mainLabel=mode==='org-building'?r=>assetOrgForRoomV245(r):r=>r.building;
@@ -2842,18 +2842,14 @@ function assetRememberOpenGroupsV245(){
  assetOpenGroupsV245=new Set(details.filter(x=>x.open).map(x=>x.dataset.assetGroupKey));
 }
 function assetMountEditorV245(id){
- const inline=qsa('[data-asset-inline-for]',$('assetRoomRowsV244')).find(x=>x.dataset.assetInlineFor===id);
- if(!inline)return false;
- const slot=inline.querySelector('[data-asset-inline-slot]'),editor=$('assetRoomEditorV244');
- slot.appendChild(editor);inline.classList.remove('hidden');editor.classList.remove('hidden');
- let p=inline.parentElement;while(p&&p!==$('assetRoomRowsV244')){if(p.tagName==='DETAILS')p.open=true;p=p.parentElement;}
- qsa('[data-asset-room-row]',$('assetRoomRowsV244')).forEach(row=>row.classList.toggle('asset-row-open',row.dataset.assetRoomRow===id));
- qsa('[data-asset-room]',$('assetRoomRowsV244')).forEach(b=>{const is=b.dataset.assetRoom===id;b.textContent=is?'접기':'점검 / 수정';b.setAttribute('aria-expanded',is?'true':'false');});
- return true;
+ const dialog=assetDialogV356();dialog.appendChild($('assetRoomEditorV244'));$('assetRoomEditorV244').classList.remove('hidden');
+ if(!dialog.open)dialog.showModal();return true;
 }
 function assetCloseRoomV245(){
+ if(assetSavingV244)return toast('저장 중입니다. 잠시 기다려 주세요.');
  if(assetDirtyV244.size&&!confirm('저장하지 않은 비품 수정을 버리고 닫을까요?'))return;
  assetDirtyV244.clear();assetCurrentRoomV244='';
+ const dialog=$('assetDialogV356');if(dialog?.open)dialog.close();
  $('assetRoomEditorV244').classList.add('hidden');$('assetEditorParkingV245').appendChild($('assetRoomEditorV244'));
  qsa('[data-asset-inline-for]',$('assetRoomRowsV244')).forEach(x=>x.classList.add('hidden'));
  qsa('[data-asset-room-row]',$('assetRoomRowsV244')).forEach(x=>x.classList.remove('asset-row-open'));
@@ -2864,6 +2860,7 @@ function assetEditorSnapshotV244(row){
 }
 function assetRoomTitleV244(room){return [room.building,room.floor,room.corridor,room.room+'호'].join(' · ');}
 function assetOpenRoomV244(id){
+ if(assetSavingV244&&id!==assetCurrentRoomV244)return;
  if(assetDirtyV244.size&&id!==assetCurrentRoomV244&&!confirm('저장하지 않은 변경을 버리고 다른 호실을 열까요?'))return;
  const room=assetDataV244?.rooms.find(x=>x.id===id);if(!room)return;
  assetCurrentRoomV244=id;assetDirtyV244.clear();$('assetRoomTitleV244').textContent=assetRoomTitleV244(room);
@@ -4558,6 +4555,12 @@ function assetPlanBandsV332(rooms,layout){
  for(const room of rooms.filter(r=>!used.has(r.id)).sort((a,b)=>String(a.room).localeCompare(String(b.room),'ko',{numeric:true}))){let group=groups.find(g=>g.unplaced&&g.building===room.building&&g.floor===room.floor&&g.corridor===(room.corridor||''));if(!group){group={building:room.building,floor:room.floor,corridor:room.corridor||'',unplaced:true,rooms:[]};groups.push(group);}group.rooms.push(room);}
  for(const group of groups)if(!group.unplaced)group.rooms.sort((a,b)=>a.planX-b.planX);
  return groups;
+}
+function assetDialogV356(){
+ let dialog=$('assetDialogV356');if(dialog)return dialog;
+ dialog=document.createElement('dialog');dialog.id='assetDialogV356';dialog.className='asset-dialog';dialog.setAttribute('aria-labelledby','assetRoomTitleV244');document.body.appendChild(dialog);
+ dialog.addEventListener('cancel',e=>{e.preventDefault();assetCloseRoomV245();});
+ return dialog;
 }
 function assetPlanRenderV332(){
  const root=$('assetPlanV332'),open=new Set(qsa('details[open][data-asset-plan-building]',root).map(d=>d.dataset.assetPlanBuilding)),rooms=assetRoomsFilteredV244(),bands=assetPlanBandsV332(rooms,assetDataV244.layout),buildings=[...new Set(bands.map(g=>g.building))];
