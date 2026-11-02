@@ -1,0 +1,2 @@
+export function dormOutingJs(js){return js.replace('비고·배정명단 정확 일치','외출 항목별 확인').replace("'조직구분','확인상태'","'조직구분','외출 항목'").replace('[p.name,p.cohort,p.company,p.building,p.floor,p.corridor,p.room,p.group]','[p.name,p.cohort,p.company,p.building,p.floor,p.corridor,p.room,p.group,p.status]');}
+export function dormOutingHtml(html){return html.replace('<th>조직</th><th>확인</th>','<th>조직</th><th>외출 항목</th>').replace('비고를 삭제하면 다음 조회에서 자동 제외됩니다.','특별외출·입원·청원휴가 등 원본 항목을 표시하며, 비고를 삭제하면 다음 조회에서 자동 제외됩니다.').replace('외출자 이름 · 기수 · 중대 · 호실 검색','이름 · 중대 · 호실 · 외출 항목 검색');}

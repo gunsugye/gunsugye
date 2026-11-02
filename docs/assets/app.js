@@ -2411,7 +2411,7 @@ function dormOutingFilteredV249(){
   const eligible=new Set(dormFilteredV234().map(r=>r.id));
   const query=String($('dormOutingSearchV249').value||'').trim().toLowerCase();
   return dormOutingsV249.filter(p=>eligible.has(p.roomId)&&(!query||
-   [p.name,p.cohort,p.company,p.building,p.floor,p.corridor,p.room,p.group].join(' ').toLowerCase().includes(query)));
+   [p.name,p.cohort,p.company,p.building,p.floor,p.corridor,p.room,p.group,p.status].join(' ').toLowerCase().includes(query)));
 }
 function dormOutingRenderV249(){
  const rows=$('dormOutingRowsV249'),list=dormOutingFilteredV249();
@@ -2421,13 +2421,13 @@ function dormOutingRenderV249(){
  $('dormOutingCsvV249').disabled=!list.length;
  $('dormOutingInfoV249').textContent=!canEdit?'개인별 외출 정보는 관리자 계정에서만 표시됩니다.':
   (dormSourceMetaV240&&!dormSourceMetaV240.ok?'연동 오류: '+(dormSourceMetaV240.error||'원본을 확인하세요.'):
-  '조건에 맞는 외출 인원 '+visible.length+'명 · 검색 결과 '+list.length+'명 · 비고·배정명단 정확 일치');
+  '조건에 맞는 외출 인원 '+visible.length+'명 · 검색 결과 '+list.length+'명 · 외출 항목별 확인');
  rows.innerHTML=!list.length?'<tr><td colspan="9">'+(!canEdit?'관리자 권한으로 로그인해야 개인별 상세정보를 확인할 수 있습니다.':(dormSourceMetaV240&&!dormSourceMetaV240.ok?'생도전대 비고 연동 상태를 확인해 주세요.':'조건에 맞는 외출 인원이 없습니다.'))+'</td></tr>':
   list.map(p=>'<tr><td>'+escapeH(p.cohort)+'기</td><td>'+escapeH(companyLabelV257(p.company))+'</td><td><b>'+escapeH(p.name)+'</b></td><td>'+escapeH(p.building)+'</td><td>'+escapeH(p.floor)+'</td><td>'+escapeH(p.corridor)+'</td><td><strong>'+escapeH(p.room)+'</strong></td><td>'+escapeH(p.group)+'</td><td>'+escapeH(p.status)+'</td></tr>').join('');
 }
 function dormOutingCsvV249(){
  const list=dormOutingFilteredV249();if(!list.length)return;
- const lines=[['기수','중대','이름','관','층','복도','호실','조직구분','확인상태'],...list.map(p=>[p.cohort,p.company,p.name,p.building,p.floor,p.corridor,p.room,p.group,p.status])];
+ const lines=[['기수','중대','이름','관','층','복도','호실','조직구분','외출 항목'],...list.map(p=>[p.cohort,p.company,p.name,p.building,p.floor,p.corridor,p.room,p.group,p.status])];
  download(new Blob(['\ufeff'+lines.map(a=>a.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'외출인원_상세_'+localISO()+'.csv');
 }
 function dormRenderV234(){
@@ -3092,22 +3092,23 @@ function laborCompanyLabelV261(v){return String(v||'').replace(/(?:중대)+$/,''
 let laborFlexibleDimV262='company';
 function laborSyncDimensionV262_(){
  const mode=$('laborModeV259').value,sel=$('laborDimV259');
- const locked=mode==='total';
+ const locked=mode==='total'||$('laborByBuildingV357').checked;
+ $('laborByBuildingV357').disabled=mode==='total';if(mode==='total')$('laborByBuildingV357').checked=false;
  if(locked){
   if(!sel.disabled)laborFlexibleDimV262=sel.value;
-  sel.value='company';
+  sel.value=mode==='total'?'company':'building';
  }else if(sel.disabled){
   sel.value=laborFlexibleDimV262;
  }
  sel.disabled=locked;
- sel.title=locked?'총인원은 생활실 미배정자를 포함하여 중대별로만 분배합니다.':'';
+ sel.title=$('laborByBuildingV357').checked?'관별 지급 기준 적용 중':locked?'총인원은 생활실 미배정자를 포함하여 중대별로만 분배합니다.':'';
  laborSelectionSummaryV263();
- $('laborDimLockV262').textContent=locked?
+ laborBuildingVisibilityV357();$('laborDimLockV262').textContent=$('laborByBuildingV357').checked?'관별 지급 기준 적용 · 분배 단위: 관별':locked?
   '총인원: 방 미배정자 포함 · 분배 방식 중대별 고정 · 각 중대 B8(학년 선택 시 B4:B7) 사용':
   '현재·전체 인원: 중대별 / 관별 / 층별 중 선택 가능 · 최신 생활실 배정 위치 반영';
 }
 function laborSelectionSummaryV263(){
- const ratio=$('laborDivisorV259').selectedOptions[0]?.textContent||'2인 1개';
+ const ratio=laborBuildingInputV357()?Object.entries(laborBuildingInputV357()).map(([b,d])=>b+' '+d+'인 1개').join(' · '):$('laborDivisorV259').selectedOptions[0]?.textContent||'2인 1개';
  const grade=$('laborGradeV261').selectedOptions[0]?.textContent||'전학년';
  const mode=$('laborModeV259').selectedOptions[0]?.textContent?.split(' (')[0]||'전체 인원';
  const dim=$('laborDimV259').selectedOptions[0]?.textContent?.split(' (')[0]||'중대별';
@@ -3115,8 +3116,9 @@ function laborSelectionSummaryV263(){
 }
 function laborShortV259(k){const p=(laborResultV259?.pairs?.singles||[]).find(x=>x.key===k);return p?[p.cohort,laborCompanyLabelV261(p.company),p.name,p.building,p.room].join(' · '):k;}
 function laborShowV259(result){
+ laborBuildingRenderV357(result);
  laborResultV259=result;$('laborDraftOpenV264').disabled=!canEdit;
- const groups=result.groups||[];const denom=Number(result.divisor)||2;
+ const groups=result.groups||[];const denom=laborPairDivisorV357(result);
  if(result.dimensionLocked){$('laborDimV259').value='company';$('laborDimV259').disabled=true;}
  $('laborLivingSourceLinkV262').href=result.livingSourceUrl||$('laborLivingSourceLinkV262').href;
  $('laborNoticeV259').textContent=result.notice+'  |  스마트당직: '+result.source+' · '+result.smartRoster+'명 · B8 합계 '+(result.hasB8?result.officialTotal+'명':'미연결')+' · 생활실 배정명단에서 스마트당직 미대조 '+result.residenceUnmatched+'명 · 사역 대상 중 호실 미확인 '+(result.unlocatedSmart||0)+'명';
@@ -3159,7 +3161,7 @@ function laborShowV259(result){
  laborSummaryV324(result);
  // v2.97 · independent roster drill-down for room unconfirmed, smart mismatch and solo-unpaired.
  laborRenderReviewV297(result);
- $('laborTableV259').innerHTML=groups.map(g=>'<tr><td><strong>'+escapeH(g.label)+'</strong>'+(g.key==='호실 미확인'?' <button type="button" class="labor-review-inline-v297" data-review-open="missingRoom">명단</button>':'')+'</td><td>'+laborFmtV259(g.count)+'명'+(g.allocationCount!==undefined&&g.allocationCount!==g.count?'<small class="labor-virtual-count-v268">짝 반영 '+laborFmtV259(g.allocationCount)+'명분</small>':'')+'</td><td class="labor-quantity-v324"><b>'+laborFmtV259(g.quota)+'</b><span>개</span></td><td class="labor-how-v324">'+escapeH(laborExplanationV324(g,denom))+'</td></tr>').join('')||'<tr><td colspan="4">대상 없음</td></tr>';
+ $('laborTableV259').innerHTML=groups.map(g=>'<tr><td><strong>'+escapeH(g.label)+'</strong>'+(result.buildingDivisors?'<small class="labor-virtual-count-v268">'+g.divisor+'인 1개</small>':'')+(g.key==='호실 미확인'?' <button type="button" class="labor-review-inline-v297" data-review-open="missingRoom">명단</button>':'')+'</td><td>'+laborFmtV259(g.count)+'명'+(g.allocationCount!==undefined&&g.allocationCount!==g.count?'<small class="labor-virtual-count-v268">짝 반영 '+laborFmtV259(g.allocationCount)+'명분</small>':'')+'</td><td class="labor-quantity-v324"><b>'+laborFmtV259(g.quota)+'</b><span>개</span></td><td class="labor-how-v324">'+escapeH(laborExplanationV324(g,g.divisor||denom))+'</td></tr>').join('')||'<tr><td colspan="4">대상 없음</td></tr>';
  const virtualTransfers=groups.reduce((s,g)=>s+Math.max(0,Number(g.count)-Number(g.allocationCount??g.count)),0);
  if(virtualTransfers)$('laborNoticeV259').textContent+=' · 다른 중대·층 또는 관 내 조직구분 사이에 짝을 지정한 경우 가상 생활실의 대표 생도 소속으로 '+virtualTransfers+'명분이 이동하여 계산됩니다.';
 
@@ -3208,19 +3210,21 @@ $('laborTableV259').addEventListener('click',e=>{
 async function laborLoadV259(){
  if(!ready||laborLoadingV259)return;
  laborSyncDimensionV262_();
- laborLoadingV259=true;$('laborRefreshV259').disabled=true;$('laborDraftOpenV264').disabled=true;$('laborAutoAssignV269').disabled=true;laborSelectionSummaryV263();$('laborNoticeV259').textContent='생활실 배정명단·스마트당직 B4:B8 인원·호실 위치 대조 중…';
- try{const r=await server('getLaborCalcV259',$('laborModeV259').value,$('laborDimV259').value,Number($('laborDivisorV259').value),$('laborGradeV261').value);laborShowV259(r);}
+ laborLoadingV259=true;laborBuildingBusyV357(true);$('laborRefreshV259').disabled=true;$('laborDraftOpenV264').disabled=true;$('laborAutoAssignV269').disabled=true;laborSelectionSummaryV263();$('laborNoticeV259').textContent='생활실 배정명단·스마트당직 B4:B8 인원·호실 위치 대조 중…';
+ try{const r=await server('getLaborCalcV259',$('laborModeV259').value,$('laborDimV259').value,Number($('laborDivisorV259').value),$('laborGradeV261').value,laborBuildingInputV357());laborShowV259(r);}
  catch(e){laborResultV259=null;$('laborReviewV297').classList.add('hidden');$('laborNoticeV259').textContent='계산 실패: '+e.message+' · 기타 → 설정의 1~8중대 연결 및 생활실 배정명단을 확인하세요.';}
- finally{laborLoadingV259=false;$('laborRefreshV259').disabled=false;$('laborAutoAssignV269').disabled=!canEdit||!laborResultV259||Number(laborResultV259.divisor)===1||laborPairSavingV264;}
+ finally{laborLoadingV259=false;laborBuildingBusyV357(false);$('laborRefreshV259').disabled=false;$('laborAutoAssignV269').disabled=!canEdit||!laborResultV259||laborPairDivisorV357(laborResultV259)===1||laborPairSavingV264;}
 }
-$('laborRefreshV259').addEventListener('click',laborLoadV259);
+$('laborByBuildingV357').addEventListener('change',()=>{laborBuildingVisibilityV357();laborLoadV259();});
+ $('laborBuildingRatesV357').addEventListener('change',laborLoadV259);
+ $('laborRefreshV259').addEventListener('click',laborLoadV259);
 ['laborDivisorV259','laborGradeV261','laborDimV259'].forEach(id=>$(id).addEventListener('change',laborLoadV259));
 $('laborModeV259').addEventListener('change',()=>{laborSyncDimensionV262_();laborLoadV259();});
 laborSyncDimensionV262_();
 let laborPairSavingV264=false;
 // v2.69 · '자동배정 설정'은 별도 저장 없이 클릭 한 번으로 수동 지정 전체를 해제하고 재산출합니다.
 async function laborAutoAssignV269(){
- if(!canEdit||laborPairSavingV264||laborLoadingV259||Number($('laborDivisorV259').value)===1)return;
+ if(!canEdit||laborPairSavingV264||laborLoadingV259||laborPairDivisorV357(laborResultV259)===1)return;
  laborPairCloseV268();
  laborPairSavingV264=true;
  const btn=$('laborAutoAssignV269');btn.disabled=true;
@@ -3233,11 +3237,11 @@ async function laborAutoAssignV269(){
  }catch(e){await laborLoadV259();alert('자동배정 설정 실패: '+e.message);}
  finally{
   laborPairSavingV264=false;btn.textContent='자동배정 설정 ↻';
-  btn.disabled=!canEdit||!laborResultV259||Number(laborResultV259.divisor)===1;
+  btn.disabled=!canEdit||!laborResultV259||laborPairDivisorV357(laborResultV259)===1;
  }
 }
 $('laborAutoAssignV269').addEventListener('click',laborAutoAssignV269);
-function laborPairOptionsV264(){return {mode:$('laborModeV259').value,dimension:$('laborDimV259').value,divisor:Number($('laborDivisorV259').value),grade:$('laborGradeV261').value};}
+function laborPairOptionsV264(){return {mode:$('laborModeV259').value,dimension:$('laborDimV259').value,divisor:Number($('laborDivisorV259').value),grade:$('laborGradeV261').value,buildingDivisors:laborBuildingInputV357()};}
 async function laborPairChangeV264(a,b,action){
  if(!canEdit||laborPairSavingV264)return;
  laborPairCloseV268();laborPairSavingV264=true;$('laborPairPickStatusV264').textContent='짝 변경을 저장하고 있습니다…';
@@ -3307,7 +3311,7 @@ async function laborRecordOpenV264(){
  laborRecordSavingV264=true;$('laborDraftOpenV264').disabled=true;
  $('laborRecordMessageV264').textContent='계산 결과를 사역 내역으로 임시 저장 중…';
  try{
-  const r=await server('saveLaborDraftV265',{id:laborDraftRequestV265,mode:laborResultV259.mode,dimension:laborResultV259.dimension,divisor:laborResultV259.divisor,grade:laborResultV259.grade,date:localISO()});
+  const r=await server('saveLaborDraftV265',{id:laborDraftRequestV265,mode:laborResultV259.mode,dimension:laborResultV259.dimension,divisor:laborResultV259.divisor,buildingDivisors:laborResultV259.buildingDivisors,grade:laborResultV259.grade,date:localISO()});
   $('laborRecordMessageV264').textContent='사역 내역에 임시 저장했습니다. 품목과 세부 수량은 사역 내역에서 나중에 작성하세요.';
   laborDraftRequestV265='';toast('사역 계산 임시 저장 완료 · 사역 내역으로 이동합니다.');
   switchView('laborRecords');await laborRecordsLoadV264();
@@ -4500,8 +4504,17 @@ const laborExplanationV324=function distributionExplanation(group,divisor){
 };
 function laborSummaryV324(result){
  const groups=result.groups||[],people=groups.reduce((s,g)=>s+Number(g.count||0),0),quantity=groups.reduce((s,g)=>s+Number(g.quota||0),0),divisor=Number(result.divisor)||2;
- $('laborStatsV259').innerHTML=[['대상 인원',laborFmtV259(people)+'명'],['지급 기준',divisor+'명당 1개'],['총수량',laborFmtV259(quantity)+'개']].map(([label,value])=>'<div class="labor-answer-v324"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
+ $('laborStatsV259').innerHTML=[['대상 인원',laborFmtV259(people)+'명'],['지급 기준',result.buildingDivisors?'관별 기준':divisor+'명당 1개'],['총수량',laborFmtV259(quantity)+'개']].map(([label,value])=>'<div class="labor-answer-v324"><span>'+label+'</span><strong>'+value+'</strong></div>').join('');
 }
+
+function laborBuildingInputV357(){if(!$('laborByBuildingV357').checked||$('laborModeV259').value==='total')return null;return Object.fromEntries(qsa('[data-labor-building]',$('laborBuildingRatesV357')).map(s=>[s.dataset.laborBuilding,Number(s.value)]));}
+function laborPairDivisorV357(result){return result?.buildingDivisors?Math.max(1,...Object.values(result.buildingDivisors).map(Number)):Number(result?.divisor||$('laborDivisorV259').value)||2;}
+function laborBuildingVisibilityV357(){const enabled=$('laborByBuildingV357').checked&&$('laborModeV259').value!=='total';$('laborBuildingRatesV357').classList.toggle('hidden',!enabled);$('laborDivisorV259').classList.toggle('hidden',enabled);$('laborRateHelpV357').textContent=enabled?'호실 미확인: '+$('laborDivisorV259').value+'인 1개':'1개당 인원';}
+function laborBuildingRenderV357(result){
+ const root=$('laborBuildingRatesV357'),previous=Object.fromEntries(qsa('[data-labor-building]',root).map(s=>[s.dataset.laborBuilding,s.value]));
+ root.innerHTML=(result.buildings||[]).map(b=>'<label><span>'+escapeH(b)+'</span><select class="field" data-labor-building="'+escapeH(b)+'" aria-label="'+escapeH(b)+' 지급 기준">'+[1,2,3,4,5,6].map(d=>'<option value="'+d+'" '+(Number(result.buildingDivisors?.[b]||previous[b]||$('laborDivisorV259').value)===d?'selected':'')+'>'+d+'인 1개</option>').join('')+'</select></label>').join('');laborBuildingVisibilityV357();
+}
+function laborBuildingBusyV357(busy){['laborByBuildingV357','laborDivisorV259','laborGradeV261','laborModeV259'].forEach(id=>$(id).disabled=busy);qsa('[data-labor-building]').forEach(s=>s.disabled=busy);if(!busy)laborSyncDimensionV262_();}
 
 function assetOverviewGroupsV327(rooms,items,records,mode){
  const itemIds=new Set(items.map(i=>i.id)),byRecord=new Map(records.filter(r=>itemIds.has(r.itemId)).map(r=>[r.roomId+'|'+r.itemId,r])),groups=new Map();
