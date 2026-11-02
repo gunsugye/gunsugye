@@ -75,6 +75,7 @@
   "importVerifiedDutyCadetsV371",
   "initializeDormRoomsAndRosterV243",
   "listFullEditorsV281",
+  "moveDutyCadetV372",
   "moveRosterToSpecialV255",
   "normalizeDormInventoryScopeV245",
   "normalizeRosterCohort",

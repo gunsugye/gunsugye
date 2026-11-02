@@ -1,5 +1,5 @@
 export function dutyRoleInfoV367(row){
- const text=String(row.duty||'').normalize('NFKC').replace(/\s/g,''),company=Number(text.match(/([1-8])중대/)?.[1]||row.company)||0;
+ const text=String(row.duty||'').normalize('NFKC').replace(/\s/g,''),company=Number(row.dutyCompanyOverride||text.match(/([1-8])중대/)?.[1]||row.company)||0;
  const grade=Number(row.gradeOverride||text.match(/([1-4])학년/)?.[1]||({'75':4,'76':3,'77':2,'78':1})[String(row.cohort).replace(/기$/,'')])||0;
  const battalion=Number(row.battalionOverride||text.match(/([12])대대/)?.[1])||0;
  let organization=row.organization||(/동기/.test(text)?'동기회':/명예/.test(text)?'명예위':/생발|생활발전/.test(text)?'생발위':/전대/.test(text)?'전대':/대대/.test(text)&&battalion?battalion+'대대':/중대|편대|보좌|기수|교육|행정|보급|문화체육/.test(text)?'중대':'기타');
@@ -19,6 +19,7 @@ export function dutyRoleInfoV367(row){
 }
 export function dutySortV367(rows){return [...rows].sort((a,b)=>{const x=dutyRoleInfoV367(a).sort,y=dutyRoleInfoV367(b).sort;for(let i=0;i<x.length;i++)if(x[i]!==y[i])return x[i]-y[i];return String(a.name||'').localeCompare(String(b.name||''),'ko');});}
 export function dutyFamilyV367(row){
+ if(row.familyOverride)return row.familyOverride;
  const info=dutyRoleInfoV367(row),text=String(row.duty||'').normalize('NFKC').replace(/\s/g,'');
  if(['동기회','명예위','생발위'].includes(info.organization))return info.organization;
  if(/전대장|대대장|중대장/.test(text)&&!/보좌/.test(text))return '장';

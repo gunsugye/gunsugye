@@ -20,6 +20,7 @@ await import('./duty-roles.test.mjs');
 await import('./duty-items.test.mjs');
 await import('./duty-manual.test.mjs');
 await import('./duty-verification.test.mjs');
+await import('./duty-order.test.mjs');
 await import('./staff-email.test.mjs');
 await import('./asset-overview.test.mjs');
 await import('./asset-plan.test.mjs');
