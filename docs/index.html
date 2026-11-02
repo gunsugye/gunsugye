@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-app-version="66d25593f26908f6" data-release-id="b0d11c70324d588b" data-navigation-pending lang="ko">
+<html data-app-version="e6d45990f69bce97" data-release-id="b91025c5c05bba25" data-navigation-pending lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -143,7 +143,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div class="v273-detail" id="v273Detail" role="status"></div>
   <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
 </div>
-<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.72 · 근무별 접기·펼치기 · 소속 선택 · 순서 이동</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header><div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.73 · 사역 계산 · 관별 층/중대 배분</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header><div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>
  <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
  <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
 <div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
@@ -652,7 +652,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
    <div><p class="labor-eyebrow">사역 / 식수 관리</p><h2 class="panel-title">사역 수량 계산</h2><p class="panel-sub">배정 비율과 학년·인원·분배 단위를 선택하면, 최신 생활실 배정과 스마트당직을 기준으로 계산합니다.</p></div>
    <a id="laborLivingSourceLinkV262" class="labor-source-link" href="https://docs.google.com/spreadsheets/d/13-ziStWuEB8mRmat_Jciz2ih-dT1Adv6euSczZwY-b0/edit#gid=1415389609" target="_blank" rel="noopener noreferrer">생활실현황 원본 ↗</a>
   </div>
-  <fieldset class="labor-distribution-mode"><legend>배분 방식</legend><label><input type="radio" name="laborDistributionV358" value="whole" checked>전체 배분</label><label><input type="radio" name="laborDistributionV358" value="building">관별 배분</label></fieldset><input type="checkbox" id="laborByBuildingV357" hidden><div class="labor-step-grid">
+  <p class="panel-sub">관별 배분 · 층별 / 중대별</p><input type="checkbox" id="laborByBuildingV357" hidden checked><div class="labor-step-grid">
    <div class="labor-step">
     <div class="labor-step-head"><span class="labor-step-number">01</span><label for="laborDivisorV259">지급 기준</label></div>
     <select id="laborDivisorV259" class="field"><option value="1">1인 1개</option><option value="2" selected>2인 1개</option><option value="3">3인 1개</option><option value="4">4인 1개</option><option value="5">5인 1개</option><option value="6">6인 1개</option></select>
