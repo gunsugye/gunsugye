@@ -1,0 +1,34 @@
+(()=>{
+ const ids=['room','assets','firearm','uniform','supplies'],grid=document.querySelector('#dashboard>.grid'),cards=new Map(ids.map(id=>[id,document.getElementById(id).closest('section.card')]));let enabled=false,drag=null,original=null,pointer=null,scrollTimer=null;
+ document.getElementById('personName').textContent='미리보기';document.getElementById('personMeta').textContent='예시 정보 · 실제 개인 정보 아님';document.getElementById('room').textContent='정예 본관 · 1층 · 132호 · 1번';document.getElementById('warnings').hidden=true;
+ document.querySelectorAll('.page-head button').forEach(b=>b.disabled=true);
+ function table(rows){return '<table class="personal-table"><thead><tr><th>품목</th><th>상태</th><th>세부사항</th></tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map((v,i)=>'<'+(i?'td':'th')+'>'+v+'</'+(i?'td':'th')+'>').join('')+'</tr>').join('')+'</tbody></table>';}
+ document.getElementById('assets').innerHTML=table([['책상','정상','1번 자리'],['침대','수리필요(보고완료)','서랍 수리 요청'],['냉장고','정상','공용']]);
+ document.getElementById('firearm').innerHTML='<div><dt>총기번호</dt><dd>••••00</dd></div><div><dt>상태</dt><dd>정상</dd></div>';
+ document.getElementById('uniform').innerHTML=table([['전투복','100',''],['전투화','270','']]);document.getElementById('supplies').innerHTML=table([['공사티','정상','100 · 2개'],['체육복','정상','100 · 1개']]);
+ document.getElementById('updated').textContent='예시 화면 · 카드 순서만 변경';
+ document.querySelector('footer').textContent='비품·피복 변경은 관리자 확인 후 반영';
+ function send(value){parent.postMessage({type:'personal-preview-v360',...value},'*');}
+ function order(){return [...grid.children].map(card=>card.dataset.previewCard);}
+ function setOrder(values){for(const id of values)if(cards.has(id))grid.appendChild(cards.get(id));}
+ function changed(){send({order:order()});}
+ function cleanup(){clearInterval(scrollTimer);scrollTimer=null;for(const card of cards.values())card.classList.remove('preview-moving','preview-over');drag=null;pointer=null;original=null;send({scrollStop:true});}
+ function cancel(){if(original)setOrder(original);cleanup();}
+ for(const [id,card] of cards){
+  card.dataset.previewCard=id;const bar=document.createElement('div');bar.className='preview-drag';bar.innerHTML='<button type="button" class="preview-grip" aria-label="'+card.querySelector('h2').textContent+' 드래그">⠿ 이동</button><strong></strong><button type="button" data-preview-step="-1" aria-label="위로">↑</button><button type="button" data-preview-step="1" aria-label="아래로">↓</button>';card.prepend(bar);
+  card.addEventListener('dragstart',e=>{if(!enabled||pointer!==null){e.preventDefault();return;}drag=id;original=order();e.dataTransfer.setData('text/plain',id);e.dataTransfer.effectAllowed='move';card.classList.add('preview-moving');});
+  card.addEventListener('dragover',e=>{if(!enabled||!drag||pointer!==null)return;e.preventDefault();e.dataTransfer.dropEffect='move';card.classList.add('preview-over');});
+  card.addEventListener('dragleave',()=>card.classList.remove('preview-over'));
+  card.addEventListener('drop',e=>{if(!enabled||!drag||pointer!==null)return;e.preventDefault();const moving=cards.get(drag),r=card.getBoundingClientRect();if(moving!==card)grid.insertBefore(moving,e.clientY<r.top+r.height/2?card:card.nextSibling);changed();cleanup();});
+  card.addEventListener('dragend',cancel);
+  bar.addEventListener('click',e=>{const b=e.target.closest('[data-preview-step]');if(!b||!enabled)return;const values=order(),i=values.indexOf(id),j=i+Number(b.dataset.previewStep);if(j<0||j>=values.length)return;[values[i],values[j]]=[values[j],values[i]];setOrder(values);changed();});
+  const grip=bar.querySelector('.preview-grip');grip.draggable=false;
+  grip.addEventListener('pointerdown',e=>{if(!enabled||e.button!==0)return;e.preventDefault();drag=id;original=order();pointer=e.pointerId;document.body.setPointerCapture(pointer);card.classList.add('preview-moving');});
+ }
+ window.addEventListener('pointermove',e=>{if(pointer!==e.pointerId)return;e.preventDefault();const card=cards.get(drag),target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-preview-card]');if(target&&target!==card){const r=target.getBoundingClientRect();grid.insertBefore(card,e.clientY<r.top+r.height/2?target:target.nextSibling);}send({pointerY:e.clientY});});
+ window.addEventListener('pointerup',e=>{if(pointer!==e.pointerId)return;changed();cleanup();});
+ window.addEventListener('pointercancel',()=>{if(pointer!==null)cancel();});document.body.addEventListener('lostpointercapture',()=>{if(pointer!==null)cancel();});
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag)cancel();});
+ window.addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='personal-preview-state-v360')return;cancel();const state=e.data;enabled=!!state.enabled;if(Array.isArray(state.order))setOrder(state.order);for(const card of cards.values()){card.draggable=enabled;card.querySelectorAll('.preview-drag button').forEach(b=>b.disabled=!enabled);}requestAnimationFrame(()=>send({height:document.documentElement.scrollHeight}));});
+ new ResizeObserver(()=>send({height:document.documentElement.scrollHeight})).observe(document.body);send({ready:true});
+})();

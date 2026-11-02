@@ -23,6 +23,7 @@ import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} 
 import {uniformRequestNavSource,uniformRequestNavJs,uniformRequestNavHtml} from './uniform-request-navigation.mjs';
 import {trainingShellJs,trainingShellHtml} from './training-shell.mjs';
 import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,personalInterfaceCSS} from './personal-interface.mjs';
+import {personalInterfacePreview} from './personal-interface-preview.mjs';
 import {personalSessionStore} from './personal-session.mjs';
 import {dormMemberCohortsV343} from './dorm-members.mjs';
 import {dormPlaceRoomV344} from './dorm-placement.mjs';
@@ -54,7 +55,7 @@ js=assetRequestsJs(js,read('scripts/asset-requests-client.js.txt'));
 js=uniformRequestNavJs(js);
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+read('scripts/uniform-requests-client.js.txt')+'\n'+js.slice(end);}
 js=trainingShellJs(js);
-js=personalInterfaceJs(js,read('scripts/personal-interface-client.js.txt'));
+js=personalInterfaceJs(js,'const PERSONAL_PREVIEW_HTML_V360='+JSON.stringify(personalInterfacePreview(read('scripts/personal-portal.html'),read('scripts/personal-portal.css'),read('scripts/personal-interface-preview.js.txt')))+';\n'+read('scripts/personal-interface-client.js.txt'));
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
  .replace('async function wxLoadAll(){',`let wxLoadPromiseV314=null;

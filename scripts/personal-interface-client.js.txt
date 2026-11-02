@@ -1,6 +1,7 @@
 const PERSONAL_INTERFACE_ITEMS_V359={room:'생활실 위치',assets:'생활실 비품',firearm:'총기',uniform:'피복 사이즈',supplies:'군수품'};
 let personalInterfaceOrderV359=[],personalInterfaceOriginalV359='[]',personalInterfaceVersionV359='',personalInterfaceDirtyV359=false,personalInterfaceBusyV359=false;
 function personalInterfaceRenderV359(){
+ personalInterfacePreviewSyncV360();
  personalInterfaceDirtyV359=JSON.stringify(personalInterfaceOrderV359)!==personalInterfaceOriginalV359;
  $('personalInterfaceRowsV359').innerHTML=personalInterfaceOrderV359.map((id,i)=>'<li><strong>'+escapeH(PERSONAL_INTERFACE_ITEMS_V359[id])+'</strong><div class="asset-actions"><button class="btn" type="button" data-personal-move="'+i+'" data-direction="-1" aria-label="'+escapeH(PERSONAL_INTERFACE_ITEMS_V359[id])+' 위로" '+(!i||personalInterfaceBusyV359?'disabled':'')+'>↑</button><button class="btn" type="button" data-personal-move="'+i+'" data-direction="1" aria-label="'+escapeH(PERSONAL_INTERFACE_ITEMS_V359[id])+' 아래로" '+(i===personalInterfaceOrderV359.length-1||personalInterfaceBusyV359?'disabled':'')+'>↓</button></div></li>').join('');
  $('personalInterfaceSaveV359').disabled=personalInterfaceBusyV359||!personalInterfaceDirtyV359||!canManageUsersV281;
@@ -22,3 +23,21 @@ $('personalInterfaceSaveV359').addEventListener('click',async()=>{
  catch(e){$('personalInterfaceStatusV359').textContent='저장 실패: '+e.message;}finally{personalInterfaceBusyV359=false;personalInterfaceRenderV359();}
 });
 window.addEventListener('beforeunload',e=>{if(personalInterfaceDirtyV359){e.preventDefault();e.returnValue='';}});
+let personalPreviewScrollV360=null,personalPreviewScrollYV360=0;
+function personalInterfacePreviewSyncV360(){
+ const frame=$('personalInterfacePreviewV360');if(!frame.dataset.initialized){frame.dataset.initialized='true';frame.srcdoc=PERSONAL_PREVIEW_HTML_V360;}
+ frame.contentWindow?.postMessage({type:'personal-preview-state-v360',order:personalInterfaceOrderV359,enabled:canManageUsersV281&&!personalInterfaceBusyV359&&personalInterfaceOrderV359.length===5},'*');
+}
+window.addEventListener('message',e=>{
+ const frame=$('personalInterfacePreviewV360'),value=e.data;if(e.source!==frame.contentWindow||value?.type!=='personal-preview-v360')return;
+ if(value.ready)personalInterfacePreviewSyncV360();
+ if(Number.isFinite(value.height))frame.style.height=Math.min(6000,Math.max(400,value.height))+'px';
+ if(value.scrollStop){clearInterval(personalPreviewScrollV360);personalPreviewScrollV360=null;}
+ if(Number.isFinite(value.pointerY)){
+  personalPreviewScrollYV360=frame.getBoundingClientRect().top+value.pointerY;
+  if(!personalPreviewScrollV360)personalPreviewScrollV360=setInterval(()=>{if(view!=='personalInterface'){clearInterval(personalPreviewScrollV360);personalPreviewScrollV360=null;return;}const y=personalPreviewScrollYV360;if(y<90)window.scrollBy(0,-18);else if(y>innerHeight-90)window.scrollBy(0,18);},30);
+ }
+ if(!Array.isArray(value.order)||personalInterfaceBusyV359||!canManageUsersV281)return;
+ const known=Object.keys(PERSONAL_INTERFACE_ITEMS_V359);if(value.order.length!==known.length||new Set(value.order).size!==known.length||value.order.some(id=>!known.includes(id)))return;
+ personalInterfaceOrderV359=value.order.slice();personalInterfaceRenderV359();$('personalInterfaceStatusV359').textContent=personalInterfaceDirtyV359?'저장 전 · 순서 변경 중':'개인 조회앱 표시 순서';
+});

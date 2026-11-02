@@ -1,0 +1,4 @@
+export function personalInterfacePreview(html,css,client){
+ html=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'').replace(/<link\b[^>]*>/g,'').replace('<main id="dashboard" hidden>','<main id="dashboard">').replace('<section id="login"','<section hidden id="login"').replace('<dl id="uniform"></dl>','<div id="uniform"></div>');
+ return html.replace('</head>','<style>'+css+'\n.preview-drag{display:flex;align-items:center;gap:8px;margin:0 0 10px}.preview-drag strong{flex:1;font-size:12px}.preview-drag button{min-height:34px;padding:5px 9px;font-size:12px}.preview-grip{touch-action:none;cursor:grab}.preview-moving{opacity:.5;outline:3px solid #397acb}.preview-over{outline:3px solid #397acb}section.card{scroll-margin:20px}#assetActions{display:none}header a{pointer-events:none}</style></head>').replace('</body>','<script>'+client+'</script></body>');
+}
