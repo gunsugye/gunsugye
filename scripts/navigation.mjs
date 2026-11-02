@@ -41,10 +41,11 @@ export function normalizeNavigation(value, defaults, available) {
     const def=defaults.find(g=>g.id==='departures');
     if(def){let group=groups.find(g=>g.id===def.id);if(!group){group={id:def.id,title:def.title,items:[]};groups.unshift(group);}group.items.push('departures');used.add('departures');}
   }
+  if(valid&&!value.dutyItemsAddedV368){const ids=['dutyBadge','dutyBlock','dutyNameplate'].filter(id=>allowed.has(id)&&!used.has(id));if(ids.length){const def=defaults.find(g=>g.id==='devices');if(def){let group=groups.find(g=>g.id==='devices');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}const pos=group.items.indexOf('saber');group.items.splice(pos<0?group.items.length:pos+1,0,...ids);ids.forEach(id=>used.add(id));}}}
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }
-  return { schemaVersion: 2, groups, labels, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true };
+  return { schemaVersion: 2, groups, labels, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {

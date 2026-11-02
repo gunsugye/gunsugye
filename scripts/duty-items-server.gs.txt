@@ -1,0 +1,12 @@
+function dutyItemSheetV368_(create){const ss=spreadsheet_(),headers=['키','근무명단ID','품목','수량','수정시각','수정자'];let sh=ss.getSheetByName('근무생도물품');if(!sh&&create){sh=ss.insertSheet('근무생도물품');setupTab_(sh,headers);}if(sh){const head=sh.getRange(1,1,1,6).getDisplayValues()[0];if(head.some((v,i)=>v!==headers[i]))throw Error('근무생도물품 시트 열 구성을 확인하세요.');}return sh;}
+function dutyItemDataV368_(){const sh=dutyItemSheetV368_(false);if(sh&&sh.getLastRow()>10000)throw Error('물품 기록 보관 한도를 확인하세요.');return sh&&sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,6).getDisplayValues().filter(r=>r[0]):[];}
+function dutyItemRosterV368_(){dutyManualReadyV369_();return {version:'manual-v369',rows:dutyRosterStateV367_('manual-v369').records};}
+function getDutyItemsV368(){dutyRosterAdminV367_();const roster=dutyItemRosterV368_();return {...roster,revision:PropertiesService.getScriptProperties().getProperty('DUTY_ITEMS_REV_V368')||'',items:dutyItemDataV368_().map(r=>({personId:r[1],item:r[2],quantity:Number(r[3]),updatedAt:r[4]}))};}
+function saveDutyItemsV368(version,revision,changes){
+ dutyRosterAdminV367_();if(!Array.isArray(changes)||!changes.length||changes.length>4000)throw Error('저장할 수량을 확인하세요.');
+ const keys=new Set(),patch=changes.map(c=>{const id=text_(c.personId,120),item=text_(c.item,16),qty=c.quantity;if(!id||!['badge','block','door','triangle'].includes(item)||typeof qty!=='number'||!Number.isInteger(qty)||qty<0||qty>1000)throw Error('수량은 0~1000 사이 정수로 입력하세요.');const key=id+'|'+item;if(keys.has(key))throw Error('중복 항목이 있습니다.');keys.add(key);return {key,id,item,qty};});
+ return lockAndRun_(()=>{const props=PropertiesService.getScriptProperties();if((props.getProperty('DUTY_ITEMS_REV_V368')||'')!==String(revision||''))throw Error('다른 곳에서 수량을 변경했습니다. 새로고침 후 다시 저장하세요.');const roster=dutyItemRosterV368_();if(roster.version!==version)throw Error('편성안이 변경되었습니다. 새로고침하세요.');const ids=new Set(roster.rows.map(r=>r.id));if(patch.some(c=>!ids.has(c.id)))throw Error('현재 근무명단에 없는 인원입니다. 새로고침하세요.');
+ const rows=dutyItemDataV368_(),map=new Map(rows.map((r,i)=>[r[0],i])),now=iso_(),email=config_().email;for(const c of patch){const row=[c.key,c.id,c.item,c.qty,now,email];if(map.has(c.key))rows[map.get(c.key)]=row;else{map.set(c.key,rows.length);rows.push(row);}}
+ if(rows.length>9999)throw Error('물품 기록 보관 한도를 확인하세요.');const sh=dutyItemSheetV368_(true);ensureRows_(sh,rows.length+1);sh.getRange(2,1,rows.length,6).setValues(rows);const next=Utilities.getUuid();props.setProperty('DUTY_ITEMS_REV_V368',next);return {ok:true,revision:next};
+ });
+}

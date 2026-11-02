@@ -4,7 +4,7 @@ function dutyRosterRecordsV367_(){const sh=dutyRosterSheetV367_(false);if(!sh||s
 function dutyRosterPublicV367_(record){return {...record.data.source,...record.data.edits,id:record.id,updatedAt:record.updatedAt,sourceKey:record.key,originalDuty:record.data.source.duty,edited:Object.keys(record.data.edits||{}).length>0};}
 function dutyRosterStateV367_(version){return {indexVersion:PropertiesService.getScriptProperties().getProperty('DUTY_INDEX_VERSION_V367')||'',records:dutyRosterRecordsV367_().filter(r=>r.data.version===version).map(dutyRosterPublicV367_)};}
 function syncDormDutyCadetsV367(version,rows){
- dutyRosterAdminV367_();if(!Array.isArray(rows)||rows.length>1000)throw Error('근무명단 크기를 확인하세요.');
+ dutyRosterAdminV367_();if(PropertiesService.getScriptProperties().getProperty('DUTY_ROSTER_MANUAL_V369')==='yes')throw Error('직접 입력 명단을 사용 중입니다. PDF 동기화는 중지되었습니다.');if(!Array.isArray(rows)||rows.length>1000)throw Error('근무명단 크기를 확인하세요.');
  const normalized=rows.map(r=>{const next={};for(const [key,length] of Object.entries({sourceKey:600,cohort:24,company:12,name:60,duty:160,building:40,floor:12,room:40,review:80}))next[key]=text_(r[key],length);next.page=Number(r.page);if(!next.sourceKey||!next.name||!next.duty||!Number.isInteger(next.page)||next.page<1||next.page>50)throw Error('근무명단 내용을 확인하세요.');return next;});
  if(new Set(normalized.map(r=>r.sourceKey)).size!==normalized.length)throw Error('근무명단 원본키가 중복됐습니다.');
  return lockAndRun_(()=>{
@@ -17,16 +17,12 @@ function syncDormDutyCadetsV367(version,rows){
  });
 }
 function saveDormDutyCadetV367(id,edits,expected){
- dutyRosterAdminV367_();const keys=['cohort','company','name','duty','organization','gradeOverride','battalionOverride','saberRoleOverride'];if(!edits||typeof edits!=='object'||Array.isArray(edits)||Object.keys(edits).some(k=>!keys.includes(k)))throw Error('수정 항목을 확인하세요.');
- const patch={};for(const key of keys)patch[key]=text_(edits[key],key==='duty'?160:key==='saberRoleOverride'?120:60);
- patch.cohort=patch.cohort.normalize('NFKC').replace(/기$/,'');patch.company=patch.company.normalize('NFKC').replace(/중대$/,'');
- if(!patch.name||!patch.duty||(patch.cohort&&!/^\d{2,3}$/.test(patch.cohort))||(patch.company&&!/^[1-8]$/.test(patch.company))||!['','전대','1대대','2대대','중대','동기회','명예위','생발위','기타'].includes(patch.organization)||!['','1','2','3','4'].includes(patch.gradeOverride)||!['','1','2'].includes(patch.battalionOverride))throw Error('이름·근무·기수·중대·분류를 확인하세요.');
- if(!['','auto','none'].includes(patch.saberRoleOverride)&&!saberRolesV276_().some(r=>r.id===patch.saberRoleOverride))throw Error('예도 직책을 확인하세요.');
- return lockAndRun_(()=>{const record=dutyRosterRecordsV367_().find(r=>r.id===id),version=dormPlanDataV315_().version;if(!record||record.data.version!==version)throw Error('현재 편성안의 명단이 아닙니다. 새로고침하세요.');if(record.updatedAt!==String(expected||''))throw Error('다른 곳에서 수정했습니다. 새로고침 후 다시 저장하세요.');
+ dutyRosterAdminV367_();const patch=dutyCadetPatchV369_(edits);
+ return lockAndRun_(()=>{const record=dutyRosterRecordsV367_().find(r=>r.id===id),version=PropertiesService.getScriptProperties().getProperty('DUTY_ROSTER_MANUAL_V369')==='yes'?'manual-v369':dormPlanDataV315_().version;if(!record||record.data.version!==version)throw Error('현재 편성안의 명단이 아닙니다. 새로고침하세요.');if(record.updatedAt!==String(expected||''))throw Error('다른 곳에서 수정했습니다. 새로고침 후 다시 저장하세요.');
   record.data.edits=patch;record.updatedAt=iso_();record.by=config_().email;dutyRosterSheetV367_(false).getRange(record.row,1,1,5).setValues([[record.id,record.key,JSON.stringify(record.data),record.updatedAt,record.by]]);return dutyRosterPublicV367_(record);
  });
 }
 function saberDutyLinksV367_(items){
- const version=dormPlanDataV315_().version;if(PropertiesService.getScriptProperties().getProperty('DUTY_INDEX_VERSION_V367')!==version)return items.map(item=>({...item,linkedCadets:[]}));const records=dutyRosterRecordsV367_().filter(r=>r.data.version===version).map(dutyRosterPublicV367_);
+ const version=PropertiesService.getScriptProperties().getProperty('DUTY_ROSTER_MANUAL_V369')==='yes'?'manual-v369':dormPlanDataV315_().version;if(PropertiesService.getScriptProperties().getProperty('DUTY_INDEX_VERSION_V367')!==version)return items.map(item=>({...item,linkedCadets:[]}));const records=dutyRosterRecordsV367_().filter(r=>r.data.version===version).map(dutyRosterPublicV367_);
  return items.map(item=>{const linked=records.filter(row=>dutySaberRoleV367(row)===item.id).map(row=>({id:row.id,name:row.name,cohort:row.cohort,company:row.company}));return {...item,linkedCadets:linked,name:linked.length===1?linked[0].name:item.name};});
 }
