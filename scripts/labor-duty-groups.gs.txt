@@ -1,0 +1,10 @@
+function laborMainCategoryV375_(p){
+ if(!String(p.room?.building||'').normalize('NFKC').replace(/\s/g,'').includes('본관'))return '';
+ return p.dutyCategoryKnownV375?p.dutyCategoryV375||'':'';
+}
+function laborAttachDutyV375_(assigned){
+ const props=PropertiesService.getScriptProperties(),version=props.getProperty('DUTY_ROSTER_MANUAL_V369')==='yes'?'manual-v369':props.getProperty('DUTY_INDEX_VERSION_V367');if(!version)return;
+ const records=dutyRosterRecordsV367_().filter(r=>r.data.version===version).map(dutyRosterPublicV367_),key=smartComparisonKeyV322_(assigned,records),index=new Map();
+ for(const row of records){const org=dutyRoleInfoV367(row).organization,category=['전대','1대대','2대대'].includes(org)?'전대·대대 근무':['동기회','명예위','생발위'].includes(org)?'동생명':'';if(!index.has(key(row)))index.set(key(row),new Set());index.get(key(row)).add(category);}
+ for(const p of assigned){const categories=index.get(key(p));if(categories?.size===1){p.dutyCategoryKnownV375=true;p.dutyCategoryV375=[...categories][0];}}
+}
