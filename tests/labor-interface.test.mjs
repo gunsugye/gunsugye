@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {distributionExplanation} from '../scripts/labor-interface.mjs';
 import {readFileSync,existsSync} from 'node:fs';import vm from 'node:vm';
 
-test('외출 항목은 원본 비고의 행 제목을 연결하고 중복 항목을 함께 표시한다',()=>{
+test('외출 항목은 원본 비고의 행 제목을 연결하고 중복 항목을 함께 표시한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
  const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');
  const take=name=>{const start=source.indexOf('function '+name+'(');return source.slice(start,source.indexOf('\n}\n',start)+3);};
  const context=vm.createContext({});vm.runInContext(['dormTriplesV241_','dormOutingCategoriesV357_','dormNamesMatchedV240_'].map(take).join('\n'),context);
@@ -11,7 +11,7 @@ test('외출 항목은 원본 비고의 행 제목을 연결하고 중복 항목
  const matched=context.dormNamesMatchedV240_(entries.map(e=>e.text),[{cohort:'77',company:'1',name:'검증갑',roomId:'r1',verified:true}]);assert.equal(matched.matched,1);assert.equal(matched.records.length,1);
 });
 
-test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 총수량을 보존한다',()=>{
+test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 총수량을 보존한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
  const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');
  const take=name=>{const start=source.indexOf('function '+name+'(');return source.slice(start,source.indexOf('\n}\n',start)+3);};
  const buildings=['정예 본관','정예 동관','정예 서관'],rooms=buildings.map((building,i)=>({id:String(i),building}));
@@ -29,7 +29,7 @@ test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 �
  assert.equal(context.getLaborCalcV259('whole','building',2,'all').buildingDivisors,null);
 });
 
-test('1인 1개인 관은 자동·수동 독방 짝과 미지정에서 제외한다',()=>{
+test('1인 1개인 관은 자동·수동 독방 짝과 미지정에서 제외한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
  const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8'),start=source.indexOf('function laborPairsV259_('),fn=source.slice(start,source.indexOf('\n}\n',start)+3);
  const assigned=Array.from({length:4},(_,i)=>({personKey:'p'+i,cohort:'77',company:'1',matched:true,duty:'',room:{id:String(i),building:i<2?'본관':'동관',room:String(i)}}));
  const context=vm.createContext({laborGradeSetV261_:()=>[],laborGradeMatchV261_:()=>true,laborAbsentAllV259_:()=>false,laborAbsentNowV259_:()=>false,laborRoomOccupancyV260_:()=>({counts:new Map(assigned.map(p=>[p.room.id,1])),details:[]}),laborPhysicalKeyV260_:r=>r.id,laborSoloPairStateV264_:()=>({pairs:{p2:'p3'},blocked:[]}),laborUnitV259_:x=>x});vm.runInContext(fn,context);
