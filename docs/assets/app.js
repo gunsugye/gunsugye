@@ -3279,7 +3279,7 @@ function laborPairOpenV268(button){
  const panel=document.createElement('div');panel.className='labor-inline-picker-v268';
  panel.innerHTML='<p class="labor-inline-hint-v268">'+escapeH(building)+' 내 생도 선택 · 다른 관은 선택 불가</p><input class="labor-inline-search-v268" type="search" aria-label="'+escapeH(building)+' 명단 검색" placeholder="이름 / 기수 / 중대 검색"><div class="labor-inline-scroll-v268">'+(choices||'<p class="help">선택할 생도가 없습니다.</p>')+'</div>'+
  (b?'<button class="labor-inline-unassign-v268" type="button" data-pair-set-unassigned>이 자리를 미지정으로 변경</button>':'')+'</div>';
- button.closest('.labor-pair-cell-v268').appendChild(panel);
+ panel.querySelectorAll('.labor-inline-option-v268').forEach(label=>{const name=label.querySelector('span'),check=label.querySelector('input');if(name&&check)label.replaceChildren(name,check);});button.closest('.labor-pair-cell-v268').appendChild(panel);
  button.setAttribute('aria-expanded','true');
  laborPairPopupV268={button,panel,fixed,selected,a,b,side,building};
  panel.querySelector('input[type="search"]').focus();
