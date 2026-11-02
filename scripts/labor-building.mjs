@@ -18,7 +18,7 @@ export function laborBuildingJs(js){
  js=js.replace("laborLoadingV259=true;$('laborRefreshV259')","laborLoadingV259=true;laborBuildingBusyV357(true);$('laborRefreshV259')");
  js=js.replace("$('laborRefreshV259').addEventListener('click',laborLoadV259);",`$('laborByBuildingV357').addEventListener('change',()=>{laborBuildingVisibilityV357();laborLoadV259();});
  qsa('[name="laborDistributionV358"]').forEach(radio=>radio.addEventListener('change',()=>{$('laborByBuildingV357').checked=radio.value==='building';laborBuildingVisibilityV357();laborLoadV259();}));
- $('laborBuildingRatesV357').addEventListener('change',laborLoadV259);
+ $('laborBuildingRatesV357').addEventListener('change',e=>{if(e.target.matches('[data-labor-building],[data-labor-dimension]'))laborLoadV259();});
  $('laborRefreshV259').addEventListener('click',laborLoadV259);`);
  js=js.replace('laborSyncDimensionV262_();\nlet laborPairSavingV264', 'laborSyncDimensionV262_();\nlet laborPairSavingV264');
  const end=js.lastIndexOf('})();');return js.slice(0,end)+`

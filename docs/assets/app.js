@@ -3223,7 +3223,7 @@ async function laborLoadV259(){
 }
 $('laborByBuildingV357').addEventListener('change',()=>{laborBuildingVisibilityV357();laborLoadV259();});
  qsa('[name="laborDistributionV358"]').forEach(radio=>radio.addEventListener('change',()=>{$('laborByBuildingV357').checked=radio.value==='building';laborBuildingVisibilityV357();laborLoadV259();}));
- $('laborBuildingRatesV357').addEventListener('change',laborLoadV259);
+ $('laborBuildingRatesV357').addEventListener('change',e=>{if(e.target.matches('[data-labor-building],[data-labor-dimension]'))laborLoadV259();});
  $('laborRefreshV259').addEventListener('click',laborLoadV259);
 ['laborDivisorV259','laborGradeV261','laborDimV259'].forEach(id=>$(id).addEventListener('change',laborLoadV259));
 $('laborModeV259').addEventListener('change',()=>{laborSyncDimensionV262_();laborLoadV259();});
