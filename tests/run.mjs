@@ -16,6 +16,7 @@ await import('./dorm-plan.test.mjs');
 await import('./labor-interface.test.mjs');
 await import('./personal-interface.test.mjs');
 await import('./duty-cadets.test.mjs');
+await import('./duty-roles.test.mjs');
 await import('./staff-email.test.mjs');
 await import('./asset-overview.test.mjs');
 await import('./asset-plan.test.mjs');

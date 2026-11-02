@@ -26,6 +26,7 @@ import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,per
 import {personalInterfacePreview} from './personal-interface-preview.mjs';
 import {staffAccessHtml,staffAccessJs} from './staff-access.mjs';
 import {dutyCadetsJs,dutyCadetsHtml} from './duty-cadets.mjs';
+import {dutyRoleInfoV367,dutySortV367,dutyFamilyV367,dutySaberRoleV367} from './duty-roles.mjs';
 import {personalSessionStore} from './personal-session.mjs';
 import {dormMemberCohortsV343} from './dorm-members.mjs';
 import {dormPlaceRoomV344} from './dorm-placement.mjs';
@@ -60,7 +61,7 @@ js=trainingShellJs(js);
 js=staffAccessJs(js);
 html=staffAccessHtml(html);
 js=personalInterfaceJs(js,'const PERSONAL_PREVIEW_HTML_V360='+JSON.stringify(personalInterfacePreview(read('scripts/personal-portal.html'),read('scripts/personal-portal.css'),read('scripts/personal-interface-preview.js.txt')))+';\n'+read('scripts/personal-interface-client.js.txt'));
-js=dutyCadetsJs(js,read('scripts/duty-cadets-client.js.txt'));
+js=dutyCadetsJs(js,dutyRoleInfoV367.toString()+'\n'+dutySortV367.toString()+'\n'+dutyFamilyV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-cadets-client.js.txt')+'\n'+read('scripts/duty-roster-client.js.txt'));
 html=dutyCadetsHtml(html);
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
@@ -75,7 +76,7 @@ const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');\n`+js.slice(hook);
-js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
+js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
 const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS;
 html=personalInterfaceHtml(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
@@ -146,6 +147,7 @@ legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V3
 legacy+='\n'+read('scripts/personal-server.gs.txt');
 legacy+='\n'+read('scripts/personal-interface-server.gs.txt');
 legacy+='\n'+read('scripts/duty-cadets-server.gs.txt');
+legacy+='\n'+dutyRoleInfoV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-roster-server.gs.txt');
 legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();

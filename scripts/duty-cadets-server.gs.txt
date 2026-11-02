@@ -2,5 +2,5 @@ function getDormDutyCadetsV365(includePdf){
  requireOwner_();if(!accessPolicyV284_().legacy)throw Error('근무생도 PDF 명단은 전체 관리자만 조회할 수 있습니다.');
  const plan=dormPlanDataV315_(),ss=spreadsheet_(),roster=dormRosterReadV240_(ss),rooms=dormReadV234_(dormTabV234_(ss,false)).map(room=>({id:room.id,building:room.building,floor:room.floor,room:room.room,members:roster.filter(p=>String(p.roomId)===String(room.id)).map(p=>({name:p.name,cohort:p.cohort,company:p.company}))}));
  const layout=dormPlanBindLayoutV321_(plan.layout||[],rooms),indexed=layout.length>0&&layout.every(a=>Array.isArray(a.pdfMembers)&&a.pdfMembers.every(p=>typeof p.isDuty==='boolean'));
- return {filename:plan.filename,version:plan.version,layout,rooms,indexed,...(includePdf===true?{base64:plan.base64}:{})};
+ return {filename:plan.filename,version:plan.version,layout,rooms,indexed,...dutyRosterStateV367_(plan.version),saberRoles:saberRolesV276_(),...(includePdf===true?{base64:plan.base64}:{})};
 }

@@ -3441,7 +3441,7 @@ let saberDataV276=null,saberBusyV276=false;
 async function saberLoadV276(){
  if(saberBusyV276)return; saberBusyV276=true;
  try{
-  let r=await server('getSaberV276');
+  if(canEdit&&!v284Scoped&&!dutyCadetsMetaV365)await dutyCadetsLoadV365();let r=await server('getSaberV276');
   // 기존 예도현황을 사용하는 관리자는 누락된 신규 직책을 데이터 손실 없이 행 추가합니다.
   if(r.initialized&&r.canEdit&&r.missingCount>0){
    try{await enqueue(()=>server('setupSaberV276'));r=await server('getSaberV276');}
@@ -3483,7 +3483,7 @@ function saberRenderV276(){
  const writable=canEdit&&data.canEdit;
  $('saberRowsV276').innerHTML=list.map(p=>{
   const state=p.status==='수리 필요'?'saber-repair-v276':p.status==='교체 필요'?'saber-replace-v277':'';
-  return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요(보고)" '+(p.status==='수리 필요(보고)'?'selected':'')+'>수리 필요(보고)</option><option value="수리 필요(미보고)" '+(p.status==='수리 필요(미보고)'?'selected':'')+'>수리 필요(미보고)</option><option value="교체 필요" '+(p.status==='교체 필요'?'selected':'')+'>교체 필요</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
+  return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+((p.linkedCadets||[]).length?'<small style="display:block">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요(보고)" '+(p.status==='수리 필요(보고)'?'selected':'')+'>수리 필요(보고)</option><option value="수리 필요(미보고)" '+(p.status==='수리 필요(미보고)'?'selected':'')+'>수리 필요(미보고)</option><option value="교체 필요" '+(p.status==='교체 필요'?'selected':'')+'>교체 필요</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
  }).join('')||'<tr><td colspan="4">검색 결과가 없습니다.</td></tr>';
  $('saberInfoV276').textContent=list.length+'개 직책 표시 · 상태 변경과 세부사항 입력은 자동 저장됩니다.';
  $('saberSyncTitlesV277').classList.toggle('hidden',!data.titleSyncNeeded||!writable);
@@ -4738,20 +4738,56 @@ function dutyCadetRowsV365(parsed,rooms){
   const local=suitable.filter(({room})=>source.roomId?room.id===source.roomId:room.building===source.building&&room.floor===source.floor&&room.room.split('-')[0]===source.room.split('-')[0]);
   const match=local.length===1?local[0]:suitable.length===1?suitable[0]:null,person=match?.person||old||{},room=match?.room||source;
   const key=[source.page,source.building,source.floor,source.sourceRoom||source.room,mark.name,mark.duty].join('|');if(seen.has(key))continue;seen.add(key);
-  rows.push({cohort:norm(person.cohort),company:norm(person.company),name:match?.person.name||mark.name,duty:mark.duty||'직책 미표기',building:room.building,floor:room.floor,room:room.room,page:source.page,review:mark.dutyReview?'괄호 확인 필요':match?'현재 배정':'배정명단 확인 필요'});
+  rows.push({sourceKey:key,cohort:norm(person.cohort),company:norm(person.company),name:match?.person.name||mark.name,duty:mark.duty||'직책 미표기',building:room.building,floor:room.floor,room:room.room,page:source.page,review:mark.dutyReview?'괄호 확인 필요':match?'현재 배정':'배정명단 확인 필요'});
  }
  return rows.sort((a,b)=>a.building.localeCompare(b.building,'ko')||a.floor.localeCompare(b.floor,'ko')||a.room.localeCompare(b.room,'ko',{numeric:true})||a.name.localeCompare(b.name,'ko'));
 }
-let dutyCadetsBusyV365=false,dutyCadetsDataV365=[],dutyCadetsCacheV365=null,dutyCadetsMetaV365=null,dutyCadetsWarningsV365=0;
-function dutyCadetsRenderV365(){
- const query=$('dutyCadetsSearchV365').value.trim().toLowerCase(),building=$('dutyCadetsBuildingV365').value,list=dutyCadetsDataV365.filter(p=>(!building||p.building===building)&&(!query||Object.values(p).join(' ').toLowerCase().includes(query)));
- $('dutyCadetsRowsV365').innerHTML=list.map(p=>'<tr><td>'+escapeH(p.cohort?p.cohort+'기':'확인 필요')+'</td><td>'+escapeH(p.company?p.company+'중대':'확인 필요')+'</td><td><strong>'+escapeH(p.name)+'</strong></td><td>'+escapeH(p.duty)+'</td><td>'+escapeH([p.building,p.floor,p.room+'호'].join(' '))+'</td><td>'+p.page+'쪽</td><td>'+escapeH(p.review)+'</td></tr>').join('')||'<tr><td colspan="7">표시할 근무생도가 없습니다.</td></tr>';
- $('dutyCadetsStatusV365').textContent=(dutyCadetsMetaV365?.filename||'편성안')+' · 근무생도 '+dutyCadetsDataV365.length+'명 · 표시 '+list.length+'명'+(dutyCadetsWarningsV365?' · 판독 범위 확인 '+dutyCadetsWarningsV365+'호':'');
+function dutyRoleInfoV367(row){
+ const text=String(row.duty||'').normalize('NFKC').replace(/\s/g,''),company=Number(text.match(/([1-8])중대/)?.[1]||row.company)||0;
+ const grade=Number(row.gradeOverride||text.match(/([1-4])학년/)?.[1]||({'75':4,'76':3,'77':2,'78':1})[String(row.cohort).replace(/기$/,'')])||0;
+ const battalion=Number(row.battalionOverride||text.match(/([12])대대/)?.[1])||0;
+ let organization=row.organization||(/동기/.test(text)?'동기회':/명예/.test(text)?'명예위':/생발|생활발전/.test(text)?'생발위':/전대/.test(text)?'전대':/대대/.test(text)&&battalion?battalion+'대대':/중대|편대|보좌|기수|교육|행정|보급|문화체육/.test(text)?'중대':'기타');
+ let rank=90,series=['작전','인사','군수','체육','문화'].findIndex(s=>text.includes(s)),title=text;
+ if(['전대','1대대','2대대'].includes(organization)){
+  rank=/참모/.test(text)?(/보좌/.test(text)?10:1)+(series<0?8:series):/(전대장|대대장)/.test(text)?0:80;
+ }else if(organization==='중대'){
+  if(/중대장/.test(text))rank=0;
+  else if(/편대장/.test(text))rank=1+(Number(text.match(/([1-4])편대장/)?.[1])||0)/10;
+  else if(/보좌|교육|행정|보급|문화|체육/.test(text)){series=/문화|체육/.test(text)?3:/작전|교육/.test(text)?0:/인사|행정/.test(text)?1:/군수|보급/.test(text)?2:-1;rank=30+(series<0?8:series);if(/문화|체육/.test(text))title='문화체육보좌관';}
+  else if(/기수/.test(text))rank=40;
+  else rank=({4:10,3:20,2:50,1:60})[grade]||80;
+ }else if(organization==='동기회')rank=/부회장/.test(text)?1:/회장/.test(text)?0:/총무/.test(text)?2:/친목활동부장/.test(text)?3:20;
+ else if(organization==='명예위'||organization==='생발위')rank=/위원장/.test(text)&&!/부위원장/.test(text)?0:10;
+ const orgOrder=({'전대':0,'1대대':1,'2대대':2,'중대':3,'동기회':4,'명예위':5,'생발위':6,'기타':9})[organization]??9;
+ return {organization,company,grade,battalion,rank,title,sort:organization==='동기회'?[orgOrder,grade?5-grade:9,rank,battalion||9,company||9]:[orgOrder,organization==='중대'?company:0,rank,grade?5-grade:9,battalion||9,company||9]};
 }
+function dutySortV367(rows){return [...rows].sort((a,b)=>{const x=dutyRoleInfoV367(a).sort,y=dutyRoleInfoV367(b).sort;for(let i=0;i<x.length;i++)if(x[i]!==y[i])return x[i]-y[i];return String(a.name||'').localeCompare(String(b.name||''),'ko');});}
+function dutyFamilyV367(row){
+ const info=dutyRoleInfoV367(row),text=String(row.duty||'').normalize('NFKC').replace(/\s/g,'');
+ if(['동기회','명예위','생발위'].includes(info.organization))return info.organization;
+ if(/전대장|대대장|중대장/.test(text)&&!/보좌/.test(text))return '장';
+ if(/작전|교육|1편대장/.test(text))return '작전';if(/인사|행정|2편대장/.test(text))return '인사';if(/군수|보급|3편대장/.test(text))return '군수';if(/문화|체육|4편대장/.test(text))return '문화 및 체육';
+ if(info.organization==='중대'&&/기수/.test(text))return '중대기수';
+ if(info.organization==='중대'&&info.rank>=10)return '중대임원';return '기타';
+}
+function dutySaberRoleV367(row){
+ if(row.saberRoleOverride==='none')return '';if(row.saberRoleOverride&&row.saberRoleOverride!=='auto')return row.saberRoleOverride;
+ const info=dutyRoleInfoV367(row),text=String(row.duty||'').normalize('NFKC').replace(/\s/g,'');
+ if(/보좌/.test(text))return '';
+ if(['전대','1대대','2대대'].includes(info.organization)){
+  if(/전대장|대대장/.test(text))return info.organization+'|대장생도';
+  const series=['작전','인사','군수','체육','문화활동'].find(s=>text.includes(s)||(s==='문화활동'&&text.includes('문화')));return /참모/.test(text)&&series?info.organization+'|'+series+'참모생도':'';
+ }
+ if(info.organization==='중대'&&info.company){if(/중대장/.test(text))return info.company+'중대|중대장생도';const flight=text.match(/([1-4])편대장/);if(flight)return info.company+'중대|'+flight[1]+'편대장생도';}
+ if(info.organization==='명예위'&&/위원장/.test(text))return '명예위원회|명예위원장생도';return '';
+}
+let dutyCadetsBusyV365=false,dutyCadetsDataV365=[],dutyCadetsCacheV365=null,dutyCadetsMetaV365=null,dutyCadetsWarningsV365=0;
+function dutyCadetsRenderV365(){return dutyCadetsRenderV367();}
 async function dutyCadetsLoadV365(){
  if(dutyCadetsBusyV365)return;dutyCadetsBusyV365=true;$('dutyCadetsReloadV365').disabled=true;$('dutyCadetsStatusV365').textContent='등록된 편성안 확인 중…';let pdf;
  try{
   const meta=await server('getDormDutyCadetsV365',false);let parsed;
+  if(meta.indexVersion===meta.version){dutyCadetsMetaV365=meta;dutyCadetsDataV365=meta.records||[];dutyCadetsSetBuildingsV367();dutyCadetsRenderV365();return;}
   if(meta.indexed)parsed=meta.layout.map(anchor=>({anchor,people:anchor.pdfMembers}));
   else if(dutyCadetsCacheV365?.version===meta.version)parsed=dutyCadetsCacheV365.parsed;
   else{
@@ -4766,16 +4802,37 @@ async function dutyCadetsLoadV365(){
    }
    dutyCadetsCacheV365={version:meta.version,parsed,skipped,skippedRooms};
   }
-  dutyCadetsMetaV365=meta;dutyCadetsWarningsV365=meta.indexed?0:dutyCadetsCacheV365?.skipped||0;dutyCadetsDataV365=dutyCadetRowsV365(parsed,meta.rooms);
+  dutyCadetsMetaV365=meta;dutyCadetsWarningsV365=meta.indexed?0:dutyCadetsCacheV365?.skipped||0;const raw=dutyCadetRowsV365(parsed,meta.rooms),saved=await enqueue(()=>server('syncDormDutyCadetsV367',meta.version,raw));dutyCadetsDataV365=saved.records||raw;
   $('dutyCadetsWarningsV365').hidden=!dutyCadetsWarningsV365;$('dutyCadetsWarningRoomsV365').innerHTML=(meta.indexed?[]:dutyCadetsCacheV365?.skippedRooms||[]).map(room=>'<li>'+escapeH(room)+'</li>').join('');
-  const select=$('dutyCadetsBuildingV365'),old=select.value,buildings=[...new Set(dutyCadetsDataV365.map(p=>p.building))];select.innerHTML='<option value="">전체 관</option>'+buildings.map(b=>'<option value="'+escapeH(b)+'">'+escapeH(b)+'</option>').join('');select.value=buildings.includes(old)?old:'';dutyCadetsRenderV365();
+  dutyCadetsSetBuildingsV367();dutyCadetsRenderV365();
  }catch(e){$('dutyCadetsStatusV365').textContent='근무생도 조회 실패: '+e.message;}
  finally{if(pdf)await pdf.destroy().catch(()=>{});dutyCadetsBusyV365=false;$('dutyCadetsReloadV365').disabled=false;}
 }
 $('dutyCadetsReloadV365').addEventListener('click',dutyCadetsLoadV365);$('dutyCadetsSearchV365').addEventListener('input',dutyCadetsRenderV365);$('dutyCadetsBuildingV365').addEventListener('change',dutyCadetsRenderV365);
+function dutyCadetsSetBuildingsV367(){const select=$('dutyCadetsBuildingV365'),old=select.value,buildings=[...new Set(dutyCadetsDataV365.map(p=>p.building))];select.innerHTML='<option value="">전체 관</option>'+buildings.map(b=>'<option value="'+escapeH(b)+'">'+escapeH(b)+'</option>').join('');select.value=buildings.includes(old)?old:'';}
+
+const dutyFamiliesV367=['장','작전','인사','군수','문화 및 체육','동기회','명예위','생발위','중대임원','중대기수','기타'];
+const dutyControlsV367=document.createElement('div');dutyControlsV367.className='asset-actions';dutyControlsV367.innerHTML='<select class="field" id="dutyModeV367" aria-label="명단 보기"><option value="company">중대별</option><option value="family">근무별</option></select><select class="field" id="dutyFamilyV367" aria-label="근무 계열"><option value="">전체 근무</option>'+dutyFamiliesV367.map(x=>'<option>'+x+'</option>').join('')+'</select>';$('dutyCadetsSearchV365').parentElement.before(dutyControlsV367);
+$('dutyModeV367').addEventListener('change',dutyCadetsRenderV365);$('dutyFamilyV367').addEventListener('change',dutyCadetsRenderV365);
+function dutyCadetsRenderV367(){
+ const query=$('dutyCadetsSearchV365').value.trim().toLowerCase(),building=$('dutyCadetsBuildingV365').value,family=$('dutyFamilyV367').value,mode=$('dutyModeV367').value;
+ const list=dutyCadetsDataV365.filter(p=>(!building||p.building===building)&&(!family||dutyFamilyV367(p)===family)&&(!query||Object.values(p).join(' ').toLowerCase().includes(query)));
+ const groups=new Map();for(const p of dutySortV367(list)){const i=dutyRoleInfoV367(p),f=dutyFamilyV367(p),group=mode==='family'?f:(i.company?i.company+'중대':'중대 확인');if(!groups.has(group))groups.set(group,[]);groups.get(group).push(p);}
+ const names=[...groups.keys()].sort((a,b)=>mode==='family'?dutyFamiliesV367.indexOf(a)-dutyFamiliesV367.indexOf(b):a.localeCompare(b,'ko',{numeric:true}));
+ let html='';for(const group of names){let rows=groups.get(group);if(mode==='family'&&group==='중대임원')rows.sort((a,b)=>{const x=dutyRoleInfoV367(a),y=dutyRoleInfoV367(b);return (y.grade||0)-(x.grade||0)||(x.company||9)-(y.company||9)||Number(/여생도/.test(a.duty))-Number(/여생도/.test(b.duty))||a.name.localeCompare(b.name,'ko');});
+ html+='<tr><th colspan="9">'+escapeH(group)+' · '+rows.length+'명</th></tr>';let previous='';for(const p of rows){const i=dutyRoleInfoV367(p),sub=mode==='family'&&group==='중대임원'?(i.grade?i.grade+'학년':'학년 확인')+' · '+(i.company?i.company+'중대':'중대 확인')+' · '+(/여생도/.test(p.duty)?'여생도 중대임원':'중대임원'):'';if(sub&&sub!==previous){html+='<tr><th colspan="9">'+escapeH(sub)+'</th></tr>';previous=sub;}
+ const role=dutySaberRoleV367(p);html+='<tr><td>'+escapeH(p.cohort?p.cohort+'기':'확인 필요')+'</td><td>'+escapeH(i.company?i.company+'중대':'확인 필요')+'</td><td><strong>'+escapeH(p.name)+'</strong></td><td>'+escapeH(i.title)+'<small style="display:block">'+escapeH(i.organization)+'</small></td><td>'+escapeH([p.building,p.floor,p.room+'호'].join(' '))+'</td><td>'+Number(p.page)+'쪽</td><td>'+escapeH(p.edited?'수정됨':p.review)+'</td><td>'+escapeH(role?role.replace('|',' · '):'—')+'</td><td><button type="button" class="btn" data-duty-edit="'+escapeH(p.id||'')+'" '+(!p.id?'disabled':'')+'>수정</button></td></tr>';}}
+ $('dutyCadetsRowsV365').innerHTML=html||'<tr><td colspan="9">표시할 근무생도가 없습니다.</td></tr>';$('dutyCadetsRowsV365').closest('table').querySelector('thead tr').innerHTML='<th>기수</th><th>중대</th><th>이름</th><th>근무</th><th>생활실</th><th>PDF</th><th>확인</th><th>예도 연결</th><th>관리</th>';
+ $('dutyCadetsStatusV365').textContent=(dutyCadetsMetaV365?.filename||'편성안')+' · 전체 '+dutyCadetsDataV365.length+'명 · 표시 '+list.length+'명';
+}
+const dutyDialogV367=document.createElement('dialog');dutyDialogV367.style.cssText='width:min(520px,92vw);max-height:90dvh;overflow:auto';dutyDialogV367.innerHTML='<form id="dutyFormV367"><h2>근무생도 수정</h2>'+[['name','이름'],['cohort','기수'],['company','중대'],['duty','근무']].map(([key,label])=>'<label style="display:block">'+label+'<input class="field" name="'+key+'" '+(['name','duty'].includes(key)?'required':'')+' maxlength="'+(key==='duty'?160:60)+'"></label>').join('')+[['organization','조직',['자동','전대','1대대','2대대','중대','동기회','명예위','생발위','기타']],['gradeOverride','학년',['자동','1','2','3','4']],['battalionOverride','대대',['자동','1','2']]].map(([key,label,opts])=>'<label style="display:block">'+label+'<select class="field" name="'+key+'">'+opts.map((v,i)=>'<option value="'+(i?v:'')+'">'+v+'</option>').join('')+'</select></label>').join('')+'<label style="display:block">예도 연결<select class="field" name="saberRoleOverride"></select></label><p role="status" id="dutyEditStatusV367"></p><div class="asset-actions"><button type="submit" class="btn">저장</button><button type="button" class="btn" id="dutyCloseV367">닫기</button></div></form>';document.body.append(dutyDialogV367);
+let dutyEditRowV367=null,dutySavingV367=false;
+$('dutyCadetsRowsV365').addEventListener('click',e=>{const b=e.target.closest('[data-duty-edit]');if(!b)return;const p=dutyCadetsDataV365.find(x=>x.id===b.dataset.dutyEdit);if(!p)return;dutyEditRowV367=p;const form=$('dutyFormV367'),roles=dutyCadetsMetaV365?.saberRoles||[];form.elements.saberRoleOverride.innerHTML='<option value="auto">자동 연결</option><option value="none">연결 안 함</option>'+roles.map(r=>'<option value="'+escapeH(r.id)+'">'+escapeH(r.id.replace('|',' · '))+'</option>').join('');for(const key of ['name','cohort','company','duty','organization','gradeOverride','battalionOverride','saberRoleOverride'])form.elements[key].value=p[key]|| (key==='saberRoleOverride'?'auto':'');$('dutyEditStatusV367').textContent='';dutyDialogV367.showModal();});
+$('dutyCloseV367').onclick=()=>{if(!dutySavingV367)dutyDialogV367.close();};dutyDialogV367.addEventListener('cancel',e=>{if(dutySavingV367)e.preventDefault();});
+$('dutyFormV367').addEventListener('submit',async e=>{e.preventDefault();if(dutySavingV367)return;dutySavingV367=true;const form=e.target,patch=Object.fromEntries(new FormData(form));form.querySelector('[type=submit]').disabled=true;try{const saved=await enqueue(()=>server('saveDormDutyCadetV367',dutyEditRowV367.id,patch,dutyEditRowV367.updatedAt));dutyCadetsDataV365=dutyCadetsDataV365.map(p=>p.id===saved.id?saved:p);dutyCadetsRenderV365();dutyDialogV367.close();toast('근무명단 저장 완료');}catch(error){$('dutyEditStatusV367').textContent=error.message;}finally{dutySavingV367=false;form.querySelector('[type=submit]').disabled=false;}});
 
 
-window.logbookReloadState=()=>({busy:!!(personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(isFormDirty()||modalSaving||eqDirty()||eqSaving||rosterIsDirty()||rosterHasQuickChanges()||rosterSaving||rosterQuickSaving.size||supplyDirty()||navDirtyV220||navSavingV220||wxCalDirty()||wxBulkDirtyV229()||wxCustomDirty()||wxCalSaving||wxBulkSavingV229||wxRowSaving||pendingNote||syncPending||assetDirtyV244.size||assetSavingV244||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});
+window.logbookReloadState=()=>({busy:!!(dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(isFormDirty()||modalSaving||eqDirty()||eqSaving||rosterIsDirty()||rosterHasQuickChanges()||rosterSaving||rosterQuickSaving.size||supplyDirty()||navDirtyV220||navSavingV220||wxCalDirty()||wxBulkDirtyV229()||wxCustomDirty()||wxCalSaving||wxBulkSavingV229||wxRowSaving||pendingNote||syncPending||assetDirtyV244.size||assetSavingV244||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});
 
 window.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');
 })();

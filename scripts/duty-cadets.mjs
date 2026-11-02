@@ -15,7 +15,7 @@ export function dutyCadetRowsV365(parsed,rooms){
   const local=suitable.filter(({room})=>source.roomId?room.id===source.roomId:room.building===source.building&&room.floor===source.floor&&room.room.split('-')[0]===source.room.split('-')[0]);
   const match=local.length===1?local[0]:suitable.length===1?suitable[0]:null,person=match?.person||old||{},room=match?.room||source;
   const key=[source.page,source.building,source.floor,source.sourceRoom||source.room,mark.name,mark.duty].join('|');if(seen.has(key))continue;seen.add(key);
-  rows.push({cohort:norm(person.cohort),company:norm(person.company),name:match?.person.name||mark.name,duty:mark.duty||'직책 미표기',building:room.building,floor:room.floor,room:room.room,page:source.page,review:mark.dutyReview?'괄호 확인 필요':match?'현재 배정':'배정명단 확인 필요'});
+  rows.push({sourceKey:key,cohort:norm(person.cohort),company:norm(person.company),name:match?.person.name||mark.name,duty:mark.duty||'직책 미표기',building:room.building,floor:room.floor,room:room.room,page:source.page,review:mark.dutyReview?'괄호 확인 필요':match?'현재 배정':'배정명단 확인 필요'});
  }
  return rows.sort((a,b)=>a.building.localeCompare(b.building,'ko')||a.floor.localeCompare(b.floor,'ko')||a.room.localeCompare(b.room,'ko',{numeric:true})||a.name.localeCompare(b.name,'ko'));
 }
@@ -27,6 +27,8 @@ export function dutyCadetsJs(js,client){
  .replace("v==='personalInterface'||v==='uniformRequests'","v==='dutyCadets'||v==='personalInterface'||v==='uniformRequests'")
  .replace("if(v==='personalInterface')personalInterfaceLoadV359();","if(v==='personalInterface')personalInterfaceLoadV359();if(v==='dutyCadets')dutyCadetsLoadV365();")
  .replace("if(id==='access'&&!canManageUsersV281)return;","if(id==='dutyCadets'&&(!canEdit||v284Scoped))return;if(id==='access'&&!canManageUsersV281)return;");
+ js=js.replace("let r=await server('getSaberV276');", "if(canEdit&&!v284Scoped&&!dutyCadetsMetaV365)await dutyCadetsLoadV365();let r=await server('getSaberV276');")
+ .replace("escapeH(p.role)+'</td><td><select", "escapeH(p.role)+((p.linkedCadets||[]).length?'<small style=\"display:block\">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select");
  const end=js.lastIndexOf('})();');return js.slice(0,end)+'\n'+dormPdfDutyRegionV365.toString()+'\n'+dutyCadetRowsV365.toString()+'\n'+client+'\n'+js.slice(end);
 }
 export function dutyCadetsHtml(html){return html.replace('</main>',`<section id="dutyCadetsView" class="hidden"><div class="panel"><div class="panel-head"><div><h2 class="panel-title">근무생도 명단</h2><p class="panel-sub">편성안 괄호 표시 기준 · 두 줄 근무 내용 연결</p></div><button class="btn" type="button" id="dutyCadetsReloadV365">새로고침</button></div><div class="asset-actions"><select id="dutyCadetsBuildingV365" class="field" aria-label="근무생도 관"><option value="">전체 관</option></select><input id="dutyCadetsSearchV365" class="field" type="search" placeholder="이름 · 중대 · 근무 · 호실" aria-label="근무생도 검색"></div><p id="dutyCadetsStatusV365" class="panel-sub" role="status" aria-live="polite"></p><details id="dutyCadetsWarningsV365" hidden><summary>PDF 판독 확인</summary><ul id="dutyCadetsWarningRoomsV365"></ul></details><div class="eq-scroll"><table class="eq-table"><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>근무</th><th>생활실</th><th>PDF</th><th>확인</th></tr></thead><tbody id="dutyCadetsRowsV365"></tbody></table></div></div></section></main>`);}
