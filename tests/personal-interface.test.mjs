@@ -11,6 +11,6 @@ test('개인 화면 순서는 관리자만 저장하며 누락·중복·임의 �
 test('개인 화면은 기존 카드 DOM을 옮기며 미설정·잘못된 항목은 기본 순서로 보완한다',()=>{
  const defaults=['room','assets','firearm','uniform','supplies'],cards=new Map(defaults.map(id=>[id,{id,closest(){return this;}}])),order=[];
  const c=vm.createContext({$:id=>cards.get(id),document:{querySelector:()=>({appendChild(card){const i=order.indexOf(card);if(i>=0)order.splice(i,1);order.push(card);}})}});vm.runInContext(readFileSync(new URL('../scripts/personal-interface-portal.js.txt',import.meta.url),'utf8'),c);
- c.personalInterfaceOrderV359(['uniform','room','uniform','unknown']);assert.deepEqual(order.map(x=>x.id),['uniform','room','assets','firearm','supplies']);assert.equal(order[0],cards.get('uniform'));
- c.personalInterfaceOrderV359();assert.deepEqual(order.map(x=>x.id),defaults);
+ c.personalInterfaceOrderV359(['uniform','room','uniform','unknown']);assert.deepEqual(order.map(x=>x.id),['uniform','room','firearm','assets','supplies']);assert.equal(order[0],cards.get('uniform'));
+ c.personalInterfaceOrderV359();assert.deepEqual(order.map(x=>x.id),['room','firearm','assets','uniform','supplies']);
 });

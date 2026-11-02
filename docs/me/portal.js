@@ -74,8 +74,8 @@ function fields(id,values){
 window.addEventListener('beforeunload',e=>{if(uniformDirtyV350){e.preventDefault();e.returnValue='';}});
 
 function personalInterfaceOrderV359(order){
- const defaults=['room','assets','firearm','uniform','supplies'],known=new Set(defaults),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
- for(const id of [...(Array.isArray(order)?order:defaults),...defaults]){if(!known.has(id)||seen.has(id))continue;seen.add(id);const card=$(id)?.closest('section.card');if(card)grid.appendChild(card);}
+ const defaults=['room','firearm','assets','uniform','supplies'],known=new Set(defaults),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
+ for(const id of [...(Array.isArray(order)?order:defaults),...defaults]){if(!known.has(id)||seen.has(id))continue;for(const item of id==='room'||id==='firearm'?['room','firearm']:[id]){if(seen.has(item))continue;seen.add(item);const card=$(item)?.closest('section.card');if(card)grid.appendChild(card);}}
 }
 
 })();

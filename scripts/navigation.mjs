@@ -59,6 +59,7 @@ export function updateNavigationJs(js) {
     .replace("del.textContent=(navTreeV233.hiddenItems||[]).includes(id)?'↩':'×';del.title=(navTreeV233.hiddenItems||[]).includes(id)?'삭제 취소 · 메뉴 복원':'하위 메뉴 삭제 (화면에서만 숨김)'", "del.textContent='×';del.title='하위 메뉴 삭제'")
     .replace("await wxLoadAll();switchView(page.id);", "await wxLoadAll();await navAttachCreatedV301(page.id);switchView(page.id);");
   const extra = `
+document.addEventListener('click',event=>{if(navEditModeV220)return;const button=event.target.closest('[data-view]');if(button&&button.dataset.view===view&&button.closest('#sidebarMenu,.mobile-nav')){event.preventDefault();event.stopImmediatePropagation();}},true);
 function navOpenCatalogV301(){
  if(!navEditModeV220)return;
  const active=new Set(navTreeV233.groups.flatMap(g=>g.items));
