@@ -11,7 +11,7 @@ export function normalizeNavigation(value, defaults, available) {
     if (!modern && hiddenGroups.has(g.id)) { for (const id of g.items || []) excluded.add(id); continue; }
     const items = [];
     for (const originalId of Array.isArray(g.items) ? g.items : []) {
-      const id=originalId==='access'?'staff':originalId;
+      const id=originalId==='access'?'staff':['dutyBadge','dutyBlock','dutyNameplate'].includes(originalId)?'dutyItems':originalId;
       if (allowed.has(id) && !used.has(id) && (modern || !excluded.has(id))) { items.push(id); used.add(id); }
     }
     groups.push({ id: g.id, title: g.id==='devices'&&g.title==='장비'?'총기/군수품/장비':String(g.title || known.get(g.id).title).trim().slice(0, 25) || known.get(g.id).title, items });
@@ -41,7 +41,7 @@ export function normalizeNavigation(value, defaults, available) {
     const def=defaults.find(g=>g.id==='departures');
     if(def){let group=groups.find(g=>g.id===def.id);if(!group){group={id:def.id,title:def.title,items:[]};groups.unshift(group);}group.items.push('departures');used.add('departures');}
   }
-  if(valid&&!value.dutyItemsAddedV368){const ids=['dutyBadge','dutyBlock','dutyNameplate'].filter(id=>allowed.has(id)&&!used.has(id));if(ids.length){const def=defaults.find(g=>g.id==='devices');if(def){let group=groups.find(g=>g.id==='devices');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}const pos=group.items.indexOf('saber');group.items.splice(pos<0?group.items.length:pos+1,0,...ids);ids.forEach(id=>used.add(id));}}}
+  if(valid&&!value.dutyItemsAddedV368){const ids=['dutyItems'].filter(id=>allowed.has(id)&&!used.has(id));if(ids.length){const def=defaults.find(g=>g.id==='devices');if(def){let group=groups.find(g=>g.id==='devices');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}const pos=group.items.indexOf('saber');group.items.splice(pos<0?group.items.length:pos+1,0,...ids);ids.forEach(id=>used.add(id));}}}
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }

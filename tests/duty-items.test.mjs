@@ -6,9 +6,10 @@ test('장·참모·보좌관·동생명의 흉장/블럭 기준과 모든 인원
  context.row={duty:'4학년중대임원'};assert.equal(req.runInContext(context).review,true);
 });
 test('물품 메뉴를 예도 바로 아래 한 번 추가하고 사용자 삭제·제한 목록을 보존한다',()=>{
- const defaults=[{id:'devices',title:'장비',items:['saber','dutyBadge','dutyBlock','dutyNameplate','repairs']}],available=defaults[0].items;
- const next=normalizeNavigation({schemaVersion:2,groups:[{id:'devices',title:'장비',items:['saber','repairs']}]},defaults,available);assert.deepEqual(next.groups[0].items,available);next.groups[0].items=next.groups[0].items.filter(x=>x!=='dutyBlock');assert.ok(!normalizeNavigation(next,defaults,available).groups[0].items.includes('dutyBlock'));
- assert.ok(!normalizeNavigation({schemaVersion:2,groups:[]},defaults,['saber']).groups.flatMap(g=>g.items).includes('dutyBadge'));const source="const NAV_FIXED_V233=['saber','repairs'];";assert.equal(dutyItemsNavSourceV368(dutyItemsNavSourceV368(source)),dutyItemsNavSourceV368(source));
+ const defaults=[{id:'devices',title:'장비',items:['saber','dutyItems','repairs']}],available=defaults[0].items;
+ const next=normalizeNavigation({schemaVersion:2,groups:[{id:'devices',title:'장비',items:['saber','repairs']}]},defaults,available);assert.deepEqual(next.groups[0].items,available);next.groups[0].items=next.groups[0].items.filter(x=>x!=='dutyItems');assert.ok(!normalizeNavigation(next,defaults,available).groups[0].items.includes('dutyItems'));
+ const legacy=normalizeNavigation({schemaVersion:2,dutyItemsAddedV368:true,groups:[{id:'devices',title:'장비',items:['saber','dutyBadge','dutyBlock','dutyNameplate','repairs']}]},defaults,available);assert.deepEqual(legacy.groups[0].items,available);assert.deepEqual(normalizeNavigation(legacy,defaults,available),legacy);
+ assert.ok(!normalizeNavigation({schemaVersion:2,groups:[]},defaults,['saber']).groups.flatMap(g=>g.items).includes('dutyItems'));const source="const NAV_FIXED_V233=['saber','repairs'];";assert.equal(dutyItemsNavSourceV368(dutyItemsNavSourceV368(source)),dutyItemsNavSourceV368(source));
 });
 test('물품 수량은 일괄 저장하며 미등록/0 구분, 기존 기록 보존, 충돌·편성안·권한·수량 검증을 적용한다',()=>{
  let legacy=true,version='manual-v369',indexed=true,writes=0;const records=[['키','근무명단ID','품목','수량','수정시각','수정자']],props=new Map(),sheet={getLastRow:()=>records.length,getRange:(r,c,n,w)=>({getDisplayValues:()=>records.slice(r-1,r-1+n).map(v=>v.slice(c-1,c-1+w)),setValues:rows=>{writes++;rows.forEach((row,i)=>records[r-1+i]=row);}})};

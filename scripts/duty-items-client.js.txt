@@ -1,4 +1,4 @@
-let dutyItemsDataV368=null,dutyItemsBusyV368=false,dutyItemsViewV368='dutyBadge';const dutyItemDraftV368=new Map(),dutyItemSelectedV368=new Set();
+let dutyItemsDataV368=null,dutyItemsBusyV368=false,dutyItemsViewV368='dutyItems';const dutyItemDraftV368=new Map(),dutyItemSelectedV368=new Set();
 function dutyItemsPanelV368(){return document.querySelector('[data-duty-items="'+dutyItemsViewV368+'"]');}
 function dutyItemsKindsV368(){return dutyItemsV368.filter(i=>i.view===dutyItemsViewV368);}
 function dutyItemsVisibleV368(){const panel=dutyItemsPanelV368(),company=panel.querySelector('[data-item-company]').value,query=panel.querySelector('[data-item-search]').value.trim().toLowerCase(),filter=panel.querySelector('[data-item-filter]').value,kinds=dutyItemsKindsV368();return dutySortV367(dutyItemsDataV368?.rows||[]).filter(p=>{const req=dutyItemRequirementsV368(p),info=dutyRoleInfoV367(p);return (!company||String(info.company)===company)&&(!query||[p.name,p.duty,p.cohort,p.company].join(' ').toLowerCase().includes(query))&&(filter==='all'||kinds.some(k=>req[k.id]>0&&(filter!=='missing'||dutyItemQuantityV368(p.id,k.id)==null||dutyItemQuantityV368(p.id,k.id)<req[k.id])));});}
@@ -20,4 +20,4 @@ document.querySelectorAll('[data-duty-items]').forEach(panel=>{
 });
 window.addEventListener('beforeunload',e=>{if(dutyItemDraftV368.size){e.preventDefault();e.returnValue='';}});
 
-const dutyItemLinksV368=document.createElement('div');dutyItemLinksV368.className='asset-actions';for(const [id,title] of [['dutyBadge','흉장'],['dutyBlock','블럭'],['dutyNameplate','명패']]){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=title;b.onclick=()=>switchView(id);dutyItemLinksV368.appendChild(b);}$('saberView').prepend(dutyItemLinksV368);
+const dutyItemLinksV368=document.createElement('div');dutyItemLinksV368.className='asset-actions';for(const [id,title] of [['dutyItems','흉장·블럭·명패']]){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=title;b.onclick=()=>switchView(id);dutyItemLinksV368.appendChild(b);}$('saberView').prepend(dutyItemLinksV368);
