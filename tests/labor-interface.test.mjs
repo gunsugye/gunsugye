@@ -43,7 +43,8 @@ test('1인 1개인 관은 자동·수동 독방 짝과 미지정에서 제외한
  const assigned=Array.from({length:4},(_,i)=>({personKey:'p'+i,cohort:'77',company:'1',matched:true,duty:'',room:{id:String(i),building:i<2?'본관':'동관',room:String(i)}}));
  const context=vm.createContext({laborGradeSetV261_:()=>[],laborGradeMatchV261_:()=>true,laborAbsentAllV259_:()=>false,laborAbsentNowV259_:()=>false,laborRoomOccupancyV260_:()=>({counts:new Map(assigned.map(p=>[p.room.id,1])),details:[]}),laborPhysicalKeyV260_:r=>r.id,laborSoloPairStateV264_:()=>({pairs:{p2:'p3'},blocked:[]}),laborUnitV259_:x=>x});vm.runInContext(fn,context);
  const result=context.laborPairsV259_(assigned,'whole','all',1,'building',{'본관':2,'동관':1});
- assert.equal(result.pairs.length,1);assert.equal(result.pairs[0].a,'p0');assert.equal(result.pairs[0].b,'p1');assert.equal(result.unpaired.length,0);assert.equal(result.singles.length,4);
+ assert.equal(result.pairs.length,1);assert.equal(result.pairs[0].a,'p0');assert.equal(result.pairs[0].b,'p1');assert.equal(result.unpaired.length,0);assert.equal(result.singles.length,2);
+ const bothTwo=context.laborPairsV259_(assigned,'whole','all',2,'building',{'본관':2,'동관':2});assert.equal(bothTwo.pairs.length,1);assert.ok(bothTwo.singles.every(p=>p.building==='본관'));assert.equal(bothTwo.activeCount,2);
 });
 
 test('사역 생활실 조회는 관리 화면의 최신 호실·명단을 읽고 별도 파일로 되돌아가지 않는다',{skip:!existsSync(new URL('../apps-script/Legacy.gs',import.meta.url))},()=>{
