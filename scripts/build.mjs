@@ -16,7 +16,7 @@ import {correctDormSource,correctDormClient} from './dorm-corrections.mjs';
 import {dormPlanHtml,dormPlanClient,dormPlanCSS} from './dorm-plan.mjs';
 import {laborInterfaceJs,laborInterfaceCSS} from './labor-interface.mjs';
 import {laborBuildingJs,laborBuildingHtml,laborBuildingCSS} from './labor-building.mjs';
-import {laborCardsJsV374,laborCardsCSSV374,laborCardsNoWrapCSSV375} from './labor-cards.mjs';
+import {laborCardsJsV374,laborCardsCSSV374,laborCardsNoWrapCSSV375,laborContainCSSV376} from './labor-cards.mjs';
 import {dormOutingJs,dormOutingHtml} from './dorm-outing.mjs';
 import {assetOverviewJs} from './asset-overview.mjs';
 import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} from './asset-plan.mjs';
@@ -86,7 +86,7 @@ if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치�
 const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');\n`+js.slice(hook);
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372||dutyVerifyBusyV371||dutyItemsBusyV368||dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyItemDraftV368.size||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS;
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS;
 html=personalInterfaceHtml(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');

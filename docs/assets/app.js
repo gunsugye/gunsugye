@@ -3135,7 +3135,7 @@ function laborShowV259(result){
  $('laborPairSummaryV259').textContent=denom===1?
   '실제 독방 '+singles.length+'명 · 1인 1개 기준은 짝 배정 없이 각자 계산합니다.':
   '실제 독방 '+singles.length+'명 · 계산 대상 '+(pairs.activeCount||0)+'명 · 같은 관 내 가상 2인실 '+(pairs.pairs||[]).length+'개 · 미지정 '+(pairs.unpaired||[]).length+'명 · 생활실 명단 불일치 '+(pairs.roomCountWarnings||0)+'곳';
- $('laborPairPickStatusV264').textContent=denom===1?'1인 1개: 짝 지정이 필요하지 않습니다.':'자동 짝 배정 결과입니다. 바꾸려는 이름 또는 미지정을 눌러 같은 관 생도를 체크하세요.';
+ $('laborPairPickStatusV264').textContent=denom===1?'1인 1개: 짝 지정이 필요하지 않습니다.':'';
  laborPairPopupV268=null;
  const people=new Map(singles.map(p=>[p.key,p]));
  const displayName=k=>{const p=people.get(k);return p?escapeH(String(p.cohort||'').normalize('NFKC').replace(/기$/,'')+'기 · '+laborCompanyLabelV261(p.company)+' · '+p.name):escapeH(k);};
