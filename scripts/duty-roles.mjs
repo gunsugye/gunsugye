@@ -15,7 +15,7 @@ export function dutyRoleInfoV367(row){
  }else if(organization==='동기회')rank=/부회장/.test(text)?1:/회장/.test(text)?0:/총무/.test(text)?2:/친목활동부장/.test(text)?3:20;
  else if(organization==='명예위'||organization==='생발위')rank=/위원장/.test(text)&&!/부위원장/.test(text)?0:10;
  const orgOrder=({'전대':0,'1대대':1,'2대대':2,'중대':3,'동기회':4,'명예위':5,'생발위':6,'기타':9})[organization]??9;
- return {organization,company,grade,battalion,rank,title,sort:organization==='동기회'?[orgOrder,grade?5-grade:9,rank,battalion||9,company||9]:[orgOrder,organization==='중대'?company:0,rank,grade?5-grade:9,battalion||9,company||9]};
+ const ordinal=Number(text.match(/([12])(?:st|nd)/i)?.[1]||0);return {organization,company,grade,battalion,rank,title,sort:organization==='동기회'?[orgOrder,grade?5-grade:9,rank,battalion||9,company||9,ordinal]:[orgOrder,organization==='중대'?company:0,rank,grade?5-grade:9,battalion||9,company||9,ordinal]};
 }
 export function dutySortV367(rows){return [...rows].sort((a,b)=>{const x=dutyRoleInfoV367(a).sort,y=dutyRoleInfoV367(b).sort;for(let i=0;i<x.length;i++)if(x[i]!==y[i])return x[i]-y[i];return String(a.name||'').localeCompare(String(b.name||''),'ko');});}
 export function dutyFamilyV367(row){

@@ -36,6 +36,7 @@
   "getBootstrap",
   "getChangesV283",
   "getDepartureDashboardV305",
+  "getDormDutyCadetsV365",
   "getDormInventoryRequestsV336",
   "getDormInventoryResetV313",
   "getDormInventoryV244",
@@ -71,6 +72,7 @@
   "importRosterPaste",
   "importSmartDutySnapshotV253",
   "importUniformCohortV278",
+  "importVerifiedDutyCadetsV371",
   "initializeDormRoomsAndRosterV243",
   "listFullEditorsV281",
   "moveRosterToSpecialV255",
@@ -151,5 +153,6 @@
   "trainSaveUniformV291",
   "trainSetConfigV227",
   "trainSetupV227",
-  "unifyDormSheetsV248"
+  "unifyDormSheetsV248",
+  "verifyDutyCadetsV371"
 ]
