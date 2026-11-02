@@ -10,7 +10,8 @@ export function normalizeNavigation(value, defaults, available) {
     if (!g || !known.has(g.id) || groups.some(x => x.id === g.id)) continue;
     if (!modern && hiddenGroups.has(g.id)) { for (const id of g.items || []) excluded.add(id); continue; }
     const items = [];
-    for (const id of Array.isArray(g.items) ? g.items : []) {
+    for (const originalId of Array.isArray(g.items) ? g.items : []) {
+      const id=originalId==='access'?'staff':originalId;
       if (allowed.has(id) && !used.has(id) && (modern || !excluded.has(id))) { items.push(id); used.add(id); }
     }
     groups.push({ id: g.id, title: String(g.title || known.get(g.id).title).trim().slice(0, 25) || known.get(g.id).title, items });
@@ -40,7 +41,7 @@ export function normalizeNavigation(value, defaults, available) {
     if(def){let group=groups.find(g=>g.id===def.id);if(!group){group={id:def.id,title:def.title,items:[]};groups.unshift(group);}group.items.push('departures');used.add('departures');}
   }
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
-    if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = label.trim().slice(0, 50);
+    if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }
   return { schemaVersion: 2, groups, labels, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true };
 }

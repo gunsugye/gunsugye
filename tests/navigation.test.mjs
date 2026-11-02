@@ -9,6 +9,12 @@ const constants = app.slice(app.indexOf('const NAV_GROUP_DEFAULT_V233='), app.in
 const constantsContext = vm.createContext({});
 new vm.Script(constants + '\nglobalThis.defaults=NAV_GROUP_DEFAULT_V233;globalThis.allowed=NAV_BUILTIN_V233;').runInContext(constantsContext);
 const defaults = JSON.parse(JSON.stringify(constantsContext.defaults)), allowed = Array.from(constantsContext.allowed);
+
+test('기존 권한 메뉴는 군수계 통합 메뉴로 바꾸고 중복·삭제 상태를 유지한다',()=>{
+ const current=normalizeNavigation({schemaVersion:2,groups:[{id:'other',title:'기타',items:['access','staff','updates']}],labels:{staff:'군수계 명단'}},defaults,allowed);
+ assert.deepEqual(current.groups.find(g=>g.id==='other').items,['staff','updates']);assert.equal(current.labels.staff,'군수계 명단·권한 관리');assert.equal(allowed.includes('access'),false);
+ current.groups.find(g=>g.id==='other').items=['updates'];assert.equal(normalizeNavigation(current,defaults,allowed).groups.flatMap(g=>g.items).includes('staff'),false);
+});
 test('피복 수정 요청은 피복 아래 1회 추가하며 이후 삭제를 유지한다',()=>{const next=normalizeNavigation({schemaVersion:2,groups:[{id:'uniform',title:'피복',items:['uniform']}],labels:{}},defaults,allowed);assert.deepEqual(next.groups.find(g=>g.id==='uniform').items,['uniform','uniformRequests']);next.groups.find(g=>g.id==='uniform').items=['uniform'];assert.deepEqual(normalizeNavigation(next,defaults,allowed).groups.find(g=>g.id==='uniform').items,['uniform']);});
 test('비품 수정 요청 메뉴를 시설에 한 번 추가하고 이후 사용자의 삭제는 유지한다',()=>{const old={schemaVersion:2,departuresAddedV305:true,saberRestoredV326:true,groups:[{id:'journal',title:'일지',items:['today']}],labels:{today:'내 일지'}},next=normalizeNavigation(old,defaults,allowed);assert.equal(next.groups.find(g=>g.id==='facility').items.includes('assetRequests'),true);assert.equal(next.labels.today,'내 일지');next.groups.find(g=>g.id==='facility').items=[];assert.equal(normalizeNavigation(next,defaults,allowed).groups.flatMap(g=>g.items).includes('assetRequests'),false);});
 
