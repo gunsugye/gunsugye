@@ -14,6 +14,7 @@ await import('./room-assets.test.mjs');
 await import('./room-assets-bulk.test.mjs');
 await import('./dorm-plan.test.mjs');
 await import('./labor-interface.test.mjs');
+await import('./labor-absence.test.mjs');
 if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./labor-duty-groups.test.mjs');
 await import('./personal-interface.test.mjs');
 await import('./duty-cadets.test.mjs');
