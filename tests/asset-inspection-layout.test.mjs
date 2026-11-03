@@ -39,7 +39,7 @@ test('참고 시트 배치와 실제 자리별 수량을 보존하며 입력 모
  assert.equal(rows[12][6], '수리필요');
  assert.equal(rows[12][14], 3, '침대 두 자리와 양식 외 선풍기의 불량 3건을 모두 보존');
  assert.equal(rows[12][15], '조치대상');
- assert.equal(rows[12][16], '침대틀: 볼트 풀림\n선풍기: 모터 고장');
+ assert.equal(rows[12][16], '침대틀(1번): 볼트 풀림\n침대틀(2번): 볼트 풀림\n선풍기: 모터 고장');
  assert.deepEqual(rows[12].slice(17), [3, 0, 0]);
  assert.deepEqual(rows[13].slice(17), [0, 0, 3]);
  assert.strictEqual(layout.sheets[1], model.sheets[1]);
