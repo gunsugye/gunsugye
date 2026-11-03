@@ -10,6 +10,7 @@ import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './depar
 import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
 import {developmentNavSource,developmentRequestsJs,developmentRequestsHtml,developmentRequestsCSS} from './development-requests.mjs';
+import {assetInspectionModelV382,assetInspectionHtmlV382,assetInspectionJsV382} from './asset-inspection.mjs';
 import { updateNotificationsJs } from './notifications.mjs';
 import { repairJs, repairHtml, repairServer } from './repairs.mjs';
 import {roomAssetJs,roomAssetHtml,roomAssetServer,roomAssetCSS} from './room-assets.mjs';
@@ -73,6 +74,7 @@ html=dutyCadetsHtml(html);
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+dutyOrgKeyV372.toString()+'\n'+dutyOrderRowsV372.toString()+'\n'+dutyOrderSignatureV372.toString()+'\n'+dutyHierarchyV373.toString()+'\n'+dutyAccordionV373.toString()+'\n'+read('scripts/duty-order-client.js.txt')+'\n'+js.slice(end);}
 js=dutyItemsJsV368(js,'const dutyItemsV368='+JSON.stringify(dutyItemsV368)+';\n'+dutyItemRequirementsV368.toString()+'\n'+read('scripts/duty-items-client.js.txt'));
 js=developmentRequestsJs(js,read('scripts/development-requests-client.js.txt'));
+js=assetInspectionJsV382(js,read('scripts/asset-inspection-client.js.txt'));
 html=developmentRequestsHtml(html);
 html=dutyItemsHtmlV368(html);
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
@@ -90,6 +92,7 @@ const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');\n`+js.slice(hook);
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372||dutyVerifyBusyV371||dutyItemsBusyV368||dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyItemDraftV368.size||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
 js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV372||').replace('dirty:!!(','dirty:!!(devDirtyV381()||');
+js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
 const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + developmentRequestsCSS;
 html=personalInterfaceHtml(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
@@ -146,6 +149,7 @@ for (const [path, contents] of assets) {
 write('docs/index.html', assetRequestsHtml(assetPlanHtml(dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html)))))))));
 write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
+write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
 write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
@@ -158,6 +162,7 @@ legacy=uniformRequestNavSource(legacy);
 legacy=personalInterfaceNavSource(legacy);
 legacy=developmentNavSource(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDevelopmentRequestsV381','createDevelopmentRequestV381','updateDevelopmentRequestV381'].includes(name))return accessPolicyV284_();").replace('ret.allowedViews=policy.views.slice();',"ret.allowedViews=policy.views.concat('developmentRequests');");
 legacy+='\n'+read('scripts/development-requests-server.gs.txt');
+legacy+='\n'+assetInspectionModelV382.toString()+'\n'+read('scripts/asset-inspection-server.gs.txt');
 legacy=dutyItemsNavSourceV368(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');

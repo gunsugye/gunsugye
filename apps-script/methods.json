@@ -19,6 +19,7 @@
   "clearLogbook",
   "clearSpecialGunNumberV255",
   "compareUniformSmartV278",
+  "createAssetInspectionV382",
   "createDevelopmentRequestV381",
   "createSupplyItem",
   "createWorkspacePageV221",
