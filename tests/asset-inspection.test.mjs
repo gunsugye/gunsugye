@@ -11,6 +11,7 @@ test('비고는 품목과 문제 설명만 표시하며 중복을 줄이고 자�
  const data=fixture(),slots=[{position:'1',status:'수리 필요(보고)',details:'상판 흔들림'},{position:'2',status:'수리 필요(미보고)',details:'상판 흔들림'}];data.records=[{roomId:'r1',itemId:'bed',slots}];let model=assetInspectionModelV382(data,'');assert.equal(model.rooms[0].note,'침대틀: 상판 흔들림');assert.equal(model.stats.bad,2);assert.equal(model.sheets[1].rows[1][5],'1번');assert.equal(model.sheets[2].rows[2][6],'수리 필요(미보고)');
  slots[1].details='2번 서랍 레일 파손';model=assetInspectionModelV382(data,'');assert.equal(model.rooms[0].note,'침대틀: 상판 흔들림\n침대틀: 2번 서랍 레일 파손');
  slots[1].details='2번 자리: 레일 파손';model=assetInspectionModelV382(data,'');assert.equal(model.rooms[0].note,'침대틀: 상판 흔들림\n침대틀: 레일 파손');assert.equal(model.sheets[2].rows[2][8],'2번 자리: 레일 파손');
+ slots[1].details='2번 자리가 흔들림';model=assetInspectionModelV382(data,'');assert.match(model.rooms[0].note,/침대틀: 2번 자리가 흔들림/);
  slots[0].details=' ';slots[1].details='';model=assetInspectionModelV382(data,'');assert.equal(model.rooms[0].note,'침대틀: 세부내용 미입력');assert.equal(model.stats.bad,2);
 });
 test('기존 수량 기록도 실제 수량만 집계하고 확인된 0개만 해당없음으로 표시한다',()=>{
