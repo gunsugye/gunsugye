@@ -5,6 +5,14 @@ import {readFileSync} from 'node:fs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const tick=()=>new Promise(r=>setImmediate(r));
 
+test('업데이트 제목과 설명은 깨진 물음표 없이 한글로 저장된다',()=>{
+ const release=JSON.parse(read('docs/release.json'));
+ for(const text of [release.title,...release.notes]){
+  assert.match(text,/[가-힣]/);
+  assert.doesNotMatch(text,/\?{2,}|\uFFFD/);
+ }
+});
+
 function noticeFixture(){
  const elements=new Map(),events=new Map(),stored=new Map();let clock=100000,reloads=0,requests=0,release={id:'aaaaaaaaaaaaaaaa',version:'3.08',title:'검증 업데이트',notes:['첫 번째 변경']};
  const element=id=>{if(!elements.has(id))elements.set(id,{id,hidden:true,textContent:'',children:[],addEventListener:(n,f)=>events.set(id+':'+n,f),replaceChildren(...nodes){this.children=nodes;},append(){}});return elements.get(id);};
