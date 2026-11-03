@@ -163,7 +163,7 @@ legacy=uniformRequestNavSource(legacy);
 legacy=personalInterfaceNavSource(legacy);
 legacy=developmentNavSource(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDevelopmentRequestsV381','createDevelopmentRequestV381','updateDevelopmentRequestV381'].includes(name))return accessPolicyV284_();").replace('ret.allowedViews=policy.views.slice();',"ret.allowedViews=policy.views.concat('developmentRequests');");
 legacy+='\n'+read('scripts/development-requests-server.gs.txt');
-legacy+='\n'+assetInspectionModelV382.toString()+'\n'+assetInspectionLayoutV384.toString()+'\n'+read('scripts/asset-inspection-server.gs.txt');
+legacy+='\n'+assetInspectionModelV382.toString()+'\n'+assetInspectionLayoutV384.toString()+'\n'+read('scripts/asset-inspection-native-server.gs.txt');
 legacy=dutyItemsNavSourceV368(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
