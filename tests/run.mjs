@@ -8,6 +8,7 @@ await import('./calendar.test.mjs');
 await import('./departures.test.mjs');
 await import('./performance.test.mjs');
 await import('./updates.test.mjs');
+await import('./development-requests.test.mjs');
 await import('./notifications.test.mjs');
 if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./repairs.test.mjs');
 await import('./room-assets.test.mjs');

@@ -9,6 +9,7 @@ import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
 import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
+import {developmentNavSource,developmentRequestsJs,developmentRequestsHtml,developmentRequestsCSS} from './development-requests.mjs';
 import { updateNotificationsJs } from './notifications.mjs';
 import { repairJs, repairHtml, repairServer } from './repairs.mjs';
 import {roomAssetJs,roomAssetHtml,roomAssetServer,roomAssetCSS} from './room-assets.mjs';
@@ -71,6 +72,8 @@ js=dutyCadetsJs(js,dutyRoleInfoV367.toString()+'\n'+dutySortV367.toString()+'\n'
 html=dutyCadetsHtml(html);
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+dutyOrgKeyV372.toString()+'\n'+dutyOrderRowsV372.toString()+'\n'+dutyOrderSignatureV372.toString()+'\n'+dutyHierarchyV373.toString()+'\n'+dutyAccordionV373.toString()+'\n'+read('scripts/duty-order-client.js.txt')+'\n'+js.slice(end);}
 js=dutyItemsJsV368(js,'const dutyItemsV368='+JSON.stringify(dutyItemsV368)+';\n'+dutyItemRequirementsV368.toString()+'\n'+read('scripts/duty-items-client.js.txt'));
+js=developmentRequestsJs(js,read('scripts/development-requests-client.js.txt'));
+html=developmentRequestsHtml(html);
 html=dutyItemsHtmlV368(html);
 js=js.replace('function navRenderV233(){','let wxNavigationReadyV314=false;\nfunction navRenderV233(){')
  .replace('nav.replaceChildren(frag);v284AddUtilityNav();','nav.replaceChildren(frag);v284AddUtilityNav();if(ready&&wxNavigationReadyV314&&!navEditModeV220&&!navDirtyV220)window.LOGBOOK_NAVIGATION?.commit();')
@@ -86,7 +89,8 @@ if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치�
 const hook=js.lastIndexOf('})();');
 js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');\n`+js.slice(hook);
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372||dutyVerifyBusyV371||dutyItemsBusyV368||dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyItemDraftV368.size||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS;
+js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV372||').replace('dirty:!!(','dirty:!!(devDirtyV381()||');
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + developmentRequestsCSS;
 html=personalInterfaceHtml(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
@@ -152,6 +156,8 @@ legacy=assetPlanServer(legacy);
 legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.txt');
 legacy=uniformRequestNavSource(legacy);
 legacy=personalInterfaceNavSource(legacy);
+legacy=developmentNavSource(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDevelopmentRequestsV381','createDevelopmentRequestV381','updateDevelopmentRequestV381'].includes(name))return accessPolicyV284_();").replace('ret.allowedViews=policy.views.slice();',"ret.allowedViews=policy.views.concat('developmentRequests');");
+legacy+='\n'+read('scripts/development-requests-server.gs.txt');
 legacy=dutyItemsNavSourceV368(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');

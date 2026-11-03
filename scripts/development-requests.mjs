@@ -1,0 +1,17 @@
+export function developmentNavSource(source){
+ if(source.includes("'developmentRequests'"))return source;
+ return source.replace("{id:'other',title:'기타',items:[","{id:'other',title:'기타',items:['developmentRequests',")
+ .replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['developmentRequests',");
+}
+export function developmentRequestsJs(js,client){
+ js=developmentNavSource(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['developmentRequests',")
+ .replace('const viewNames={',"const viewNames={developmentRequests:['DEVELOPMENT REQUESTS','개발 요청 관리','수정 요청과 처리 결과를 기록합니다.'],")
+ .replace('function navInitV220(){',"function navInitV220(){const devButton=document.createElement('button');devButton.type='button';devButton.className='nav-btn';devButton.dataset.view='developmentRequests';devButton.textContent='개발 요청 관리';$('sidebarMenu').appendChild(devButton);")
+ .replace("'personalInterface','uniformRequests','assetRequests','departures','today'","'developmentRequests','personalInterface','uniformRequests','assetRequests','departures','today'")
+ .replace("v==='personalInterface'||v==='uniformRequests'","v==='developmentRequests'||v==='personalInterface'||v==='uniformRequests'")
+ .replace("if(v==='personalInterface')personalInterfaceLoadV359();","if(v==='personalInterface')personalInterfaceLoadV359();if(v==='developmentRequests')devLoadV381();")
+ .replace('function switchView(v){',"function switchView(v){if(view==='developmentRequests'&&v!==view){if(devBusyV381)return false;if(devDirtyV381()&&!confirm('작성 중인 요청을 두고 이동할까요?'))return false;}");
+ const end=js.lastIndexOf('})();');return js.slice(0,end)+'\n'+client+'\n'+js.slice(end);
+}
+export function developmentRequestsHtml(html){return html.replace('</main>',`<section id="developmentRequestsView" class="hidden"><div class="panel"><div class="panel-head"><h2>개발 요청 관리</h2><button id="devRefreshV381" class="btn" type="button">새로고침</button></div><form id="devFormV381" class="dev-form"><label>제목<input id="devTitleV381" class="field" required maxlength="100" placeholder="예: 생활실 배치도 표시 수정"></label><label>구분<select id="devTypeV381" class="field"><option>오류</option><option>기능 추가</option><option>화면 개선</option><option>기타</option></select></label><label>내용<textarea id="devBodyV381" class="field" required maxlength="5000" rows="4" placeholder="화면 이름 · 현재 동작 · 원하는 동작"></textarea></label><div><button id="devSubmitV381" class="btn btn-primary" type="submit">요청 등록</button></div></form><p id="devMessageV381" role="status" aria-live="polite"></p><div class="panel-head"><label>처리 상태 <select id="devFilterV381" class="field"><option>전체</option><option>접수</option><option>진행 중</option><option>완료</option><option>보류</option></select></label><span id="devCountV381"></span></div><div id="devListV381"></div></div></section></main>`);}
+export const developmentRequestsCSS=`.dev-form{display:grid;gap:12px;max-width:820px}.dev-form label,.dev-card label{display:grid;gap:5px}.dev-form .field,.dev-card .field{width:100%;box-sizing:border-box;min-width:0}.dev-card{border:1px solid #d6e1ed;border-radius:10px;padding:14px;margin:12px 0;overflow-wrap:anywhere}.dev-card h3{margin:0}.dev-card p{white-space:pre-wrap}.dev-meta{font-size:12px;color:#64748b}.dev-review{display:grid;grid-template-columns:1fr 1fr;gap:10px}.dev-review label:last-of-type{grid-column:1/-1}@media(max-width:600px){.dev-review{grid-template-columns:1fr}.dev-card{padding:10px}}`;

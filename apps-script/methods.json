@@ -19,6 +19,7 @@
   "clearLogbook",
   "clearSpecialGunNumberV255",
   "compareUniformSmartV278",
+  "createDevelopmentRequestV381",
   "createSupplyItem",
   "createWorkspacePageV221",
   "deleteCalendarEventV221",
@@ -36,6 +37,7 @@
   "getBootstrap",
   "getChangesV283",
   "getDepartureDashboardV305",
+  "getDevelopmentRequestsV381",
   "getDormDutyCadetsV365",
   "getDormInventoryRequestsV336",
   "getDormInventoryResetV313",
@@ -155,5 +157,6 @@
   "trainSetConfigV227",
   "trainSetupV227",
   "unifyDormSheetsV248",
+  "updateDevelopmentRequestV381",
   "verifyDutyCadetsV371"
 ]

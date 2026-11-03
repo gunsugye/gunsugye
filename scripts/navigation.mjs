@@ -29,6 +29,7 @@ export function normalizeNavigation(value, defaults, available) {
     }
   }
   const labels = {};
+  if(valid&&!value.developmentRequestsAddedV381&&allowed.has('developmentRequests')&&!used.has('developmentRequests')){const def=defaults.find(g=>g.id==='other');if(def){let group=groups.find(g=>g.id==='other');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('developmentRequests');used.add('developmentRequests');}}
   if(valid&&!value.dutyCadetsAddedV365&&allowed.has('dutyCadets')&&!used.has('dutyCadets')){const def=defaults.find(g=>g.id==='devices');if(def){let group=groups.find(g=>g.id==='devices');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}const pos=group.items.indexOf('roster');group.items.splice(pos<0?0:pos+1,0,'dutyCadets');used.add('dutyCadets');}}
   if(valid&&!value.personalInterfaceAddedV359&&allowed.has('personalInterface')&&!used.has('personalInterface')){const def=defaults.find(g=>g.id==='personalInfo');if(def){let group=groups.find(g=>g.id==='personalInfo');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('personalInterface');used.add('personalInterface');}}
   if(valid&&!value.uniformRequestsAddedV351&&allowed.has('uniformRequests')&&!used.has('uniformRequests')){const def=defaults.find(g=>g.id==='uniform');if(def){let group=groups.find(g=>g.id==='uniform');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('uniformRequests');used.add('uniformRequests');}}
@@ -45,7 +46,7 @@ export function normalizeNavigation(value, defaults, available) {
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }
-  return { schemaVersion: 2, groups, labels, departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  return { schemaVersion: 2, groups, labels, developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {
