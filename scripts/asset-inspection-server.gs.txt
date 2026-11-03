@@ -5,27 +5,29 @@ function createAssetInspectionV382(requestKey){
   if(previous?.complete)return previous;
   const data=getDormInventoryV244();if(!data.initialized||!data.rooms?.length||!data.items?.length)throw Error('등록된 생활실 비품 자료를 먼저 확인하세요.');
   data.items=data.items.map(item=>({...item,positions:assetPositionsV311_(item.name)}));
-  const stamp=Utilities.formatDate(new Date(),'Asia/Seoul','yyyy-MM-dd HH:mm:ss'),model=assetInspectionModelV382(data,stamp);
+  const stamp=Utilities.formatDate(new Date(),'Asia/Seoul','yyyy-MM-dd HH:mm:ss'),model=assetInspectionLayoutV384(assetInspectionModelV382(data,stamp),stamp);
   const target=previous?.id?SpreadsheetApp.openById(previous.id):SpreadsheetApp.create('2026년 후반기 생활실 비품 점검표 · '+stamp);
   const result={id:target.getId(),url:target.getUrl(),complete:false,createdAt:stamp,stats:model.stats};props.setProperty(key,JSON.stringify(result));
   const initial=target.getSheets()[0];
   for(let i=0;i<model.sheets.length;i++){
    const table=model.sheets[i];let sheet=target.getSheetByName(table.name);if(!sheet){sheet=i===0?initial.setName(table.name):target.insertSheet(table.name);}sheet.getDataRange().breakApart();const filter=sheet.getFilter();if(filter)filter.remove();sheet.clear();sheet.getBandings().forEach(b=>b.remove());
    const rows=table.rows,width=Math.max(...rows.map(r=>r.length)),height=rows.length;if(sheet.getMaxRows()<height)sheet.insertRowsAfter(sheet.getMaxRows(),height-sheet.getMaxRows());if(sheet.getMaxColumns()<width)sheet.insertColumnsAfter(sheet.getMaxColumns(),width-sheet.getMaxColumns());
-   const values=rows.map(r=>Array.from({length:width},(_,c)=>typeof r[c]==='number'?r[c]:safeCell_(String(r[c]??''))));
+   const values=rows.map(r=>Array.from({length:width},(_,c)=>r[c]&&typeof r[c].formula==='string'?r[c].formula:typeof r[c]==='number'?r[c]:safeCell_(String(r[c]??''))));
    sheet.getRange(1,1,height,width).setValues(values).setFontFamily('맑은 고딕').setFontSize(10).setVerticalAlignment('middle').setWrap(true);
    sheet.setColumnWidths(1,width,110);sheet.setRowHeights(1,height,28);sheet.setHiddenGridlines(true);
    if(i===0){
-    sheet.getRange(1,1,1,width).merge().setFontSize(20).setFontWeight('bold').setFontColor('#15324f');sheet.setRowHeight(1,42);
-    for(const row of [2,5,6,model.header])sheet.getRange(row,1,1,width).merge();
-    for(const row of [3,7,model.header+1])sheet.getRange(row,1,1,row===model.header+1?width:5).setBackground('#15324f').setFontColor('#ffffff').setFontWeight('bold');
-    sheet.getRange(4,1,1,5).setBackground('#e0edff').setFontSize(16).setFontWeight('bold');sheet.getRange(4,2).setNumberFormat('0.0%');sheet.getRange(8,5,model.header-9,1).setNumberFormat('0.0%');
-    sheet.setColumnWidth(1,48);sheet.setColumnWidth(2,105);sheet.setColumnWidth(3,150);sheet.setColumnWidth(4,120);sheet.setColumnWidth(17,520);
-    const count=height-model.header-1;if(count>0){sheet.getRange(model.header+2,1,count,width).setBorder(true,true,true,true,true,true,'#d5dfe9',SpreadsheetApp.BorderStyle.SOLID);sheet.getRange(model.header+1,1,count+1,width).createFilter();}
-    sheet.setFrozenRows(model.header+1);sheet.setFrozenColumns(4);
+    const layout=model.dashboard;for(const range of layout.merges)sheet.getRange(range).merge();
+    sheet.getRange('B2').setFontSize(16).setFontWeight('bold').setFontColor('#17365d');sheet.getRange('B3').setFontSize(10);sheet.setRowHeight(2,38);
+    for(const column of [2,4,6,8,10]){sheet.getRange(5,column,1,2).setBackground('#17365d').setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center');sheet.getRange(6,column,2,2).setBackground('#e8f0fe').setFontSize(20).setFontWeight('bold').setFontColor('#17365d').setHorizontalAlignment('center');}
+    sheet.getRange('M5:Q6').setBackground('#17365d').setFontColor('#ffffff').setFontWeight('bold');sheet.getRange(layout.totalRow,13,1,5).setBackground('#e8f0fe').setFontWeight('bold');
+    for(const cell of layout.percentCells)sheet.getRange(cell).setNumberFormat('0.0%');
+    sheet.getRange(layout.headerRow,1,1,17).setBackground('#17365d').setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center');sheet.setRowHeight(layout.headerRow,36);
+    [48,78,98,88,93,93,93,93,93,93,93,93,93,93,108,93,340].forEach((pixels,c)=>sheet.setColumnWidth(c+1,pixels));sheet.hideColumns(18,3);
+    const count=height-layout.headerRow;if(count>0){sheet.getRange(layout.headerRow+1,1,count,17).setBorder(true,true,true,true,true,true,'#d5dfe9',SpreadsheetApp.BorderStyle.SOLID);sheet.getRange(layout.headerRow,1,count+1,17).createFilter();sheet.autoResizeRows(layout.headerRow+1,count);}
+    sheet.setFrozenRows(layout.headerRow);sheet.setFrozenColumns(4);
    }else{sheet.getRange(1,1,1,width).setBackground('#15324f').setFontColor('#ffffff').setFontWeight('bold');sheet.setFrozenRows(1);if(height>1)sheet.getRange(1,1,height,width).createFilter();if(i===1)sheet.setColumnWidth(8,500);if(i===2)sheet.setColumnWidth(9,500);if(i===3)sheet.setColumnWidth(2,850);if(i===4)sheet.setColumnWidth(3,850);}
-   const colorRanges=i===0?[sheet.getRange(model.header+2,5,Math.max(1,height-model.header-1),13)]:i===1?[sheet.getRange(2,7,Math.max(1,height-1),1)]:[];
-   if(colorRanges.length)sheet.setConditionalFormatRules([['사용불가','#fee2e2'],['교체필요','#fee2e2'],['수리필요','#ffedd5'],['양호','#dbeafe'],['미점검','#f1f5f9'],['미등록','#f1f5f9']].map(([word,color])=>SpreadsheetApp.newConditionalFormatRule().whenTextContains(word).setBackground(color).setRanges(colorRanges).build()));
+   const colorRanges=i===0?[sheet.getRange(model.header+2,5,Math.max(1,height-model.header-1),10),sheet.getRange(model.header+2,16,Math.max(1,height-model.header-1),1)]:i===1?[sheet.getRange(2,7,Math.max(1,height-1),1)]:[];
+   if(colorRanges.length){const rules=[['사용불가','#fbd9d9'],['교체필요','#fbd9d9'],['조치대상','#fbd9d9'],['수리필요','#fff1cc'],['양호','#e6f4ea'],['정상','#e6f4ea'],['미점검','#efefef'],['미등록','#efefef'],['해당없음','#efefef']].map(([word,color])=>SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(word).setBackground(color).setRanges(colorRanges).build());if(i===0)rules.push(SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0).setBackground('#fff1cc').setRanges([sheet.getRange(model.header+2,15,Math.max(1,height-model.header-1),1)]).build());sheet.setConditionalFormatRules(rules);}
   }
   SpreadsheetApp.flush();result.complete=true;props.setProperty(key,JSON.stringify(result));return result;
  });
