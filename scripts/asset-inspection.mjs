@@ -6,14 +6,19 @@ export function assetInspectionModelV382(data,at){
  const raw=[['건물','층','호실','소속','품목','자리','기록 상태','사용불가','세부사항','수정시각','입력방식']],issues=[['건물','층','호실','소속','품목','자리','상태','세부사항','수정시각']],used=new Set(),rooms=[];
  const buildingOrder=s=>/본관/.test(s)?0:/동관/.test(s)?1:/서관/.test(s)?2:3;
  const sorted=(data.rooms||[]).filter(r=>!vacantIds.has(String(r.id))).sort((a,b)=>buildingOrder(a.building)-buildingOrder(b.building)||String(a.building).localeCompare(String(b.building),'ko')||String(a.floor).localeCompare(String(b.floor),'ko',{numeric:true})||String(a.room).localeCompare(String(b.room),'ko',{numeric:true}));
- const positionLabel=p=>p==='common'?'공용':p?p+'번':'수량 기록',roomDisplay=value=>String(value??'').replace(/-[0-8](?:중대)?$/,'');
+ const positionLabel=p=>p==='common'?'공용':p?p+'번':'수량 기록',roomDisplay=value=>String(value??'').replace(/-(?:[0-8](?:중대)?|동|여)$/,'');
  for(const room of sorted){const note=[],items=(data.items||[]).map(item=>{const key=room.id+'|'+item.id,r=index.get(key);if(r)used.add(key);let slots=[];
   if(Array.isArray(r?.slots)){slots=r.slots.map(s=>({position:s.position,original:s.status||'',status:state(s.status,s.unavailable),unavailable:!!s.unavailable,details:s.details||'',count:1}));}
   else if(r){const quantity=Math.max(0,Number(r.quantity)||0),bad=Math.max(0,Number(r.repair)||0),good=Math.max(0,Number(r.normal)||0);if(quantity<bad+good)throw Error('정상·불량 수량이 전체 수량보다 큽니다: '+room.room+' '+item.name);
    if(!quantity&&r.confirmed)slots=[{status:'해당없음',original:r.status||'',position:'',count:0,details:r.details||''}];
    else for(let i=0;i<Math.max(quantity,1);i++)slots.push({status:i<bad?(rank(state(r.status))>2?state(r.status):'수리필요'):i<bad+good?'양호':r.confirmed?state(r.status):'미점검',original:r.status||'',position:'',details:i===0?r.details||'':'',count:1});
   }else slots=(item.positions?.length?item.positions:['']).map(position=>({position,status:'미점검',original:'',details:'',count:1}));
-  for(const s of slots){const prefix=[room.building,room.floor,roomDisplay(room.room),room.group||'',item.name,positionLabel(s.position)];raw.push([...prefix,s.original||s.status,s.unavailable?'사용불가':'',s.details||'',r?.updatedAt||'',r?.slots?'자리별':r?'수량별':'미입력']);if(rank(s.status)>2)issues.push([...prefix,s.status,s.details||'',r?.updatedAt||'']);const details=String(s.details||'').trim().replace(/^[12]\s*번\s*(?:(?:자리|좌석)(?=\s|[:：·-]|$)\s*[:：·-]?\s*|[:：·]\s*)/,'');if(rank(s.status)>2||details)note.push(item.name+(/^[12]$/.test(String(s.position))?'('+s.position+'번)':'')+': '+(details||'세부내용 미입력'));}
+  for(const s of slots){
+   const prefix=[room.building,room.floor,roomDisplay(room.room),room.group||'',item.name,positionLabel(s.position)];raw.push([...prefix,s.original||s.status,s.unavailable?'사용불가':'',s.details||'',r?.updatedAt||'',r?.slots?'자리별':r?'수량별':'미입력']);if(rank(s.status)>2)issues.push([...prefix,s.status,s.details||'',r?.updatedAt||'']);
+   const originalDetails=String(s.details||'').trim(),keptDetails=originalDetails.split(/\r?\n/).filter(line=>!norm(line).includes('스탠드')).join('\n').trim();
+   const details=keptDetails.replace(/^[12]\s*번\s*(?:(?:자리|좌석)(?=\s|[:：·-]|$)\s*[:：·-]?\s*|[:：·]\s*)/,'');
+   if(!norm(item.name).includes('스탠드')&&!(norm(originalDetails).includes('스탠드')&&!keptDetails)&&(rank(s.status)>2||details))note.push(item.name+(/^[12]$/.test(String(s.position))?'('+s.position+'번)':'')+': '+(details||'세부내용 미입력'));
+  }
   return {item,slots};});
   const all=items.flatMap(x=>x.slots),known=all.filter(s=>s.count&&s.status!=='미점검').length,normal=all.filter(s=>s.count&&s.status==='양호').length,bad=all.filter(s=>rank(s.status)>2).length,unknown=all.filter(s=>s.count&&s.status==='미점검').length;
   const cells=columns.map(([name,aliases])=>{const slots=items.filter(x=>aliases.map(norm).includes(norm(x.item.name))).flatMap(x=>x.slots);return slots.length?slots.reduce((a,s)=>rank(s.status)>rank(a)?s.status:a,'해당없음'):'미등록';});
@@ -26,6 +31,7 @@ export function assetInspectionModelV382(data,at){
  const actionRooms=[rows[header].slice(),...rooms.filter(r=>r.bad>0).map(rowForRoom)];
  const orphan=[['호실ID','품목ID','기록(JSON)'],...[...index].filter(([key])=>!used.has(key)).map(([,r])=>[r.roomId,r.itemId,JSON.stringify(r)])];
  const criteria=[['구분','작성 기준'],['기준시각',at],['원본 보존','현재 업무일지의 생활실 비품 기록을 읽어 새 파일로 정리. 원본 시트에는 기록하지 않음.'],['양식','2026년 후반기 비품조사(양식) - 생활실 비품 점검표.pdf'],['건물·소속','현재 생활실현황의 건물·소속 사용. PDF 예시의 중대-건물 배치로 덮어쓰지 않음.'],['공실 제외','소속이 미분류인 호실을 공실로 간주. '+stats.vacantExcluded+'개실과 해당 기록을 모든 표·집계에서 제외.'],['침대','침대틀·침대서랍 기록을 통합 표시. 자리별 기록은 자리별원본 탭에 보존.'],['ABC서랍','3단서랍을 양식의 ABC서랍 열에 대응.'],['추가 품목','회전의자·스탠드·선풍기 등 양식에 없는 품목도 집계·비고·불량상세·자리별원본에 포함.'],['미점검','상태 미입력. 양호로 간주하지 않으며 양호율 분모에서 제외.'],['미등록','양식 열에 대응하는 비품이 원본 품목대장에 없음.'],['해당없음','수량 0·점검완료인 기존 수량 기록에만 적용.'],['대표 상태','사용불가 → 교체필요 → 수리필요 → 미점검 → 양호 순으로 표시. 세부 상태는 자리별원본 참조.'],['조치 필요(건)','자리별 불량 비품 수. 같은 품목 2개가 불량이면 2건. 추가 품목도 포함.'],['양호율','양호 비품 / 상태 입력 비품. 해당없음·미점검 제외.'],['정상 호실','등록된 전체 품목에 미점검·불량이 없는 호실. 미등록 양식 품목은 판정 제외.'],['기록 방식','현재 저장 시점의 정리본. 원본 변경이 자동 동기화되지는 않음.'],['미연결 기록',String(orphan.length-1)+'건. 원본검토 탭에 보존.']];
+ criteria.find(row=>row[0]==='추가 품목')[1]='회전의자·선풍기 등 양식에 없는 품목도 집계·비고·불량상세·자리별원본에 포함. 스탠드 관련 내용은 비고에서 제외하며 실제 기록과 집계는 보존.';
  return {stats,header,rooms,sheets:[{name:'생활실 비품 점검표',rows},{name:'불량상세',rows:issues},{name:'자리별원본',rows:raw},{name:'작성기준',rows:criteria},{name:'원본검토',rows:orphan},{name:'조치 필요 호실',header:0,width:17,rows:actionRooms}]};
 }
 export function assetInspectionHtmlV382(html){return html.replace('<button class="btn" type="button" id="assetCsvV244">','<button class="btn" type="button" id="assetInspectionCreateV382">점검표 새 스프레드시트 만들기</button><button class="btn" type="button" id="assetCsvV244">').replace('<div id="assetSummaryV244"','<p id="assetInspectionStatusV382" role="status" aria-live="polite"></p><div id="assetSummaryV244"');}
