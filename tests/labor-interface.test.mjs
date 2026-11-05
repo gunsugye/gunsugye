@@ -2,13 +2,14 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {distributionExplanation} from '../scripts/labor-interface.mjs';
 import {readFileSync,existsSync} from 'node:fs';import vm from 'node:vm';
 
-test('외출 항목은 원본 비고의 행 제목을 연결하고 중복 항목을 함께 표시한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
+test('생활실 외출 인원은 스마트당직 상태 열을 명단과 대조하고 동일 인원을 한 번만 센다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
  const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');
- const take=name=>{const start=source.indexOf('function '+name+'(');return source.slice(start,source.indexOf('\n}\n',start)+3);};
- const context=vm.createContext({});vm.runInContext(['dormTriplesV241_','dormOutingCategoriesV357_','dormNamesMatchedV240_'].map(take).join('\n'),context);
- const entries=[{text:'77.1.검증갑, 77.1.검증을',category:'특별외출'},{text:'77.1.검증갑',category:'청원휴가'},{text:'77.1.검증갑',category:'특별외출'},{text:'76.2.검증병',category:'입원'}];
- const result=context.dormOutingCategoriesV357_(entries);assert.equal(result.get('77.1.검증갑'),'특별외출 · 청원휴가');assert.equal(result.get('77.1.검증을'),'특별외출');assert.equal(result.get('76.2.검증병'),'입원');assert.equal(result.has('77.1.검증'),false);
- const matched=context.dormNamesMatchedV240_(entries.map(e=>e.text),[{cohort:'77',company:'1',name:'검증갑',roomId:'r1',verified:true}]);assert.equal(matched.matched,1);assert.equal(matched.records.length,1);
+ const smart=readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8'),helper=source.slice(source.indexOf('function dormSmartOutingsV394_('),source.indexOf('function dormLiveV240_('));
+ const context=vm.createContext({});vm.runInContext(smart.slice(0,smart.indexOf('function smartInactiveKeysV322_('))+'\n'+helper,context);
+ const roster=[{cohort:'77',company:'1',name:'검증갑',roomId:'r1',verified:true},{cohort:'76기',company:'２중대',name:'검증을',roomId:'r2',verified:true},{cohort:'75',company:'3',name:'검증병',roomId:'r3',verified:true},{cohort:'78',company:'4',name:'미확인',roomId:'r4',verified:false},{cohort:'77',company:'5',name:'중복자',roomId:'r5',verified:true},{cohort:'77',company:'5',name:'중복자',roomId:'r6',verified:true}];
+ const items=[{cohort:'77기',company:'1중대',name:'검증갑A',locationStatus:'특별외출'},{cohort:'77',company:'1',name:'검증갑A',locationStatus:'특별외출'},{cohort:'76',company:'2',name:'검증을',locationStatus:' 정 예 관 '},{cohort:'75',company:'3',name:'검증병',locationStatus:'입원'},{cohort:'75',company:'3',name:'검증병',locationStatus:'청원휴가'},{cohort:'78',company:'4',name:'미확인',locationStatus:'위탁'},{cohort:'77',company:'5',name:'중복자',locationStatus:'외박'}];
+ const result=context.dormSmartOutingsV394_(items,roster);assert.equal(result.matched,2);assert.equal(result.sourceKeys,4);assert.equal(result.notAssigned,2);assert.equal(result.ambiguities,1);assert.equal(result.totalPeople,5);assert.equal(result.byRoom.get('r1').size,1);assert.equal(result.records.find(p=>p.roomId==='r1').status,'특별외출');assert.equal(result.records.find(p=>p.roomId==='r3').status,'입원 · 청원휴가');assert.equal(result.byRoom.has('r2'),false);
+ const live=source.slice(source.indexOf('function dormLiveV240_('),source.indexOf('/** v2.42:',source.indexOf('function dormLiveV240_(')));assert.match(live,/smartReferenceV253_/);assert.doesNotMatch(live,/dormExternalNotesV240_/);
 });
 
 test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 총수량을 보존한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{

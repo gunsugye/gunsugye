@@ -17,12 +17,12 @@ test('본관 특수 근무는 층별·중대별 모두 별도 행으로 계산�
  assigned[0].dutyCategoryKnownV375=true;assigned[0].dutyCategoryV375='동생명';assert.equal(c.laborMainCategoryV375_(assigned[0]),'동생명');assigned[0].dutyCategoryV375='';assert.equal(c.laborMainCategoryV375_(assigned[0]),'');assert.equal(c.laborMainCategoryV375_(assigned[3]),'');
 });
 
-test('겸직은 일반 중대 근무와 함께 있어도 특수 분류를 유지하고 동생명 우선으로 한 번만 배정한다',()=>{
+test('겸직 대표 근무는 명단 순서와 무관하게 전대 → 대대 → 중대 → 동생명 순으로 한 번만 배정한다',()=>{
  const people=['겸직갑','겸직을','겸직병','일반정'].map(name=>({cohort:'75',company:'1',name}));
  const rows=[{...people[0],organization:'전대'},{...people[0],organization:'중대'},{...people[1],organization:'중대'},{...people[1],organization:'명예위'},{...people[2],organization:'동기회'},{...people[2],organization:'2대대'},{...people[2],organization:'전대'},{...people[3],organization:'중대'}];
  const context=dutyContext(rows),assigned=people.map(p=>({...p,room:{building:'정예 본관'}}));context.laborAttachDutyV375_(assigned);
- assert.deepEqual(assigned.map(p=>context.laborMainCategoryV375_(p)),['전대·대대 근무','동생명','동생명','']);
- rows.reverse();context.laborAttachDutyV375_(assigned);assert.deepEqual(assigned.map(p=>context.laborMainCategoryV375_(p)),['전대·대대 근무','동생명','동생명','']);
+ assert.deepEqual(assigned.map(p=>context.laborMainCategoryV375_(p)),['전대·대대 근무','','전대·대대 근무','']);
+ rows.reverse();context.laborAttachDutyV375_(assigned);assert.deepEqual(assigned.map(p=>context.laborMainCategoryV375_(p)),['전대·대대 근무','','전대·대대 근무','']);
  rows.splice(0,rows.length);context.laborAttachDutyV375_(assigned);assert.ok(assigned.every(p=>context.laborMainCategoryV375_(p)===''&&!p.dutyCategoryKnownV375));
 });
 
@@ -41,12 +41,19 @@ test('층별·중대별 특수 근무 빈 분류는 본관에만 유지한다',(
  for(const dimension of ['floor','company']){const groups=context.laborGroupsByBuildingV361_('whole',{people},assigned,'all',Object.fromEntries(buildings.map(building=>[building,dimension])));assert.equal(groups.reduce((sum,row)=>sum+row.count,0),3);for(const label of ['전대·대대 근무','동생명']){const special=groups.filter(row=>row.label===label);assert.equal(special.length,1);assert.equal(special[0].building,'정예 본관');assert.equal(special[0].count,0);assert.equal(special[0].source,0);}}
 });
 
-test('본관 방에 동생명 근무자가 한 명이라도 있으면 같은 방 인원을 동생명으로 한 번씩 계산한다',()=>{
- const people=[{cohort:'75',company:'1',name:'동생명근무'},{cohort:'76',company:'2',name:'같은방일반'},{cohort:'77',company:'3',name:'다른방전대'}],rows=[{...people[0],organization:'명예위'},{...people[0],organization:'중대'},{...people[2],organization:'전대'}];
+test('본관에서 최종 대표 근무가 동생명인 사람이 있으면 같은 방 인원을 동생명으로 한 번씩 계산한다',()=>{
+ const people=[{cohort:'75',company:'1',name:'동생명근무'},{cohort:'76',company:'2',name:'같은방일반'},{cohort:'77',company:'3',name:'다른방전대'}],rows=[{...people[0],organization:'명예위'},{...people[2],organization:'전대'}];
  const context=dutyContext(rows,{laborGradeSetV261_:()=>[],laborGradeMatchV261_:()=>true,laborAbsentNowV259_:()=>false,laborAbsentAllV259_:()=>false,laborPersonKeyV259_:p=>p.name,laborDistributionGroupKeyV268_:(p,dim)=>dim==='company'?p.company+'중대':p.room.floor});loadBuildingGroups(context);
  const assigned=people.map((p,i)=>({...p,personKey:p.name,matched:true,room:{id:i<2?'main-101':'main-102',building:'정예 본관',floor:'1층',room:i<2?'101':'102'}}));context.laborAttachDutyV375_(assigned);
  assert.deepEqual(assigned.map(p=>context.laborMainCategoryV375_(p)),['동생명','동생명','전대·대대 근무']);
  for(const dimension of ['floor','company']){const groups=context.laborGroupsByBuildingV361_('whole',{people},assigned,'all',{'정예 본관':dimension});assert.equal(groups.reduce((sum,row)=>sum+row.count,0),3);assert.equal(groups.find(row=>row.label==='동생명').count,2);assert.equal(groups.find(row=>row.label==='전대·대대 근무').count,1);}
+});
+
+test('전대와 동생명을 겸직한 인원은 전대로 확정되어 같은 방을 동생명으로 바꾸지 않는다',()=>{
+ const people=[{cohort:'75',company:'1',name:'전대동생명겸직'},{cohort:'76',company:'1',name:'같은방일반'}],rows=[{...people[0],organization:'명예위'},{...people[0],organization:'전대'}];
+ const context=dutyContext(rows),assigned=people.map(p=>({...p,room:{id:'main-103',building:'정예 본관',floor:'1층',room:'103'}}));context.laborAttachDutyV375_(assigned);
+ assert.deepEqual(assigned.map(p=>context.laborMainCategoryV375_(p)),['전대·대대 근무','']);
+ assert.ok(assigned.every(p=>p.roomDutyCategoryV393!=='동생명'));
 });
 
 test('겸직 분배도 현재·전체 인원과 학년 필터를 적용하며 누락 호실·일반 인원을 중복하지 않는다',()=>{
@@ -54,7 +61,7 @@ test('겸직 분배도 현재·전체 인원과 학년 필터를 적용하며 �
  const rows=[{...people[0],organization:'전대'},{...people[0],organization:'중대'},{...people[1],organization:'명예위'},{...people[1],organization:'중대'},{...people[3],organization:'1대대'},{...people[3],organization:'동기회'},{...people[4],organization:'전대'}];
  const context=dutyContext(rows,{laborGradeSetV261_:grade=>grade==='all'?[]:[grade],laborGradeMatchV261_:(p,grades)=>!grades.length||grades.includes(p.cohort),laborAbsentNowV259_:duty=>/외출|위탁/.test(duty),laborAbsentAllV259_:duty=>/위탁/.test(duty),laborPersonKeyV259_:p=>p.name,laborDistributionGroupKeyV268_:(p,dim)=>dim==='company'?p.company+'중대':p.room.floor});loadBuildingGroups(context);
  const assigned=people.slice(0,5).map((p,i)=>({...p,personKey:p.name,matched:true,room:{id:'room-'+i,building:'정예 본관',floor:i%2?'2층':'1층'}}));context.laborAttachDutyV375_(assigned);
- for(const dimension of ['floor','company'])for(const [mode,grade,total,command,society] of [['whole','all',5,1,2],['current','all',4,1,1],['whole','75',4,1,2]]){const groups=context.laborGroupsByBuildingV361_(mode,{people},assigned,grade,{'정예 본관':dimension});assert.equal(groups.reduce((sum,row)=>sum+row.count,0),total);assert.equal(groups.find(row=>row.label==='전대·대대 근무').count,command);assert.equal(groups.find(row=>row.label==='동생명').count,society);assert.equal(groups.find(row=>row.unlocated).count,1);}
+ for(const dimension of ['floor','company'])for(const [mode,grade,total,command,society] of [['whole','all',5,2,0],['current','all',4,1,0],['whole','75',4,2,0]]){const groups=context.laborGroupsByBuildingV361_(mode,{people},assigned,grade,{'정예 본관':dimension});assert.equal(groups.reduce((sum,row)=>sum+row.count,0),total);assert.equal(groups.find(row=>row.label==='전대·대대 근무').count,command);assert.equal(groups.find(row=>row.label==='동생명').count,society);assert.equal(groups.find(row=>row.unlocated).count,1);}
 });
 
 test('관별 카드의 특수 근무 분배 행은 본관에만 표시된다',()=>{

@@ -2427,8 +2427,8 @@ function dormOutingRenderV249(){
  $('dormOutingCsvV249').disabled=!list.length;
  $('dormOutingInfoV249').textContent=!canEdit?'개인별 외출 정보는 관리자 계정에서만 표시됩니다.':
   (dormSourceMetaV240&&!dormSourceMetaV240.ok?'연동 오류: '+(dormSourceMetaV240.error||'원본을 확인하세요.'):
-  '조건에 맞는 외출 인원 '+visible.length+'명 · 검색 결과 '+list.length+'명 · 외출 항목별 확인');
- rows.innerHTML=!list.length?'<tr><td colspan="9">'+(!canEdit?'관리자 권한으로 로그인해야 개인별 상세정보를 확인할 수 있습니다.':(dormSourceMetaV240&&!dormSourceMetaV240.ok?'생도전대 비고 연동 상태를 확인해 주세요.':'조건에 맞는 외출 인원이 없습니다.'))+'</td></tr>':
+  '조건에 맞는 외출 인원 '+visible.length+'명 · 검색 결과 '+list.length+'명 · 스마트당직 상태·생활실 명단 대조');
+ rows.innerHTML=!list.length?'<tr><td colspan="9">'+(!canEdit?'관리자 권한으로 로그인해야 개인별 상세정보를 확인할 수 있습니다.':(dormSourceMetaV240&&!dormSourceMetaV240.ok?'스마트당직 연결과 상태 열을 확인해 주세요.':'조건에 맞는 외출 인원이 없습니다.'))+'</td></tr>':
   list.map(p=>'<tr><td>'+escapeH(p.cohort)+'기</td><td>'+escapeH(companyLabelV257(p.company))+'</td><td><b>'+escapeH(p.name)+'</b></td><td>'+escapeH(p.building)+'</td><td>'+escapeH(p.floor)+'</td><td>'+escapeH(p.corridor)+'</td><td><strong>'+escapeH(p.room)+'</strong></td><td>'+escapeH(p.group)+'</td><td>'+escapeH(p.status)+'</td></tr>').join('');
 }
 function dormOutingCsvV249(){
