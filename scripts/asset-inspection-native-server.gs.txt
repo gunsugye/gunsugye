@@ -37,13 +37,13 @@ function assetInspectionAuxV386_(target,main,table,model){
  sheet.getRange(1,1,height,width).setValues(assetInspectionValuesV386_(table.rows,width)).setFontFamily('맑은 고딕').setFontSize(10).setVerticalAlignment('middle').setWrap(true);sheet.setColumnWidths(1,width,110);sheet.setFrozenRows(0);sheet.setFrozenColumns(0);sheet.setHiddenGridlines(true);
  sheet.getRange(1,1,1,width).setBackground('#17365d').setFontColor('#ffffff').setFontWeight('bold');if(height>1)sheet.getRange(1,1,height,width).createFilter();
  if(action){main.getRange(model.dashboard.headerRow,1,1,17).copyTo(sheet.getRange(1,1,1,17),SpreadsheetApp.CopyPasteType.PASTE_FORMAT,false);for(let c=1;c<=17;c++)sheet.setColumnWidth(c,main.getColumnWidth(c));if(height>1){assetInspectionHighlightV386_(sheet,2,height-1,18);sheet.getRange(2,18,height-1,1).setValues(model.rooms.filter(r=>r.bad>0).map(r=>[r.issueLevel]));sheet.autoResizeRows(2,height-1);}}
- else if(table.name==='불량상세')sheet.setColumnWidth(8,500);else if(table.name==='자리별원본')sheet.setColumnWidth(9,500);else if(table.name==='작성기준')sheet.setColumnWidth(2,850);else if(table.name==='원본검토')sheet.setColumnWidth(3,850);else if(table.name==='중대별 호실 배정'){sheet.setColumnWidth(6,700);sheet.setColumnWidth(7,260);}else if(table.name==='호실 구성 확인'){sheet.setColumnWidth(6,260);sheet.setColumnWidth(11,380);}
+ else if(table.name==='불량상세')sheet.setColumnWidth(8,500);else if(table.name==='자리별원본')sheet.setColumnWidth(9,500);else if(table.name==='작성기준')sheet.setColumnWidth(2,850);else if(table.name==='원본검토')sheet.setColumnWidth(3,850);else if(table.name==='중대별 호실 배정'){sheet.setColumnWidth(6,700);sheet.setColumnWidth(7,260);}else if(table.name==='호실 구성 확인'){sheet.setColumnWidth(6,260);sheet.setColumnWidth(11,380);}else if(table.name==='생활실 배정 명단'){sheet.setColumnWidth(3,150);sheet.setColumnWidth(8,140);sheet.setColumnWidth(9,140);}
 }
 function createAssetInspectionV382(requestKey){
  assetRequestAdminV336_();if(typeof requestKey!=='string'||!/^\w[\w-]{15,79}$/.test(requestKey))throw Error('생성 요청을 다시 시도하세요.');
  return lockAndRun_(()=>{
   const props=PropertiesService.getUserProperties(),key='ASSET_INSPECTION_V386_'+requestKey;let previous;try{previous=JSON.parse(props.getProperty(key)||'null');}catch(_){}if(previous?.complete)return previous;
-  const data=getDormInventoryV244();if(!data.initialized||!data.rooms?.length||!data.items?.length)throw Error('등록된 생활실 비품 자료를 먼저 확인하세요.');data.items=data.items.map(item=>({...item,positions:assetPositionsV311_(item.name)}));
+  const data=assetInspectionInventoryV386_();if(!data.initialized||!data.rooms?.length||!data.items?.length)throw Error('등록된 생활실 비품 자료를 먼저 확인하세요.');data.items=data.items.map(item=>({...item,positions:assetPositionsV311_(item.name)}));
   const stamp=Utilities.formatDate(new Date(),'Asia/Seoul','yyyy-MM-dd HH:mm:ss'),model=assetInspectionLayoutV384(assetInspectionModelV382(data,stamp),stamp);let target;
   if(previous?.id)target=SpreadsheetApp.openById(previous.id);else{
    let template;try{template=SpreadsheetApp.openById(ASSET_INSPECTION_TEMPLATE_V386_);}catch(_){throw Error('군수계 점검표 양식에 접근할 수 없습니다. 군수계 계정의 파일 권한을 확인하세요.');}

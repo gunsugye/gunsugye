@@ -10,6 +10,10 @@ function loadBuildingGroups(context){
  const code=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');
  for(const name of ['laborBuildingGroupKeyV361_','laborGroupsByBuildingV361_']){const start=code.indexOf('function '+name+'(');vm.runInContext(code.slice(start,code.indexOf('\n}\n',start)+3),context);}
 }
+function loadPresenceRules(context){
+ const code=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');
+ for(const name of ['smartPresentNowV395_','laborStatusV259_','laborEligibilityStatusV392_','laborAbsentAllV259_','laborAbsentNowV259_']){const start=code.indexOf('function '+name+'(');assert.ok(start>=0,name+' 함수가 필요합니다.');vm.runInContext(code.slice(start,code.indexOf('\n}\n',start)+3),context);}
+}
 test('근무생도 명단과 기수·중대·이름을 대조하며 생활실 조직으로 추정하지 않는다',()=>{const rows=[{cohort:'75',company:'4',name:'검증갑A',organization:'전대'},{cohort:'76',company:'2',name:'검증을',organization:'명예위'},{cohort:'77',company:'3',name:'검증병A',organization:'전대'},{cohort:'77',company:'3',name:'검증병B',organization:'동기회'}],c=vm.createContext({PropertiesService:{getScriptProperties:()=>({getProperty:k=>k==='DUTY_ROSTER_MANUAL_V369'?'yes':''})},dutyRosterRecordsV367_:()=>rows.map(p=>({data:{version:'manual-v369',source:p}})),dutyRosterPublicV367_:r=>r.data.source,dutyRoleInfoV367});vm.runInContext(readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8').split('function smartAllStatusHintsV323_')[0]+'\n'+readFileSync(new URL('../scripts/labor-duty-groups.gs.txt',import.meta.url),'utf8'),c);const assigned=[{cohort:'75기',company:'４중대',name:'검증갑',room:{building:'정예 본관',group:'동생명'}},{cohort:'76',company:'2',name:'검증을',room:{building:'정예 본관',group:'전(대)대'}},{cohort:'77',company:'3',name:'검증병',room:{building:'정예 본관',group:'동생명'}},{cohort:'78',company:'1',name:'미등록',room:{building:'정예 본관',group:'전(대)대'}}];c.laborAttachDutyV375_(assigned);assert.equal(c.laborMainCategoryV375_(assigned[0]),'전대·대대 근무');assert.equal(c.laborMainCategoryV375_(assigned[1]),'동생명');assert.equal(c.laborMainCategoryV375_(assigned[2]),'');assert.equal(c.laborMainCategoryV375_(assigned[3]),'');});
 test('본관 특수 근무는 층별·중대별 모두 별도 행으로 계산하며 인원을 중복하지 않는다',()=>{const source=readFileSync(new URL('../scripts/labor-duty-groups.gs.txt',import.meta.url),'utf8'),c=vm.createContext({laborGradeSetV261_:()=>[],laborGradeMatchV261_:()=>true,laborAbsentNowV259_:()=>false,laborAbsentAllV259_:()=>false,laborPersonKeyV259_:p=>p.name,laborDistributionGroupKeyV268_:p=>p.company+'중대'});vm.runInContext(source,c);
  const code=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');for(const name of ['laborBuildingGroupKeyV361_','laborGroupsByBuildingV361_']){const start=code.indexOf('function '+name+'(');vm.runInContext(code.slice(start,code.indexOf('\n}\n',start)+3),c);}
@@ -32,6 +36,19 @@ test('동·서관은 전대·대대와 동생명을 따로 나누지 않고 실�
  const context=dutyContext(rows,{laborGradeSetV261_:()=>[],laborGradeMatchV261_:()=>true,laborAbsentNowV259_:()=>false,laborAbsentAllV259_:()=>false,laborPersonKeyV259_:p=>p.name,laborDistributionGroupKeyV268_:(p,dim)=>dim==='company'?p.company+'중대':p.room.floor});loadBuildingGroups(context);
  const assigned=people.map((p,i)=>({...p,personKey:p.name,matched:true,room:{building:i===1?'정예 서관':'정예 동관',floor:i===0?'1층':'2층'}}));context.laborAttachDutyV375_(assigned);
  for(const dimension of ['floor','company']){const groups=context.laborGroupsByBuildingV361_('whole',{people},assigned,'all',{'정예 동관':dimension,'정예 서관':dimension});assert.equal(groups.reduce((sum,row)=>sum+row.count,0),3);assert.equal(groups.some(row=>/전대·대대 근무|동생명/.test(row.label)),false);assert.equal(groups.filter(row=>row.building==='정예 동관').reduce((sum,row)=>sum+row.count,0),2);assert.equal(groups.some(row=>row.building==='정예 본관'),false);}
+});
+
+test('점호열외(당직)은 관별 층·중대 현재 인원에 포함하고 외출 상태만 제외한다',()=>{
+ const people=[{cohort:'75',company:'1',name:'당직재실',locationStatus:'점호열외(당직)'},{cohort:'76',company:'2',name:'정예관재실',locationStatus:'정예관'},{cohort:'77',company:'3',name:'실제외출',locationStatus:'특별외출'}];
+ const context=dutyContext([],{laborGradeSetV261_:()=>[],laborGradeMatchV261_:()=>true,laborPersonKeyV259_:p=>p.name,laborDistributionGroupKeyV268_:(p,dim)=>dim==='company'?p.company+'중대':p.room.floor});loadPresenceRules(context);loadBuildingGroups(context);
+ const assigned=people.map((p,i)=>({...p,personKey:p.name,matched:true,room:{building:i===2?'정예 동관':'정예 본관',floor:(i+1)+'층'}}));
+ for(const dimension of ['floor','company']){
+  const groups=context.laborGroupsByBuildingV361_('current',{people},assigned,'all',{'정예 본관':dimension,'정예 동관':dimension});
+  assert.equal(groups.reduce((sum,row)=>sum+row.count,0),2);
+  assert.equal(groups.find(row=>row.key==='정예 본관|'+(dimension==='floor'?'1층':'1중대')).count,1);
+  assert.equal(groups.find(row=>row.key==='정예 본관|'+(dimension==='floor'?'2층':'2중대')).count,1);
+  assert.equal(groups.some(row=>row.building==='정예 동관'&&row.count>0),false);
+ }
 });
 
 test('층별·중대별 특수 근무 빈 분류는 본관에만 유지한다',()=>{
@@ -79,10 +96,10 @@ test('사역 계산 화면은 스마트당직 범위·대상·방배정 흐름�
  const context=vm.createContext({$:id=>elements[id]||null,escapeH:value=>String(value),laborFmtV259:value=>String(value)});
  const source=readFileSync(new URL('../docs/assets/app.js',import.meta.url),'utf8'),start=source.indexOf('function laborBasisNumberV392('),end=source.indexOf('\nlet laborMainSoloV374',start);
  assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),context);
- context.laborCalculationBasisRenderV392({calculationBasis:{statusRanges:['1학년 D62:D91','2학년 G62:G91','3학년 J62:J91','4학년 M62:M91'],rule:'현재 인원은 정예관만 포함',selected:386,livingLinked:381,unlocated:5,matchRule:'기수·중대·이름 대조',roomRule:'생활실 배정명단으로 관·층·중대 확인'}});
+ context.laborCalculationBasisRenderV392({calculationBasis:{statusRanges:['1학년 D62:D91','2학년 G62:G91','3학년 J62:J91','4학년 M62:M91'],rule:'현재 인원은 정예관·점호열외(당직) 포함',selected:386,livingLinked:381,unlocated:5,matchRule:'기수·중대·이름 대조',roomRule:'생활실 배정명단으로 관·층·중대 확인'}});
  assert.equal(elements.laborCalculationBasisV392.hidden,false);
  assert.equal(elements.laborCalculationBasisSummaryV392.textContent,'1학년 D62:D91 · 2학년 G62:G91 · 3학년 J62:J91 · 4학년 M62:M91 · 대상 386명');
- assert.match(elements.laborCalculationBasisBodyV392.innerHTML,/현재 인원은 정예관만 포함/);
+ assert.match(elements.laborCalculationBasisBodyV392.innerHTML,/현재 인원은 정예관·점호열외\(당직\) 포함/);
  assert.match(elements.laborCalculationBasisBodyV392.innerHTML,/<b>대상<\/b> 386명.*<b>생활실 연결<\/b> 381명.*<b>호실 미확인<\/b> 5명/);
  assert.equal(context.laborAllocationLineV392({count:12,pairOut:1,pairIn:2,allocationCount:13,divisor:2,quota:6.5},2),'생활실 배정 12명 · 독방 짝 -1/+2 → 13명분 · 13÷2=6.5개');
  assert.equal(context.laborAllocationLineV392({count:12,allocationCount:12,divisor:2,quota:6},2),'생활실 배정 12명 · 12÷2=6개');

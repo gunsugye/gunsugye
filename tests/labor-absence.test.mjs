@@ -14,14 +14,15 @@ function take(name){
  return source.slice(start,end+3);
 }
 
-test('현재는 정예관만 포함하고 전체는 국외·파견만 제외한다',{skip:!hasCode},()=>{
+test('현재는 정예관·점호열외(당직)을 포함하고 전체는 국외·파견만 제외한다',{skip:!hasCode},()=>{
  const context=vm.createContext({});
- vm.runInContext(['laborStatusV259_','laborEligibilityStatusV392_','laborAbsentAllV259_','laborAbsentNowV259_'].map(take).join('\n'),context);
+ vm.runInContext(['smartPresentNowV395_','laborStatusV259_','laborEligibilityStatusV392_','laborAbsentAllV259_','laborAbsentNowV259_'].map(take).join('\n'),context);
  const isCurrent=value=>!context.laborAbsentNowV259_(value);
  const isWhole=value=>!context.laborAbsentAllV259_(value);
 
  assert.equal(isCurrent(' 정 예 관 '),true);
- for(const status of ['특별외출','점호열외(당직)','청원휴가','','국외','파견','기타'])assert.equal(isCurrent(status),false,status+'은 현재 인원이 아닙니다.');
+ assert.equal(isCurrent(' 점호 열외 （ 당직 ） '),true);
+ for(const status of ['특별외출','청원휴가','','국외','파견','기타'])assert.equal(isCurrent(status),false,status+'은 현재 인원이 아닙니다.');
 
  for(const status of ['정예관','특별외출','점호열외(당직)','청원휴가','','위탁','휴학','퇴교','기타'])assert.equal(isWhole(status),true,status+'은 전체 인원에 포함됩니다.');
  for(const status of ['국외','파견','국 외','장기 파견'])assert.equal(isWhole(status),false,status+'은 전체 인원에서 제외됩니다.');
@@ -29,7 +30,7 @@ test('현재는 정예관만 포함하고 전체는 국외·파견만 제외한�
  // 스마트당직 원본 상태가 있으면 뒤에 덧붙인 휴학·위탁 등의 참고 문구보다 우선합니다.
  assert.equal(isCurrent({locationStatus:'정예관',duty:'정예관 위탁 휴학'}),true);
  assert.equal(isWhole({locationStatus:'정예관',duty:'정예관 위탁 휴학'}),true);
- assert.equal(isCurrent({locationStatus:'점호열외(당직)',duty:'정예관'}),false);
+ assert.equal(isCurrent({locationStatus:'점호열외(당직)',duty:'국외 파견'}),true);
  assert.equal(isWhole({locationStatus:'점호열외(당직)',duty:'국외 파견'}),true);
  // 과거 스냅샷처럼 전용 필드가 없으면 기존 duty 값을 안전하게 사용합니다.
  assert.equal(isWhole({duty:'국외'}),false);
@@ -45,7 +46,7 @@ test('그룹 인원과 독방 대상은 같은 현재·전체 상태 규칙을 �
   laborMainCategoryV375_:()=>'',laborUnitV259_:value=>String(value||'').replace(/중대$/,'')
  });
  vm.runInContext([
-  'laborStatusV259_','laborEligibilityStatusV392_','laborAbsentAllV259_','laborAbsentNowV259_',
+  'smartPresentNowV395_','laborStatusV259_','laborEligibilityStatusV392_','laborAbsentAllV259_','laborAbsentNowV259_',
   'laborPhysicalKeyV260_','laborRoomOccupancyV260_','laborGroupsV259_','laborPairsV259_'
  ].map(take).join('\n'),context);
 
@@ -67,9 +68,9 @@ test('그룹 인원과 독방 대상은 같은 현재·전체 상태 규칙을 �
  const groupCount=mode=>context.laborGroupsV259_('floor',mode,smart,assigned,'all').reduce((sum,row)=>sum+row.count,0);
  const pairs=mode=>context.laborPairsV259_(assigned,mode,'all',2,'floor');
 
- assert.equal(groupCount('current'),1);
- assert.equal(pairs('current').activeCount,1);
- assert.deepEqual(Array.from(pairs('current').singles.filter(p=>p.active),p=>p.key),['현재']);
+ assert.equal(groupCount('current'),2);
+ assert.equal(pairs('current').activeCount,2);
+ assert.deepEqual(Array.from(pairs('current').singles.filter(p=>p.active),p=>p.key),['현재','열외']);
  assert.equal(groupCount('whole'),6);
  assert.equal(pairs('whole').activeCount,6);
  assert.equal(pairs('whole').pairs.length,3);
