@@ -26,7 +26,7 @@ test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 �
  const snap=context.laborSnapshotV265_(result);assert.equal(snap.groups.reduce((s,g)=>s+g.quota,0),10);assert.equal(snap.buildingDivisors['정예 본관'],2);assert.match(context.laborSummaryV265_(snap),/정예 동관 1인 1개/);
  rooms.forEach(r=>r.floor='1층');rooms.push({id:'3',building:'정예 동관',floor:'2층'});roster[6].roomId='3';roster[0].company='2';people[0].company='2';context.laborDistributionGroupKeyV268_=(p,dim)=>dim==='company'?p.company+'중대':dim==='floor'?p.room.floor:p.room.building;
  const mixed=context.getLaborCalcV259('whole','building',2,'all',{'정예 본관':2,'정예 동관':1,'정예 서관':1},{'정예 본관':'company','정예 동관':'floor','정예 서관':'building'});
- assert.equal(mixed.groups.filter(g=>g.building==='정예 본관'&&g.count>0).length,2);assert.equal(mixed.groups.filter(g=>g.building==='정예 동관').length,2);assert.equal(mixed.groups.reduce((s,g)=>s+g.quota,0),10);
+ assert.equal(mixed.groups.filter(g=>g.building==='정예 본관'&&g.count>0).length,2);assert.equal(mixed.groups.filter(g=>g.building==='정예 동관'&&g.count>0).length,2);assert.equal(mixed.groups.reduce((s,g)=>s+g.quota,0),10);
  const mixedSnap=context.laborSnapshotV265_(mixed);assert.equal(mixedSnap.buildingDimensions['정예 본관'],'company');assert.ok(mixedSnap.groups.some(g=>g.label==='정예 본관 · 2중대'));assert.ok(mixedSnap.groups.some(g=>g.label==='정예 동관 · 2층'));
  context.laborPairsV259_=()=>({singles:[],pairs:[{a:people[0].name,b:people[1].name}],unpaired:[]});
  const paired=context.getLaborCalcV259('whole','building',2,'all',{'정예 본관':2,'정예 동관':1,'정예 서관':1},{'정예 본관':'company','정예 동관':'floor'});

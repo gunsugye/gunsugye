@@ -1,3 +1,5 @@
+import {dutyFixedRolesV391,dutyFixedRoleValidV391,dutySplitAssignmentsV391} from './duty-assignments.mjs';
+import {dutyRoleInfoV367} from './duty-roles.mjs';
 export function dormPdfDutyRegionV365(tokens,boxes,sourceRoom){
  tokens=tokens.map(t=>({...t}));for(const t of tokens)if(/^\d{3}-$/.test(t.str)){const next=tokens.find(n=>/^[1-8동생명여女]$/.test(n.str)&&Math.abs(n.y-t.y)<2&&Math.abs(n.x-t.x-t.width)<6);if(next){t.str+=next.str.replace('女','여');t.width=next.x+next.width-t.x;}}
  const anchors=tokens.flatMap(t=>[...t.str.matchAll(/(?:^|\s)(\d{3}(?:-[1-8동생명여])?)(?=\s|$)/g)].map(m=>({...t,str:m[1],x:t.x+t.width*(m.index+m[0].indexOf(m[1]))/t.str.length,width:t.width*m[1].length/t.str.length}))).filter(t=>t.y>45);
@@ -19,6 +21,10 @@ export function dutyCadetRowsV365(parsed,rooms){
  }
  return rows.sort((a,b)=>a.building.localeCompare(b.building,'ko')||a.floor.localeCompare(b.floor,'ko')||a.room.localeCompare(b.room,'ko',{numeric:true})||a.name.localeCompare(b.name,'ko'));
 }
+export function dutyRoleChoicesV391(group,current){const roles=dutyFixedRolesV391(group);return {fixed:roles.length>0,roles:roles.length&&current&&!roles.includes(current)&&dutyFixedRoleValidV391({organization:group,duty:current})?[...roles,current]:roles};}
+export function dutyPersonCountV391(rows){const norm=v=>String(v||'').normalize('NFKC').replace(/\s/g,'');return new Set(rows.map(p=>[norm(p.cohort).replace(/(?:기)+$/,''),norm(p.company).replace(/(?:중대)+$/,''),norm(p.name)].join('|'))).size;}
+export function dutyAdditionalRowV391(row){const info=dutyRoleInfoV367(row),person=Object.fromEntries(['name','cohort','company','building','floor','room','gradeOverride'].filter(key=>row[key]!=null).map(key=>[key,row[key]]));return {...person,organization:info.organization,dutyCompanyOverride:info.organization==='중대'?String(info.company||''):row.dutyCompanyOverride||'',duty:'',familyOverride:'',saberRoleOverride:'auto'};}
+export function dutyCandidateRowsV391(rows){return rows.flatMap(row=>dutySplitAssignmentsV391(row.duty).map(duty=>({...row,duty})));}
 export function dutyCadetsNavSource(source){source=source.replace("{id:'devices',title:'장비',items:['roster','saber','repairs']}","{id:'devices',title:'총기/군수품/장비',items:['roster','dutyCadets','saber','repairs']}");return source.match(/const NAV_FIXED_V233=\[([^\]]*)\]/)?.[1].includes("'dutyCadets'")?source:source.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['dutyCadets',");}
 export function dutyCadetsJs(js,client){
  js=dutyCadetsNavSource(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['dutyCadets',").replace('const viewNames={',"const viewNames={dutyCadets:['DUTY CADET ROSTER','근무생도 명단','직접 등록한 근무생도 명단을 관리합니다.'],")
@@ -30,6 +36,6 @@ export function dutyCadetsJs(js,client){
  js=js.replace("let r=await server('getSaberV276');", "if(canEdit&&!v284Scoped&&!dutyCadetsMetaV365)await dutyCadetsLoadV365();let r=await server('getSaberV276');")
  .replace("escapeH(p.role)+'</td><td><select", "escapeH(p.role)+((p.linkedCadets||[]).length?'<small style=\"display:block\">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select");
  js=js.replace('trainSharedModeV289=[',"if((dutyVerifyBusyV371||dutyMoveBusyV372)&&v!==view)return false;trainSharedModeV289=[");
- const end=js.lastIndexOf('})();');return js.slice(0,end)+'\n'+dormPdfDutyRegionV365.toString()+'\n'+dutyCadetRowsV365.toString()+'\n'+client+'\n'+js.slice(end);
+ const end=js.lastIndexOf('})();');return js.slice(0,end)+'\n'+dormPdfDutyRegionV365.toString()+'\n'+dutyCadetRowsV365.toString()+'\n'+dutyRoleChoicesV391.toString()+'\n'+dutyPersonCountV391.toString()+'\n'+dutyAdditionalRowV391.toString()+'\n'+dutyCandidateRowsV391.toString()+'\n'+client+'\n'+js.slice(end);
 }
 export function dutyCadetsHtml(html){return html.replace('</main>',`<section id="dutyCadetsView" class="hidden"><div class="panel"><div class="panel-head"><div><h2 class="panel-title">근무생도 명단</h2><p class="panel-sub">PDF 1차 · 붙여넣기 2차 · 스마트당직 대조 · 최종 수정</p></div><button class="btn" type="button" id="dutyCadetsReloadV365">새로고침</button></div><div class="asset-actions"><select id="dutyCadetsBuildingV365" class="field" aria-label="근무생도 관"><option value="">전체 관</option></select><input id="dutyCadetsSearchV365" class="field" type="search" placeholder="이름 · 중대 · 근무 · 호실" aria-label="근무생도 검색"></div><p id="dutyCadetsStatusV365" class="panel-sub" role="status" aria-live="polite"></p><div id="dutyCadetsRowsV365"></div></div></section></main>`);}

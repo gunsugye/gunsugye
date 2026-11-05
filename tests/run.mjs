@@ -22,6 +22,7 @@ await import('./duty-cadets.test.mjs');
 await import('./duty-roles.test.mjs');
 await import('./duty-items.test.mjs');
 await import('./duty-manual.test.mjs');
+await import('./duty-roster-ui.test.mjs');
 await import('./duty-verification.test.mjs');
 await import('./duty-order.test.mjs');
 await import('./staff-email.test.mjs');

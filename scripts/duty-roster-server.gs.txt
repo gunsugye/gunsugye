@@ -1,7 +1,7 @@
 function dutyRosterAdminV367_(){requireOwner_();if(!accessPolicyV284_().legacy)throw Error('전체 관리자만 근무명단을 관리할 수 있습니다.');}
 function dutyRosterSheetV367_(create){const ss=spreadsheet_();let sh=ss.getSheetByName('근무생도명단');if(!sh&&create){sh=ss.insertSheet('근무생도명단');setupTab_(sh,['ID','원본키','명단JSON','수정시각','수정자']);}return sh;}
 function dutyRosterRecordsV367_(){const sh=dutyRosterSheetV367_(false);if(!sh||sh.getLastRow()<2)return [];if(sh.getLastRow()>10000)throw Error('근무명단 보관 한도를 확인하세요.');return sh.getRange(2,1,sh.getLastRow()-1,5).getDisplayValues().map((r,i)=>r[0]?({id:r[0],key:r[1],data:JSON.parse(r[2]),updatedAt:r[3],by:r[4],row:i+2}):null).filter(Boolean);}
-function dutyRosterPublicV367_(record){return {...record.data.source,...record.data.edits,manualOrder:record.data.manualOrder,orderGroup:record.data.orderGroup,id:record.id,updatedAt:record.updatedAt,sourceKey:record.key,originalDuty:record.data.source.duty,edited:Object.keys(record.data.edits||{}).length>0};}
+function dutyRosterPublicV367_(record){return {...record.data.source,...record.data.edits,manualOrder:record.data.manualOrder,orderGroup:record.data.orderGroup,splitReview:record.data.splitReview||'',id:record.id,updatedAt:record.updatedAt,sourceKey:record.key,originalDuty:record.data.source.duty,edited:Object.keys(record.data.edits||{}).length>0};}
 function dutyRosterStateV367_(version){return {indexVersion:PropertiesService.getScriptProperties().getProperty('DUTY_INDEX_VERSION_V367')||'',records:dutyRosterRecordsV367_().filter(r=>r.data.version===version).map(dutyRosterPublicV367_)};}
 function syncDormDutyCadetsV367(version,rows){
  dutyRosterAdminV367_();if(PropertiesService.getScriptProperties().getProperty('DUTY_ROSTER_MANUAL_V369')==='yes')throw Error('직접 입력 명단을 사용 중입니다. PDF 동기화는 중지되었습니다.');if(!Array.isArray(rows)||rows.length>1000)throw Error('근무명단 크기를 확인하세요.');
@@ -17,9 +17,9 @@ function syncDormDutyCadetsV367(version,rows){
  });
 }
 function saveDormDutyCadetV367(id,edits,expected){
- dutyRosterAdminV367_();const patch=dutyCadetPatchV369_(edits);
- return lockAndRun_(()=>{const record=dutyRosterRecordsV367_().find(r=>r.id===id),version=PropertiesService.getScriptProperties().getProperty('DUTY_ROSTER_MANUAL_V369')==='yes'?'manual-v369':dormPlanDataV315_().version;if(!record||record.data.version!==version)throw Error('현재 편성안의 명단이 아닙니다. 새로고침하세요.');if(record.updatedAt!==String(expected||''))throw Error('다른 곳에서 수정했습니다. 새로고침 후 다시 저장하세요.');
-  record.data.edits=patch;record.updatedAt=iso_();record.by=config_().email;dutyRosterSheetV367_(false).getRange(record.row,1,1,5).setValues([[record.id,record.key,JSON.stringify(record.data),record.updatedAt,record.by]]);return dutyRosterPublicV367_(record);
+ dutyRosterAdminV367_();const patches=dutyPatchesV391_(edits);
+ return lockAndRun_(()=>{const all=dutyRosterRecordsV367_(),record=all.find(r=>r.id===id),version=PropertiesService.getScriptProperties().getProperty('DUTY_ROSTER_MANUAL_V369')==='yes'?'manual-v369':dormPlanDataV315_().version;if(!record||record.data.version!==version)throw Error('현재 편성안의 명단이 아닙니다. 새로고침하세요.');if(record.updatedAt!==String(expected||''))throw Error('다른 곳에서 수정했습니다. 새로고침 후 다시 저장하세요.');
+  const records=all.filter(r=>r.data.version===version);if(patches.some(patch=>records.some(r=>r.id!==id&&dutyAssignmentKeyV391(dutyRosterPublicV367_(r))===dutyAssignmentKeyV391(patch)&&!(patches.length>1&&r.data.splitFromId===id))))throw Error('동일한 인원·조직·근무가 이미 등록되어 있습니다.');return dutySplitRecordV391_(record,patches,records);
  });
 }
 function saberDutyLinksV367_(items){

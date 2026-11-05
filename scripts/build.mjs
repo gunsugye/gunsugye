@@ -31,6 +31,7 @@ import {personalInterfacePreview} from './personal-interface-preview.mjs';
 import {staffAccessHtml,staffAccessJs} from './staff-access.mjs';
 import {dutyCadetsJs,dutyCadetsHtml} from './duty-cadets.mjs';
 import {dutyRoleInfoV367,dutySortV367,dutyFamilyV367,dutySaberRoleV367} from './duty-roles.mjs';
+import {dutySplitAssignmentsV391,dutyFixedRolesV391,dutyAssignmentKeyV391,dutyFixedRoleValidV391} from './duty-assignments.mjs';
 import {dutyItemsJsV368,dutyItemsHtmlV368,dutyItemsNavSourceV368,dutyItemRequirementsV368,dutyItemsV368} from './duty-items.mjs';
 import {dutyPasteV371,dutyMatchV371,dutyMergeV371} from './duty-verification.mjs';
 import {dutyOrgKeyV372,dutyOrderRowsV372,dutyOrderSignatureV372} from './duty-order.mjs';
@@ -72,6 +73,7 @@ html=staffAccessHtml(html);
 js=personalInterfaceJs(js,'const PERSONAL_PREVIEW_HTML_V360='+JSON.stringify(personalInterfacePreview(read('scripts/personal-portal.html'),read('scripts/personal-portal.css'),read('scripts/personal-interface-preview.js.txt')))+';\n'+read('scripts/personal-interface-client.js.txt'));
 js=dutyCadetsJs(js,dutyRoleInfoV367.toString()+'\n'+dutySortV367.toString()+'\n'+dutyFamilyV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-cadets-client.js.txt')+'\n'+read('scripts/duty-roster-client.js.txt')+'\n'+dutyPasteV371.toString()+'\n'+dutyMatchV371.toString()+'\n'+dutyMergeV371.toString()+'\n'+read('scripts/duty-verification-client.js.txt'));
 html=dutyCadetsHtml(html);
+{const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+[dutySplitAssignmentsV391,dutyFixedRolesV391,dutyAssignmentKeyV391,dutyFixedRoleValidV391].map(fn=>fn.toString()).join('\n')+'\n'+js.slice(end);}
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+dutyOrgKeyV372.toString()+'\n'+dutyOrderRowsV372.toString()+'\n'+dutyOrderSignatureV372.toString()+'\n'+dutyHierarchyV373.toString()+'\n'+dutyAccordionV373.toString()+'\n'+read('scripts/duty-order-client.js.txt')+'\n'+js.slice(end);}
 js=dutyItemsJsV368(js,'const dutyItemsV368='+JSON.stringify(dutyItemsV368)+';\n'+dutyItemRequirementsV368.toString()+'\n'+read('scripts/duty-items-client.js.txt'));
 js=developmentRequestsJs(js,read('scripts/development-requests-client.js.txt'));
@@ -171,6 +173,7 @@ legacy+='\n'+read('scripts/personal-interface-server.gs.txt');
 legacy+='\n'+read('scripts/duty-cadets-server.gs.txt');
 legacy+='\n'+dutyRoleInfoV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-roster-server.gs.txt');
 legacy+='\n'+read('scripts/duty-manual-server.gs.txt');
+legacy+='\n'+[dutySplitAssignmentsV391,dutyFixedRolesV391,dutyAssignmentKeyV391,dutyFixedRoleValidV391].map(fn=>fn.toString()).join('\n');
 legacy+='\n'+read('scripts/labor-duty-groups.gs.txt');
 legacy+='\n'+dutySortV367.toString()+'\n'+dutyOrgKeyV372.toString()+'\n'+dutyOrderRowsV372.toString()+'\n'+dutyOrderSignatureV372.toString()+'\n'+read('scripts/duty-order-server.gs.txt');
 legacy+='\n'+dutyMatchV371.toString()+'\n'+read('scripts/duty-verification-server.gs.txt');
