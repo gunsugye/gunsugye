@@ -1,4 +1,11 @@
-const ASSET_INSPECTION_TEMPLATE_V386_='1wKK4l21YSzVjSlYFZKKVyBDGRxFaphPd1u9jXa_zKg0';
+const ASSET_INSPECTION_TEMPLATE_V386_='11a9qUiAMMFDPUns2YFy48v0uYlkEpaQcvxGUSzZEjuY';
+function assetInspectionTemplateV386_(template,expectedHeader){
+ const sheet=template.getSheetByName('생활실 비품 점검표');if(!sheet)throw Error('군수계 점검표 양식의 생활실 비품 점검표 탭을 확인하세요.');
+ if(sheet.getMaxRows()<12||sheet.getMaxColumns()<17)throw Error('군수계 점검표 양식의 12행 항목이 점검표 형식과 다릅니다.');
+ const norm=value=>String(value??'').normalize('NFKC').replace(/\s/g,''),header=sheet.getRange(12,1,1,17).getValues()[0];
+ if(!expectedHeader||expectedHeader.length<17||expectedHeader.slice(0,17).some((value,i)=>norm(header[i])!==norm(value)))throw Error('군수계 점검표 양식의 12행 항목이 점검표 형식과 다릅니다.');
+ return sheet;
+}
 function assetInspectionValuesV386_(rows,width){return rows.map(row=>Array.from({length:width},(_,c)=>row[c]&&typeof row[c].formula==='string'?row[c].formula:typeof row[c]==='number'?row[c]:safeCell_(String(row[c]??''))));}
 function assetInspectionGridV386_(sheet,height,width){if(sheet.getMaxRows()<height)sheet.insertRowsAfter(sheet.getMaxRows(),height-sheet.getMaxRows());if(sheet.getMaxColumns()<width)sheet.insertColumnsAfter(sheet.getMaxColumns(),width-sheet.getMaxColumns());}
 function assetInspectionHighlightV386_(sheet,first,count,severityColumn){
@@ -38,7 +45,12 @@ function createAssetInspectionV382(requestKey){
   const props=PropertiesService.getUserProperties(),key='ASSET_INSPECTION_V386_'+requestKey;let previous;try{previous=JSON.parse(props.getProperty(key)||'null');}catch(_){}if(previous?.complete)return previous;
   const data=getDormInventoryV244();if(!data.initialized||!data.rooms?.length||!data.items?.length)throw Error('등록된 생활실 비품 자료를 먼저 확인하세요.');data.items=data.items.map(item=>({...item,positions:assetPositionsV311_(item.name)}));
   const stamp=Utilities.formatDate(new Date(),'Asia/Seoul','yyyy-MM-dd HH:mm:ss'),model=assetInspectionLayoutV384(assetInspectionModelV382(data,stamp),stamp);let target;
-  if(previous?.id)target=SpreadsheetApp.openById(previous.id);else{let template;try{template=SpreadsheetApp.openById(ASSET_INSPECTION_TEMPLATE_V386_);if(!template.getSheetByName('생활실 비품 점검표'))throw Error('양식 탭 없음');}catch(_){throw Error('제공한 비품조사 양식을 군수계 계정에 공유한 뒤 다시 시도하세요.');}target=template.copy('2026년 후반기 생활실 비품 점검표 · '+stamp);}
+  if(previous?.id)target=SpreadsheetApp.openById(previous.id);else{
+   let template;try{template=SpreadsheetApp.openById(ASSET_INSPECTION_TEMPLATE_V386_);}catch(_){throw Error('군수계 점검표 양식에 접근할 수 없습니다. 군수계 계정의 파일 권한을 확인하세요.');}
+   assetInspectionTemplateV386_(template,model.sheets[0].rows[model.header]);
+   try{target=template.copy('2026년 후반기 생활실 비품 점검표 · '+stamp);}catch(_){throw Error('군수계 점검표 양식을 복사하지 못했습니다. 파일 복사 권한을 확인한 뒤 다시 시도하세요.');}
+  }
+  if(target.getId()===ASSET_INSPECTION_TEMPLATE_V386_)throw Error('원본 점검표 양식에는 기록할 수 없습니다. 새 파일 생성을 다시 시도하세요.');
   const result={id:target.getId(),url:target.getUrl(),complete:false,createdAt:stamp,stats:model.stats};props.setProperty(key,JSON.stringify(result));const main=target.getSheetByName('생활실 비품 점검표');if(!main)throw Error('복사된 양식의 생활실 비품 점검표 탭을 확인하세요.');
   assetInspectionMainV386_(main,model);model.sheets.slice(1).forEach(table=>assetInspectionAuxV386_(target,main,table,model));SpreadsheetApp.flush();result.complete=true;props.setProperty(key,JSON.stringify(result));return result;
  });
