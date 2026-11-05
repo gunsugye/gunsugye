@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-app-version="1378ab15a8184cf7" data-release-id="b91b5dfbed451442" data-navigation-pending lang="ko">
+<html data-app-version="dc9a1dd81f4e2418" data-release-id="7db35959787d6960" data-navigation-pending lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -67,7 +67,7 @@ body.v294-training-mode #sidebarMenu,body.v294-training-mode #wxAddMenu,body.v29
 body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
 @media(max-width:700px){.mobile-nav .v294-mobile-training{white-space:nowrap}.mobile-nav .v294-mobile-training.hidden{display:none!important}body.v294-training-mode .mobile-nav [data-view]:not([data-view="today"]):not([data-view="train"]){display:none!important}}
 </style>
-<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style><link rel="stylesheet" href="./assets/app.css?v=a8e045e2230f2c5d">
+<style>html[data-navigation-pending] #sidebarMenu,html[data-navigation-pending] .mobile-nav{display:none!important}html:not([data-navigation-pending]) #navigationPreview{display:none}#navigationPreview .nav-item{font:inherit;color:inherit;text-align:left;width:100%;background:transparent;border:0;padding:9px 16px}#navigationPreview .navigation-loading{padding:16px;color:#a7b9ce;font-size:13px}</style><link rel="stylesheet" href="./assets/app.css?v=a30c3aef4a6da43a">
 <link rel="stylesheet" href="./assets/pages.css?v=7bfefdf0b03666ba">
 <script src="./config.js?v=32d1574ddff155dc"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -143,7 +143,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div class="v273-detail" id="v273Detail" role="status"></div>
   <div class="v273-muted">데이터를 초기화하지 않습니다. 연결되지 않은 동안에는 저장 기능을 제한합니다.</div>
 </div>
-<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.91 · 겸직 명단·근무별 사역 분배</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header><div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>
+<header class="topbar"><div class="crumb">군수계 / 업무 관리 시스템 <span class="version-chip" title="업데이트 반영 여부 확인용">v3.92 · 스마트당직 기준 사역 인원·방배정 산식</span></div><div class="topbar-right"><div id="saveIndicator" class="save-indicator"><span class="save-dot"></span><span id="saveText">Google Sheets 연결 중...</span></div><button id="reloadCloud" type="button" class="small-link" title="구글 시트에서 다시 불러오기">↻ 새로고침</button><button id="diagnoseCloudV272" type="button" class="small-link" title="업무일지·생활실·공용비품 시트 연동을 분리해서 점검합니다">⚙ 연동 점검</button><span class="top-date" id="todayLabel"></span></div></header><div id="pagesSession" class="pages-session" hidden><span id="pagesAccount"></span><button id="pagesLogout" type="button">로그아웃</button></div>
  <section class="page-header"><div><div class="eyebrow" id="pageEyebrow">DAILY OPERATION LOG</div><h1 class="page-title" id="pageTitle">일자별 업무일지</h1><span id="v288ActiveTermBadge" class="v288-active-term hidden" aria-live="polite">현재 근무: —</span><p class="page-sub" id="pageSub">오늘의 업무를 기록하고 진행 상황을 관리합니다.</p></div><button id="newEntryBtn" class="btn btn-primary" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>업무 등록</button></section>
  <div class="cloud-banner" id="cloudBanner" role="status">일반학기·성무훈련 업무일지 공용 · 훈련 전용 자료만 별도 Google Sheets 파일에 보관</div>
 <div id="connectionResultV272" class="panel hidden" style="padding:12px 16px;margin:10px 0 16px" role="status" aria-live="polite"></div>
@@ -665,8 +665,8 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
    </div>
    <div class="labor-step">
     <div class="labor-step-head"><span class="labor-step-number">03</span><label for="laborModeV259">인원 기준</label></div>
-    <select id="laborModeV259" class="field"><option value="current">현재 인원 (특출·청휴 등 제외)</option><option value="whole" selected>전체 인원 (국외·위탁·휴학 제외)</option><option value="total">총인원 (스마트당직 B8)</option></select>
-    <small>실제 남은 인원 / 전체 대상 / 공식 총원</small>
+    <select id="laborModeV259" class="field"><option value="current">현재 인원 (정예관)</option><option value="whole" selected>전체 인원 (국외·파견 제외)</option><option value="total">총인원 (스마트당직 B8)</option></select>
+    <small>정예관 / 국외·파견 제외 / 공식 총원</small>
    </div>
    <div class="labor-step">
     <div class="labor-step-head"><span class="labor-step-number">04</span><label for="laborDimV259">분배 단위</label></div>
@@ -692,7 +692,7 @@ body.v294-training-mode #trainingSidebarMenuV294{display:flex!important}
   <div id="laborPairListV259" class="labor-solo-list"></div>
  </div> <div class="panel labor-planner-panel labor-results-card">
   <div class="labor-section-head"><div><h2 class="panel-title">분배 수량</h2></div></div>
-  <div id="laborStatsV259" class="labor-kpis"></div><div id="laborBuildingRatesV357" class="labor-building-rates hidden"></div>
+  <div id="laborStatsV259" class="labor-kpis"></div><details id="laborCalculationBasisV392" class="labor-calculation-basis-v392" hidden><summary><span>인원·방배정 계산 기준</span><small id="laborCalculationBasisSummaryV392"></small></summary><div id="laborCalculationBasisBodyV392" class="labor-calculation-basis-body-v392"></div></details><div id="laborBuildingRatesV357" class="labor-building-rates hidden"></div>
   <div class="labor-table-wrap labor-results-table"><table class="eq-table" style="min-width:480px"><thead><tr><th>구분</th><th>인원</th><th>수량</th><th>잔여분</th></tr></thead><tbody id="laborTableV259"><tr><td colspan="4">계산 전</td></tr></tbody></table></div>
   <details id="laborReviewV297" class="labor-review-v297 hidden"><summary>미지정·대조 누락 명단 확인 <span id="laborReviewCountV297" class="labor-review-count-v297"></span></summary>
     <p class="help">호실 미확인과 독방 짝 미지정은 서로 다른 문제입니다. 아래 항목을 누르면 해당 생도 명단과 사유를 확인할 수 있습니다.</p>

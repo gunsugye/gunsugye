@@ -51,10 +51,24 @@ test('겸직 분배도 현재·전체 인원과 학년 필터를 적용하며 �
 
 test('관별 카드의 층별·중대별 표에는 해당 관의 전대·대대와 동생명 분배 행이 표시된다',()=>{
  const buildings=['정예 본관','정예 동관','정예 서관'],root={innerHTML:''},elements={laborBuildingRatesV357:root,laborModeV259:{value:'whole'},laborDivisorV259:{value:'2'},laborStatsV259:{before(){}}};
- const context=vm.createContext({$:id=>elements[id]||null,qsa:()=>[],escapeH:value=>String(value),laborFmtV259:value=>String(value),laborExplanationV324:()=>'',laborBuildingVisibilityV357:()=>{},document:{createElement:()=>({})}});
+ const context=vm.createContext({$:id=>elements[id]||null,qsa:()=>[],escapeH:value=>String(value),laborFmtV259:value=>String(value),laborExplanationV324:()=>'',laborBuildingVisibilityV357:()=>{},laborCalculationBasisRenderV392:()=>{},laborAllocationLineV392:()=>'',document:{createElement:()=>({})}});
  const source=readFileSync(new URL('../scripts/labor-cards-client.js.txt',import.meta.url),'utf8'),start=source.indexOf('function laborBuildingRenderV357('),end=source.indexOf('\nfunction laborCardsDistributePairsV375',start);vm.runInContext('let laborMainSoloV374=null;\n'+source.slice(start,end),context);
  for(const dimension of ['floor','company']){
   const groups=buildings.flatMap((building,i)=>[{building,key:building+'|duty:전대·대대 근무',label:'전대·대대 근무',count:i+1,quota:(i+1)/2},{building,key:building+'|duty:동생명',label:'동생명',count:i+2,quota:(i+2)/2}]);context.laborBuildingRenderV357({buildings,groups,buildingDivisors:Object.fromEntries(buildings.map(building=>[building,2])),buildingDimensions:Object.fromEntries(buildings.map(building=>[building,dimension]))});
   const cards=root.innerHTML.split('<section class="labor-card-v374"').slice(1);assert.equal(cards.length,3);for(const [i,card] of cards.entries()){assert.match(card,new RegExp('data-labor-section="'+buildings[i]+'"'));assert.match(card,/<td>전대·대대 근무<\/td><td>\d명/);assert.match(card,/<td>동생명<\/td><td>\d명/);assert.ok(card.includes('value="'+dimension+'" selected'));}
  }
+});
+
+test('사역 계산 화면은 스마트당직 범위·대상·방배정 흐름과 행별 산식을 표시한다',()=>{
+ const elements={laborCalculationBasisV392:{hidden:true},laborCalculationBasisBodyV392:{innerHTML:''},laborCalculationBasisSummaryV392:{textContent:''}};
+ const context=vm.createContext({$:id=>elements[id]||null,escapeH:value=>String(value),laborFmtV259:value=>String(value)});
+ const source=readFileSync(new URL('../docs/assets/app.js',import.meta.url),'utf8'),start=source.indexOf('function laborBasisNumberV392('),end=source.indexOf('\nlet laborMainSoloV374',start);
+ assert.ok(start>=0&&end>start);vm.runInContext(source.slice(start,end),context);
+ context.laborCalculationBasisRenderV392({calculationBasis:{statusRanges:['1학년 D62:D91','2학년 G62:G91','3학년 J62:J91','4학년 M62:M91'],rule:'현재 인원은 정예관만 포함',selected:386,livingLinked:381,unlocated:5,matchRule:'기수·중대·이름 대조',roomRule:'생활실 배정명단으로 관·층·중대 확인'}});
+ assert.equal(elements.laborCalculationBasisV392.hidden,false);
+ assert.equal(elements.laborCalculationBasisSummaryV392.textContent,'1학년 D62:D91 · 2학년 G62:G91 · 3학년 J62:J91 · 4학년 M62:M91 · 대상 386명');
+ assert.match(elements.laborCalculationBasisBodyV392.innerHTML,/현재 인원은 정예관만 포함/);
+ assert.match(elements.laborCalculationBasisBodyV392.innerHTML,/<b>대상<\/b> 386명.*<b>생활실 연결<\/b> 381명.*<b>호실 미확인<\/b> 5명/);
+ assert.equal(context.laborAllocationLineV392({count:12,pairOut:1,pairIn:2,allocationCount:13,divisor:2,quota:6.5},2),'생활실 배정 12명 · 독방 짝 -1/+2 → 13명분 · 13÷2=6.5개');
+ assert.equal(context.laborAllocationLineV392({count:12,allocationCount:12,divisor:2,quota:6},2),'생활실 배정 12명 · 12÷2=6개');
 });

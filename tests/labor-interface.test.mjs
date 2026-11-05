@@ -77,7 +77,7 @@ test('사역 스마트 명단은 전각·기수·유일한 이름을 대조하�
  vm.runInContext(readFileSync(new URL('../scripts/smart-inactive.gs.txt',import.meta.url),'utf8').split('function smartAllStatusHintsV323_')[0]+'\n'+helpers,context);
  const result=context.laborSmartV259_({});
  for(const p of roster)assert.ok(result.byKey.has(context.laborPersonKeyV259_(p)));
- const absent=result.people.find(p=>p.name==='테스트병');assert.ok(context.laborAbsentAllV259_(absent.duty));assert.ok(context.laborAbsentNowV259_(absent.duty));
+ const absent=result.people.find(p=>p.name==='테스트병');assert.match(absent.duty,/위탁/);assert.equal(absent.locationStatus,'');assert.equal(context.laborAbsentAllV259_(absent),false);assert.equal(context.laborAbsentNowV259_(absent),true);
  assert.equal(people[2].duty,'');assert.equal(people[3].name,'테스트정A');
  context.smartAllStatusHintsV323_=()=>({error:true,warning:'상태 조회 실패'});assert.throws(()=>context.laborSmartV259_({}),/상태 조회 실패/);
 });
