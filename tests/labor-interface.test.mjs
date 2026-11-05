@@ -17,11 +17,12 @@ test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 �
  const buildings=['정예 본관','정예 동관','정예 서관'],rooms=buildings.map((building,i)=>({id:String(i),building}));
  const people=Array.from({length:13},(_,i)=>({cohort:'77',company:'1',name:'검증'+i,duty:''}));
  const roster=people.slice(0,12).map((p,i)=>({...p,roomId:String(i<5?0:i<8?1:2)}));
- const context=vm.createContext({laborAttachDutyV375_:()=>{},LABOR_V259:{DIVISORS:[1,2,3,4,5,6]},LABOR_GRADES_V261:['all'],laborGradeSetV261_:()=>[],spreadsheet_:()=>({}),laborSmartV259_:()=>({people,byKey:new Map(people.map(p=>[p.name,p])),totals:{},source:'test'}),laborLivingV262_:()=>({rooms,roster}),laborPersonKeyV259_:p=>p.name,laborGroupsV259_:()=>[...buildings.map((key,i)=>({key,label:key,count:[5,3,4][i]})),{key:'호실 미확인',label:'호실 미확인',count:1}],laborPairsV259_:()=>({singles:[],pairs:[],unpaired:[]}),laborGradeMatchV261_:()=>true,laborAbsentAllV259_:()=>false,laborAbsentNowV259_:()=>false,config_:()=>({canEdit:true}),iso_:()=>'',laborDistributionGroupKeyV268_:p=>p.room.building});
+ const context=vm.createContext({laborAttachDutyV375_:()=>{},LABOR_V259:{DIVISORS:[1,2,3,4,5,6]},LABOR_GRADES_V261:['all'],laborGradeSetV261_:value=>value==='all'?['1','2','3','4']:String(value).split(''),spreadsheet_:()=>({}),laborSmartV259_:()=>({people,byKey:new Map(people.map(p=>[p.name,p])),totals:{},source:'test'}),laborLivingV262_:()=>({rooms,roster}),laborPersonKeyV259_:p=>p.name,laborGroupsV259_:()=>[...buildings.map((key,i)=>({key,label:key,count:[5,3,4][i]})),{key:'호실 미확인',label:'호실 미확인',count:1}],laborPairsV259_:()=>({singles:[],pairs:[],unpaired:[]}),laborGradeMatchV261_:()=>true,laborAbsentAllV259_:()=>false,laborAbsentNowV259_:()=>false,config_:()=>({canEdit:true}),iso_:()=>'',laborDistributionGroupKeyV268_:p=>p.room.building});
  vm.runInContext(readFileSync(new URL('../scripts/labor-duty-groups.gs.txt',import.meta.url),'utf8').split('function laborAttachDutyV375_')[0],context);
  vm.runInContext(['laborBuildingDimensionsV361_','laborBuildingGroupKeyV361_','laborGroupsByBuildingV361_','laborBuildingRatiosV357_','laborRatioSummaryV357_','getLaborCalcV259','laborSnapshotV265_','laborSummaryV265_'].map(take).join('\n'),context);
  const result=context.getLaborCalcV259('whole','building',2,'all',{'정예 본관':2,'정예 동관':1,'정예 서관':1},{'정예 본관':'building','정예 동관':'building','정예 서관':'building'});
  const byKey=new Map(result.groups.map(g=>[g.key,g]));assert.deepEqual(buildings.map(b=>byKey.get(b).quota),[2.5,3,4]);assert.equal(byKey.get('호실 미확인').quota,.5);assert.equal(byKey.get('정예 본관').remainder,1);assert.equal(byKey.get('정예 동관').divisor,1);
+ assert.deepEqual(Array.from(result.calculationBasis.statusRanges),['1학년 D62:D91','2학년 G62:G91','3학년 J62:J91','4학년 M62:M91']);assert.equal(result.calculationBasis.roomBased,true);
  assert.deepEqual(Object.values(context.laborBuildingDimensionsV361_({},buildings,{})),['floor','floor','floor']);
  const snap=context.laborSnapshotV265_(result);assert.equal(snap.groups.reduce((s,g)=>s+g.quota,0),10);assert.equal(snap.buildingDivisors['정예 본관'],2);assert.match(context.laborSummaryV265_(snap),/정예 동관 1인 1개/);
  rooms.forEach(r=>r.floor='1층');rooms.push({id:'3',building:'정예 동관',floor:'2층'});roster[6].roomId='3';roster[0].company='2';people[0].company='2';context.laborDistributionGroupKeyV268_=(p,dim)=>dim==='company'?p.company+'중대':dim==='floor'?p.room.floor:p.room.building;
@@ -37,6 +38,8 @@ test('관별 기준은 각 관의 수량·잔여분을 계산하고 저장할 �
  assert.throws(()=>context.getLaborCalcV259('total','building',2,'all',{}),/관별 계산/);
  assert.throws(()=>context.getLaborCalcV259('whole','building',2,'all',{'정예 본관':0}),/지급 기준/);
  assert.equal(context.getLaborCalcV259('whole','building',2,'all').buildingDivisors,null);
+ context.laborSmartV259_=()=>({people,byKey:new Map(people.map(p=>[p.name,p])),totals:Object.fromEntries(Array.from({length:8},(_,i)=>[String(i+1),10])),source:'test'});
+ const total=context.getLaborCalcV259('total','company',2,'all');assert.deepEqual(Array.from(total.calculationBasis.statusRanges),['전학년 B8']);assert.equal(total.calculationBasis.range,'각 중대 B8');assert.equal(total.calculationBasis.roomBased,false);assert.equal(total.calculationBasis.livingLinked,null);assert.equal(total.calculationBasis.unlocated,null);
 });
 
 test('1인 1개인 관은 자동·수동 독방 짝과 미지정에서 제외한다',{skip:!existsSync(new URL('../Code.gs.txt',import.meta.url))},()=>{
