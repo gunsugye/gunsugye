@@ -1,12 +1,22 @@
 function laborMainCategoryV375_(p){
  // 실제 거주 관은 유지하고, 근무생도 명단의 조직 분류만 분배 행에 적용한다.
- return p.dutyCategoryKnownV375?p.dutyCategoryV375||'':'';
+ // 전대·대대/동생명 분류는 본관 배분에만 사용한다. 동·서관은 층/중대로 계산한다.
+ if(!String(p?.room?.building||'').replace(/\s/g,'').includes('본관'))return '';
+ return (p.roomDutyCategoryV393||p.dutyCategoryKnownV375)?p.roomDutyCategoryV393||p.dutyCategoryV375||'':'';
+}
+function laborRoomKeyV393_(p){
+ const room=p?.room||{};
+ if(room.id)return String(room.id);
+ if(!String(room.room||'').trim())return '';
+ return [room.building,room.floor,room.corridor,room.room].map(x=>String(x||'').trim()).join('|');
 }
 function laborAttachDutyV375_(assigned){
  const props=PropertiesService.getScriptProperties(),version=props.getProperty('DUTY_ROSTER_MANUAL_V369')==='yes'?'manual-v369':props.getProperty('DUTY_INDEX_VERSION_V367');if(!version)return;
  const records=dutyRosterRecordsV367_().filter(r=>r.data.version===version).map(dutyRosterPublicV367_),key=smartComparisonKeyV322_(assigned,records),index=new Map();
  for(const row of records){const org=dutyRoleInfoV367(row).organization,category=['전대','1대대','2대대'].includes(org)?'전대·대대 근무':['동기회','명예위','생발위'].includes(org)?'동생명':'';if(!index.has(key(row)))index.set(key(row),new Set());index.get(key(row)).add(category);}
  // 겸직은 명단에서 각각 유지하되 사역 인원은 한 번만 센다. 일반 중대 근무가
- // 함께 있더라도 특수 근무를 지우지 않으며, 두 특수 근무는 전대·대대를 우선한다.
- for(const p of assigned){const categories=index.get(key(p));delete p.dutyCategoryKnownV375;delete p.dutyCategoryV375;if(categories?.size){p.dutyCategoryKnownV375=true;p.dutyCategoryV375=['전대·대대 근무','동생명',''].find(category=>categories.has(category))||'';}}
+ // 함께 있더라도 특수 근무를 지우지 않는다. 동생명 겸직자는 방 전체 동생명 기준을 적용한다.
+ for(const p of assigned){const categories=index.get(key(p));delete p.dutyCategoryKnownV375;delete p.dutyCategoryV375;delete p.roomDutyCategoryV393;if(categories?.size){p.dutyCategoryKnownV375=true;p.dutyCategoryV375=['동생명','전대·대대 근무',''].find(category=>categories.has(category))||'';}}
+ const societyRooms=new Set(assigned.filter(p=>String(p?.room?.building||'').replace(/\s/g,'').includes('본관')&&p.dutyCategoryV375==='동생명').map(laborRoomKeyV393_).filter(Boolean));
+ for(const p of assigned){const roomKey=laborRoomKeyV393_(p);if(roomKey&&societyRooms.has(roomKey))p.roomDutyCategoryV393='동생명';}
 }

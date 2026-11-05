@@ -34,7 +34,7 @@ export function assetInspectionLayoutV384(model, at) {
  ['구분(건물)', '배치 중대', '점검 호실 수', '조치 필요 비품', '정상 호실 비율'].forEach((value, i) => put(6, 13 + i, value));
  const buildingRows = buildings.map((name, i) => {
   const row = 7 + i;
-  const groups = [...new Set(rooms.filter(entry => entry.room.building === name).map(entry => entry.room.group).filter(Boolean))];
+  const groups = [...new Set(rooms.filter(entry => entry.room.building === name).flatMap(entry => entry.allocation?.companies?.length ? entry.allocation.companies : [entry.room.group]).filter(Boolean))];
   put(row, 13, name);
   put(row, 14, groups.join(' · '));
   put(row, 15, formula('=COUNTIFS(' + building + ',$M' + row + ',' + known + ',">0")'));
