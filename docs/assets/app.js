@@ -4943,12 +4943,19 @@ function assetInspectionRequestKeyV388(){
  assetInspectionKeyV382=key;try{sessionStorage.setItem(assetInspectionStorageV388,key);}catch(_){}return key;
 }
 function assetInspectionStatusV382(result){const host=$('assetInspectionStatusV382');host.replaceChildren();const link=document.createElement('a');link.href=result.url;link.target='_blank';link.rel='noopener';link.className='btn btn-primary';link.textContent='새 점검표 열기 ↗';host.append(link,document.createTextNode(' · 점검 '+result.stats.checked+'호실 · 불량 '+result.stats.bad+'개 · 미점검 '+result.stats.unknown+'개'));}
+function assetInspectionCloseTabV389(tab){try{if(tab&&!tab.closed)tab.close();}catch(_){}}
+function assetInspectionPrepareTabV389(){
+ let tab;try{tab=window.open('about:blank','_blank');}catch(_){}if(!tab)return null;
+ try{tab.opener=null;}catch(_){assetInspectionCloseTabV389(tab);return null;}
+ try{tab.document.title='점검표 생성 중…';tab.document.body.textContent='점검표 생성 중… 완료되면 자동으로 열립니다.';}catch(_){}return tab;
+}
+function assetInspectionOpenTabV389(tab,url){try{if(tab&&!tab.closed){tab.location.replace(url);return true;}}catch(_){}assetInspectionCloseTabV389(tab);return false;}
 $('assetInspectionCreateV382').addEventListener('click',async()=>{
  if(assetInspectionBusyV382||assetSavingV244)return;if(!canEdit||v284Scoped){toast('관리자만 새 점검표를 만들 수 있습니다.');return;}
  if(assetDirtyV244.size){toast('작성 중인 비품 내용을 먼저 저장하세요.');return;}
- assetInspectionBusyV382=true;
- try{$('assetInspectionCreateV382').disabled=true;$('assetInspectionStatusV382').textContent='전체 생활실 기록으로 별도 스프레드시트를 만드는 중…';const result=await server('createAssetInspectionV382',assetInspectionRequestKeyV388());assetInspectionStatusV382(result);assetInspectionKeyV382='';try{sessionStorage.removeItem(assetInspectionStorageV388);}catch(_){}}
- catch(e){$('assetInspectionStatusV382').textContent='생성 실패: '+String(e?.message||e||'알 수 없는 오류')+' · 재시도하면 같은 생성 요청을 이어서 처리합니다.';}
+ assetInspectionBusyV382=true;let tab=null;
+ try{$('assetInspectionCreateV382').disabled=true;$('assetInspectionStatusV382').textContent='전체 생활실 기록으로 별도 스프레드시트를 만드는 중…';tab=assetInspectionPrepareTabV389();const result=await server('createAssetInspectionV382',assetInspectionRequestKeyV388());if(typeof result?.url!=='string'||!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/[A-Za-z0-9_-]+(?:[/?#]|$)/.test(result.url))throw Error('생성된 점검표 주소를 확인하지 못했습니다.');assetInspectionStatusV382(result);assetInspectionKeyV382='';try{sessionStorage.removeItem(assetInspectionStorageV388);}catch(_){}if(!assetInspectionOpenTabV389(tab,result.url))try{toast('새 점검표 열기 버튼을 눌러주세요.');}catch(_){}}
+ catch(e){assetInspectionCloseTabV389(tab);$('assetInspectionStatusV382').textContent='생성 실패: '+String(e?.message||e||'알 수 없는 오류')+' · 재시도하면 같은 생성 요청을 이어서 처리합니다.';}
  finally{assetInspectionBusyV382=false;$('assetInspectionCreateV382').disabled=false;}
 });
 
