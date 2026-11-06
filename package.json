@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "check": "node tests/run.mjs",
     "build": "node scripts/build.mjs",
     "test": "node tests/run.mjs",
     "package": "node scripts/package.mjs",
