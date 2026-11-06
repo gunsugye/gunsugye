@@ -28,3 +28,5 @@ html[data-personal-restoring] #login{display:none}
 #assetPlanV332 .asset-plan-band{padding:5px 10px}#assetPlanV332 .asset-plan-scroll{padding-bottom:8px}
 
 .personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}
+.personal-profile-tabs{display:flex;gap:8px;margin:0 0 14px}.personal-profile-tabs button[aria-selected="true"]{color:#fff;background:#245fa8;border-color:#245fa8}.personal-duty-table{border-collapse:collapse;width:100%;font-size:13px;table-layout:fixed}.personal-duty-table th,.personal-duty-table td{padding:10px 6px;text-align:left;border-bottom:1px solid #e2e9f2;overflow-wrap:anywhere}.personal-duty-table thead{background:#edf3fa}.personal-duty-table th:first-child{width:25%}#personalDutyCardsV400{gap:12px}
+#personalDutyCardsV400 form{display:grid;gap:8px;margin-top:14px}#personalDutyCardsV400 form label{display:grid;gap:6px}#personalDutyCardsV400 form button{background:#245fa8;color:white}

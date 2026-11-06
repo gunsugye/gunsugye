@@ -12,6 +12,8 @@ import { releaseDetails } from './release.mjs';
 import { updateHistoryJs } from './update-history.mjs';
 import { finalizeRelease } from './finalize-release.mjs';
 import { dutyPersonEditorJsV398 } from './duty-person-editor.mjs';
+import { personalDutyPortalV400,personalDutyCSSV400 } from './personal-duty.mjs';
+import {dutyRequestsJsV400,dutyRequestsHtmlV400,dutyRequestsNavSourceV400} from './duty-requests.mjs';
 import {developmentNavSource,developmentRequestsJs,developmentRequestsHtml,developmentRequestsCSS} from './development-requests.mjs';
 import {assetInspectionModelV382,assetInspectionHtmlV382,assetInspectionJsV382} from './asset-inspection.mjs';
 import {assetInspectionLayoutV384} from './asset-inspection-layout.mjs';
@@ -94,6 +96,7 @@ async function wxLoadAllInnerV314(){\n wxNavigationReadyV314=false;`)
 js=js.replace("navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴", "navEditToggleV220(false);navUpdateDirtyV220();window.LOGBOOK_NAVIGATION?.commit();toast('메뉴");
 js=dutyPersonEditorJsV398(js,read('scripts/duty-person-editor-client.js.txt'));
 js=updateHistoryJs(js,read('scripts/update-history-client.js.txt'));
+js=dutyRequestsJsV400(js,read('scripts/duty-requests-client.js.txt'));
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
@@ -103,6 +106,7 @@ js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV37
 js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
 const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
+html=dutyRequestsHtmlV400(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -145,7 +149,8 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
 let personalSource=read('scripts/personal-portal.js').replace('function fields(id,values){','function plainFields(id,values){').replace("if(result.uniform)fields('uniform',result.uniform.uniform);","if(result.uniform){uniformEditV350=result.uniform.uniformEdit||null;fields('uniform',result.uniform.uniform);}").replace('function clear(message=\'\'){',"function clear(message=''){uniformEditV350=null;uniformDirtyV350=false;").replaceAll('if(dirty&&','if((dirty||uniformDirtyV350)&&').replace('return;load().catch', 'return;uniformDirtyV350=false;uniformEditV350=null;load().catch').replace('})();',read('scripts/personal-uniform.js.txt')+'\n})();');
 personalSource=personalSource.replace('function render(data){','function render(data){personalInterfaceOrderV359(data.interfaceOrder);').replace('})();',read('scripts/personal-interface-portal.js.txt')+'\n})();');
-const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+personalSource,personalCss=read('scripts/personal-portal.css')+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}',personalHtml=read('scripts/personal-portal.html').replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','비품·피복 변경은 관리자 확인 후 반영').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
+personalSource=personalDutyPortalV400(personalSource,read('scripts/personal-duty-portal.js.txt')).replaceAll('dirty||uniformDirtyV350','dirty||uniformDirtyV350||personalDutyDirtyV400');
+const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+personalSource,personalCss=read('scripts/personal-portal.css')+personalDutyCSSV400+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}',personalHtml=read('scripts/personal-portal.html').replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','비품·피복 변경은 관리자 확인 후 반영').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
 write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
@@ -168,12 +173,15 @@ legacy=assetPlanServer(legacy);
 legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.txt');
 legacy=uniformRequestNavSource(legacy);
 legacy=personalInterfaceNavSource(legacy);
+legacy=dutyRequestsNavSourceV400(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDutyRequestsV400','resolveDutyRequestV400'].includes(name)){dutyRosterAdminV367_();return accessPolicyV284_();}");
 legacy=developmentNavSource(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDevelopmentRequestsV381','createDevelopmentRequestV381','updateDevelopmentRequestV381'].includes(name))return accessPolicyV284_();").replace('ret.allowedViews=policy.views.slice();',"ret.allowedViews=policy.views.concat('developmentRequests');");
 legacy+='\n'+read('scripts/development-requests-server.gs.txt');
 legacy+='\n'+assetInspectionModelV382.toString()+'\n'+assetInspectionLayoutV384.toString()+'\n'+read('scripts/asset-inspection-native-server.gs.txt');
 legacy=dutyItemsNavSourceV368(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
+legacy+='\n'+dutyItemRequirementsV368.toString()+'\n'+read('scripts/personal-duty-server.gs.txt');
+legacy+='\n'+read('scripts/duty-requests-server.gs.txt');
 legacy+='\n'+read('scripts/personal-interface-server.gs.txt');
 legacy+='\n'+read('scripts/duty-cadets-server.gs.txt');
 legacy+='\n'+dutyRoleInfoV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-roster-server.gs.txt');
@@ -224,6 +232,7 @@ return {
   if(action==='supplies'||action==='uniform')return personalDetailsV337_(action);
   if(action==='assets')return personalSaveAssetsV331_(input);
   if(action==='uniform-request')return personalUniformRequestV350_(input);
+  if(action==='duty-request')return personalDutyRequestV400_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();
  },
