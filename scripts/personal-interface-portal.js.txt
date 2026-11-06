@@ -1,5 +1,4 @@
 function personalInterfaceOrderV359(order){
  const defaults=['room','firearm','assets','uniform','supplies'],known=new Set(defaults),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
  for(const id of [...(Array.isArray(order)?order:defaults),...defaults]){if(!known.has(id)||seen.has(id))continue;for(const item of id==='room'||id==='firearm'?['room','firearm']:[id]){if(seen.has(item))continue;seen.add(item);const card=$(item)?.closest('section.card');if(card)grid.appendChild(card);}}
- const duty=$('personalDutyV400');if(duty&&duty.parentElement===grid)grid.appendChild(duty);
 }

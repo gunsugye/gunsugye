@@ -7,12 +7,6 @@ import { createHmac, createHash, randomUUID } from 'node:crypto';
 const gateway = readFileSync(new URL('../apps-script/Gateway.gs', import.meta.url), 'utf8');
 const legacy = readFileSync(new URL('../apps-script/Legacy.gs', import.meta.url), 'utf8');
 const secret = 'test-secret-with-more-than-thirty-two-characters';
-
-test('실제 Gateway는 관리의 두 구성을 별도로 저장하고 개인 조회에 같은 순서를 전달한다',()=>{
- const f=fixture(),initial=f.rpc(f.signed('owner@gmail.com','getPersonalInterfaceV359',[]));assert.equal(initial.ok,true,initial.error);assert.deepEqual(initial.result.dutyOrder,['saber','badge','block','door','triangle']);
- const regular=[...initial.result.order].reverse(),duty=[...initial.result.dutyOrder].reverse(),saved=f.rpc(f.signed('owner@gmail.com','savePersonalInterfaceV359',[{regular,duty},initial.result.version]));assert.equal(saved.ok,true,saved.error);assert.deepEqual(saved.result.order,regular);assert.deepEqual(saved.result.dutyOrder,duty);
- const reread=f.rpc(f.signed('owner@gmail.com','getPersonalInterfaceV359',[]));assert.deepEqual(reread.result.dutyOrder,duty);assert.deepEqual(reread.result.order,regular);
-});
 test('개인 조회 인증 주체는 관리자 API와 일반 세션 생성에 접근할 수 없다',()=>{
  const f=fixture();for(const method of ['getBootstrap','listFullEditorsV281','pagesSessionCreate','readCompressedV282','getDormInventoryRequestsV336','resolveDormInventoryRequestV336'])assert.equal(f.rpc(f.signed('personal@portal.invalid',method,[],{sub:'personal:a',sessionId:randomUUID()})).code,'FORBIDDEN');
  assert.equal(f.rpc(f.signed('owner@gmail.com','pagesPersonalGet',[],{sub:'google123',sessionId:randomUUID()})).code,'FORBIDDEN');

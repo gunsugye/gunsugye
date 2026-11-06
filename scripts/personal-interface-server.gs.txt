@@ -1,16 +1,16 @@
 const PERSONAL_INTERFACE_V359_=['room','assets','firearm','uniform','supplies'];
-const PERSONAL_DUTY_INTERFACE_V401_=['saber','badge','block','door','triangle'];
 function personalInterfaceReadV359_(){
  const raw=PropertiesService.getScriptProperties().getProperty('PERSONAL_INTERFACE_V359');
- if(!raw)return {order:PERSONAL_INTERFACE_V359_.slice(),dutyOrder:PERSONAL_DUTY_INTERFACE_V401_.slice(),version:''};
- const value=JSON.parse(raw);personalInterfaceValidateV359_(value.order);const dutyOrder=value.dutyOrder||PERSONAL_DUTY_INTERFACE_V401_.slice();personalInterfaceValidateV359_(dutyOrder,'duty');return {order:value.order,dutyOrder,version:String(value.version||'')};
+ if(!raw)return {order:PERSONAL_INTERFACE_V359_.slice(),version:''};
+ const value=JSON.parse(raw);personalInterfaceValidateV359_(value.order);return {order:value.order,version:String(value.version||'')};
 }
-function personalInterfaceValidateV359_(order,profile){const known=profile==='duty'?PERSONAL_DUTY_INTERFACE_V401_:PERSONAL_INTERFACE_V359_;if(!Array.isArray(order)||order.length!==known.length||new Set(order).size!==order.length||order.some(id=>!known.includes(id)))throw Error('표시 항목을 확인하세요.');}
+function personalInterfaceValidateV359_(order){
+ if(!Array.isArray(order)||order.length!==PERSONAL_INTERFACE_V359_.length||new Set(order).size!==order.length||order.some(id=>!PERSONAL_INTERFACE_V359_.includes(id)))throw Error('표시 항목을 확인하세요.');
+}
 function personalInterfaceAdminV359_(){if(!config_().canManageUsers)throw Error('관리자만 인터페이스를 관리할 수 있습니다.');}
 function getPersonalInterfaceV359(){personalInterfaceAdminV359_();return personalInterfaceReadV359_();}
 function savePersonalInterfaceV359(order,expectedVersion){
- personalInterfaceAdminV359_();const profiles=Array.isArray(order)?{regular:order}:order;
- if(!profiles||typeof profiles!=='object'||Object.keys(profiles).some(key=>!['regular','duty'].includes(key))||!profiles.regular)throw Error('표시 항목을 확인하세요.');
- personalInterfaceValidateV359_(profiles.regular);if(profiles.duty)personalInterfaceValidateV359_(profiles.duty,'duty');
- return lockAndRun_(()=>{const current=personalInterfaceReadV359_();if(String(expectedVersion||'')!==current.version)throw Error('다른 곳에서 순서가 변경되었습니다. 새로고침 후 다시 저장하세요.');const value={order:profiles.regular.slice(),dutyOrder:(profiles.duty||current.dutyOrder).slice(),version:Utilities.getUuid()};PropertiesService.getScriptProperties().setProperty('PERSONAL_INTERFACE_V359',JSON.stringify(value));return value;});
+ personalInterfaceAdminV359_();personalInterfaceValidateV359_(order);
+ return lockAndRun_(()=>{const current=personalInterfaceReadV359_();if(String(expectedVersion||'')!==current.version)throw Error('다른 곳에서 순서가 변경되었습니다. 새로고침 후 다시 저장하세요.');
+ const value={order:order.slice(),version:Utilities.getUuid()};PropertiesService.getScriptProperties().setProperty('PERSONAL_INTERFACE_V359',JSON.stringify(value));return value;});
 }
