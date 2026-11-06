@@ -43,3 +43,5 @@ GitHub Pages는 main에 push하면 기존 Actions가 검증·배포합니다. �
 개인 화면의 근무생도 조회는 서버에서 인증된 본인의 기수·중대·이름을 대조합니다. `scripts/personal-duty-server.gs.txt`와 `scripts/duty-requests-server.gs.txt`가 본인 물품 조회·요청·관리자 반영을 담당합니다. 새 개인 API는 `/personal/duty-request`이며 Worker와 Gateway 양쪽에 연결되어 있습니다.
 
 v4.01부터 개인 화면은 기본 정보를 항상 유지하고 근무생도 물품만 아래에 추가합니다. 구분 전환은 인터페이스 관리에만 있으며, 기본 구성과 추가 구성의 순서를 한 설정에서 각각 보관합니다. 현재 서버는 v69이며 수정 전 백업은 `.deploy/before-v401`에 있습니다. 개인 정적 파일은 `scripts/build-personal.mjs`의 `buildPersonal()`로 생성해 미리보기와 실제 화면의 차이를 줄입니다.
+
+v4.02는 근무생도 물품을 기존 기본 카드 목록 안의 카드 하나로 통합합니다. 수량·예도 상태·품목별 세부사항을 한 표에서 입력하고 한 버튼으로 요청합니다. 근무생도물품 시트의 기존 6개 열을 보존하며, 관리자가 요청을 반영할 때 7번째 ‘세부사항’ 열을 사용합니다. 수량만 처리하는 기존 API와 호환됩니다. 수정 전 서버 백업은 `.deploy/before-v403`에 보관합니다.

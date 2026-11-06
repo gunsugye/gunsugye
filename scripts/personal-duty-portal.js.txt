@@ -1,33 +1,43 @@
 let personalDutyDirtyV400=false;
 const personalDutyDraftsV400=new Map();
-function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;$('personalRegularV400').hidden=false;}
+function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;}
 function personalDutyRenderV400(data){
  const duty=data.duty;if(!duty||duty.isDuty!==true||!Array.isArray(duty.assignments)||!duty.assignments.length){personalDutyResetV400();return;}
- personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalRegularV400').hidden=false;$('personalDutyV400').hidden=false;const root=$('personalDutyCardsV400');root.replaceChildren();
- if(duty.requests?.length){const history=element('details','','card wide');history.append(element('summary','근무 물품 수정 요청 '+duty.requests.length+'건'));for(const row of duty.requests)history.append(element('p',row.createdAt.slice(0,10)+' · '+row.status+(row.note?' · '+row.note:''),'hint'));root.append(history);}
- const labels={saber:'예도',badge:'흉장',block:'블럭',door:'방문 앞 명패',triangle:'삼각명패'},order=[...new Set([...(Array.isArray(data.dutyOrder)?data.dutyOrder:[]),...Object.keys(labels)])].filter(kind=>Object.hasOwn(labels,kind));
- for(const kind of order){
-  const assignments=duty.assignments.filter(assignment=>kind==='saber'?!!assignment.saber:(assignment.items||[]).some(item=>item.item===kind&&item.required>0));if(!assignments.length)continue;
-  const card=element('section','','card wide');card.dataset.dutyKind=kind;card.append(element('h2',labels[kind]));
-  for(const original of assignments){
-   const assignment={...original,saber:kind==='saber'?original.saber:null,items:(original.items||[]).filter(item=>item.item===kind&&item.required>0)};
-   card.append(element('p',[assignment.organization,assignment.duty].filter(Boolean).join(' · '),'hint'));
-   const table=element('table','','personal-duty-table'),head=document.createElement('thead'),header=document.createElement('tr');for(const title of ['품목','기준','등록 / 상태','부족 / 세부사항'])header.append(element('th',title));head.append(header);table.append(head);const body=document.createElement('tbody');
-   if(assignment.saber){const row=document.createElement('tr'),saber=assignment.saber;row.append(element('th','예도'),element('td','1개'),element('td',saber.status||'미등록'),element('td',saber.conflict?'배정 중복 · 군수 담당자 확인':[saber.role,saber.detail].filter(Boolean).join(' · ')||'—'));body.append(row);}
-   for(const item of assignment.items){const row=document.createElement('tr');row.append(element('th',item.label),element('td',item.required+'개'),element('td',item.quantity===null?'미등록':item.quantity+'개'),element('td',item.shortage===null?'확인 필요':item.shortage+'개'));body.append(row);}
-   table.append(body);card.append(table);personalDutyRequestFormV400(card,assignment,duty.snapshot);
-  }
-  root.append(card);
- }
+ personalDutyDirtyV400=false;personalDutyDraftsV400.clear();const card=$('personalDutyV400'),root=$('personalDutyCardsV400');card.hidden=false;root.replaceChildren();
+ const kinds=['saber','badge','block','door','triangle'],order=[...new Set([...(Array.isArray(data.dutyOrder)?data.dutyOrder:[]),...kinds])].filter(kind=>kinds.includes(kind));
+ personalDutyRequestFormV400(root,duty,order);
+ if(duty.requests?.length){const history=element('details');history.append(element('summary','수정 요청 내역 '+duty.requests.length+'건'));for(const row of duty.requests)history.append(element('p',row.createdAt.slice(0,10)+' · '+row.status+(row.note?' · '+row.note:''),'hint'));root.append(history);}
 }
-
-function personalDutyRequestFormV400(card,assignment,snapshot){
- const form=element('form'),editors=[];
- for(const item of assignment.items||[]){if(!(item.required>0))continue;const label=element('label',item.label+' 등록 수량'),input=element('input');input.type='number';input.min='0';input.max='1000';input.step='1';input.value=item.quantity??'';input.placeholder='미등록';input.setAttribute('aria-label',item.label+' 등록 수량');label.append(input);form.append(label);editors.push({key:assignment.id+'|'+item.item,before:{quantity:item.quantity},read:()=>({quantity:input.value===''?null:Number(input.value)})});}
- if(assignment.saber&&!assignment.saber.conflict){const saber=assignment.saber,label=element('label','예도 상태'),select=element('select'),detail=element('textarea');for(const status of ['','정상','수리 필요(보고)','수리 필요(미보고)','교체 필요']){const option=element('option',status||'미등록');option.value=status;select.append(option);}select.value=saber.status||'';detail.maxLength=1500;detail.value=saber.detail||'';detail.setAttribute('aria-label','예도 세부사항');label.append(select,detail);form.append(label);editors.push({key:'saber|'+saber.key,before:{status:saber.status||'',detail:saber.detail||''},read:()=>({status:select.value,detail:detail.value.trim()})});}
- if(!editors.length)return;const message=element('p','변경 후 요청하면 군수 담당자가 확인하여 반영합니다.','hint'),button=element('button','근무 물품 수정 요청');button.type='submit';button.disabled=true;form.append(message,button);card.append(form);
+function personalDutyRequestFormV400(root,duty,order){
+ const form=element('form'),table=element('table','','personal-duty-table'),head=element('thead'),heading=element('tr'),body=element('tbody'),editors=[],seen=new Set();
+ for(const label of ['근무 · 품목','기준','보유 수량 / 상태','세부사항'])heading.append(element('th',label));head.append(heading);table.append(head,body);form.append(table);
+ for(const kind of order)for(const assignment of duty.assignments){
+  if(kind==='saber'){
+   const saber=assignment.saber;if(!saber||seen.has('saber|'+saber.key))continue;seen.add('saber|'+saber.key);
+   const row=element('tr'),label=element('th','예도'),status=element('td'),detailCell=element('td'),select=element('select'),detail=element('textarea');row.dataset.dutyKind='saber';label.append(element('small',assignment.duty,'hint'));
+   for(const value of ['','정상','수리 필요(보고)','수리 필요(미보고)','교체 필요']){const option=element('option',value||'미등록');option.value=value;select.append(option);}select.value=saber.status||'';select.setAttribute('aria-label',assignment.duty+' 예도 상태');detail.maxLength=1500;detail.value=saber.detail||'';detail.setAttribute('aria-label',assignment.duty+' 예도 세부사항');
+   if(saber.conflict){select.disabled=true;detail.disabled=true;detailCell.append(element('p','배정 중복 · 군수 담당자 확인','hint'));}else editors.push({key:'saber|'+saber.key,before:{status:saber.status||'',detail:saber.detail||''},read:()=>({status:select.value,detail:detail.value.trim()})});
+   status.append(select);detailCell.append(detail);row.append(label,element('td','1개'),status,detailCell);body.append(row);continue;
+  }
+  const item=(assignment.items||[]).find(item=>item.item===kind&&item.required>0);if(!item)continue;const key=assignment.id+'|'+item.item;if(seen.has(key))continue;seen.add(key);
+  const row=element('tr'),label=element('th',item.label),cell=element('td'),input=element('input'),note=element('td',item.quantity===null?'미등록':'부족 '+Math.max(0,item.required-item.quantity)+'개');row.dataset.dutyKind=kind;label.append(element('small',assignment.duty,'hint'));
+  const quantity=personalDutyQuantityV403(item,assignment.duty+' '+item.label,()=>form.oninput?.()),details=element('textarea');details.maxLength=1500;details.value=item.detail||'';details.dataset.dutyQuantityDetail='true';details.setAttribute('aria-label',assignment.duty+' '+item.label+' 세부사항');details.placeholder='세부사항';note.replaceChildren(details);cell.append(quantity.root);row.append(label,element('td',item.required+'개'),cell,note);body.append(row);editors.push({key,before:{quantity:item.quantity,detail:item.detail||''},read:()=>({quantity:quantity.read(),detail:details.value.trim()})});
+ }
+ const message=element('p','수량·상태를 입력한 뒤 한 번에 수정 요청하세요. 관리자 확인 후 반영됩니다.','hint'),button=element('button','근무생도 물품 수정 요청');button.type='submit';button.disabled=true;form.append(message,button);root.append(form);
  const changes=()=>editors.map(editor=>({key:editor.key,value:editor.read(),before:editor.before})).filter(change=>JSON.stringify(change.value)!==JSON.stringify(change.before));
- form.oninput=()=>{personalDutyDraftsV400.set(form,changes().length>0);personalDutyDirtyV400=[...personalDutyDraftsV400.values()].some(Boolean);button.disabled=!changes().length;};
- form.onsubmit=async event=>{event.preventDefault();if(busy||!token||!changes().length)return;if(changes().some(change=>Object.hasOwn(change.value,'quantity')&&change.value.quantity===null)){message.textContent='변경한 수량을 0~1000 사이 정수로 입력하세요.';return;}busy=true;form.inert=true;$('refresh').disabled=true;const current=ticket;message.textContent='요청 중…';try{await request('duty-request',{snapshot,changes:changes().map(({key,value})=>({key,value}))});if(current!==ticket||!token)return;personalDutyDraftsV400.set(form,false);personalDutyDirtyV400=[...personalDutyDraftsV400.values()].some(Boolean);button.disabled=true;message.textContent='수정 요청 접수 · 관리자 확인 대기';for(const editor of editors)editor.before=editor.read();}catch(error){if(current===ticket)message.textContent=error.message;}finally{busy=false;form.inert=false;if(current===ticket)$('refresh').disabled=false;}};
+ form.oninput=()=>{personalDutyDirtyV400=changes().length>0;personalDutyDraftsV400.set(form,personalDutyDirtyV400);button.disabled=!personalDutyDirtyV400;};
+ form.onsubmit=async event=>{event.preventDefault();if(busy||!token||!changes().length)return;if(changes().some(change=>Object.hasOwn(change.value,'quantity')&&(!Number.isInteger(change.value.quantity)||change.value.quantity<0||change.value.quantity>1000))){message.textContent='변경한 수량은 0~1000 사이 정수로 입력하세요.';return;}
+  busy=true;form.inert=true;$('refresh').disabled=true;const current=ticket;message.textContent='요청 중…';try{await request('duty-request',{snapshot:duty.snapshot,changes:changes().map(({key,value})=>({key,value}))});if(current!==ticket||!token)return;personalDutyDirtyV400=false;personalDutyDraftsV400.clear();button.disabled=true;message.textContent='수정 요청 접수 · 관리자 확인 대기';for(const editor of editors)editor.before=editor.read();}catch(error){if(current===ticket)message.textContent=error.message;}finally{busy=false;form.inert=false;if(current===ticket)$('refresh').disabled=false;}
+ };
 }
 window.addEventListener('beforeunload',event=>{if(personalDutyDirtyV400){event.preventDefault();event.returnValue='';}});
+
+function personalDutyQuantityV403(item,label,onChange){
+ const root=element('fieldset','','duty-quantity-options'),standard=[];root.setAttribute('aria-label',label+' 수량 선택');
+ const customLabel=element('label'),custom=element('input'),number=element('input');custom.type='checkbox';custom.dataset.quantityValue='direct';customLabel.append(custom,element('span','직접 입력'));number.type='number';number.min='0';number.max='1000';number.step='1';number.setAttribute('aria-label',label+' 직접 입력');number.placeholder='수량';
+ for(let value=0;value<=Math.max(1,item.required);value++){const option=element('label'),check=element('input');check.type='checkbox';check.dataset.quantityValue=String(value);check.checked=item.quantity===value;option.append(check,element('span',value+'개'));root.append(option);standard.push({check,value});}
+ custom.checked=item.quantity!==null&&!standard.some(option=>option.value===item.quantity);number.value=item.quantity??'';number.hidden=!custom.checked;root.append(customLabel,number);
+ for(const {check}of standard)check.onchange=()=>{for(const option of standard)if(option.check!==check)option.check.checked=false;custom.checked=false;number.hidden=true;onChange();};
+ custom.onchange=()=>{for(const {check}of standard)check.checked=false;number.hidden=!custom.checked;if(custom.checked)number.focus?.();onChange();};
+ return {root,read:()=>custom.checked?(number.value===''?null:Number(number.value)):(standard.find(option=>option.check.checked)?.value??null)};
+}
