@@ -23,7 +23,7 @@
    const response=await fetch('./release.json?t='+Date.now(),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
    if(!response.ok)return;const r=await response.json();
    if(!r||!/^[a-f0-9]{16}$/.test(r.id)||typeof r.version!=='string'||typeof r.title!=='string'||!Array.isArray(r.notes)||r.notes.length>12||r.notes.some(x=>typeof x!=='string'||x.length>500))return;
-   const changed=latest?.id!==r.id;latest=r;render(force);
+   const changed=latest?.id!==r.id;latest=r;render();
    if(changed)for(const listener of subscribers){try{listener(latest);}catch(_){}}
   }catch(_){/* 업무 화면을 방해하지 않고 다음 주기에 재확인합니다. */}
   finally{busy=false;}

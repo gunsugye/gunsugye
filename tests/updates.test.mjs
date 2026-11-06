@@ -36,6 +36,17 @@ test('배포 확인은 10초 간격이며 탭 복귀는 이전 확인 직후에�
  f.setRelease({id:'cccccccccccccccc',version:'3.98',title:'다음',notes:[]});f.events.get('online')();await tick();assert.equal(notified,1);unsubscribe();
 });
 
+test('확인한 업데이트는 탭 복귀·재연결·메뉴 재조회에도 닫힌 상태를 유지하고 새 버전만 다시 안내한다',async()=>{
+ const f=noticeFixture();await tick();f.events.get('pagesUpdateApply:click')();
+ assert.equal(f.element('pagesUpdateNotice').hidden,true);assert.equal(f.stored.get('logbook.release.seen.v1'),'aaaaaaaaaaaaaaaa');
+ for(const name of ['focus','visibilitychange','online']){f.events.get(name)();await tick();assert.equal(f.element('pagesUpdateNotice').hidden,true,name);}
+ await f.context.window.LOGBOOK_UPDATES.refresh();assert.equal(f.element('pagesUpdateNotice').hidden,true);
+ f.advance(10000);f.events.get('interval')();await tick();assert.equal(f.element('pagesUpdateNotice').hidden,true);
+ f.events.get('pagesUpdateLauncher:click')();await tick();assert.equal(f.element('pagesUpdateNotice').hidden,false);
+ f.events.get('pagesUpdateApply:click')();assert.equal(f.element('pagesUpdateNotice').hidden,true);
+ f.setRelease({id:'bbbbbbbbbbbbbbbb',version:'3.99',title:'다음 버전',notes:[]});f.events.get('focus')();await tick();assert.equal(f.element('pagesUpdateNotice').hidden,false);
+});
+
 test('업데이트 목록은 서버가 대기 중이어도 배포 기록부터 표시하고 과거 기록을 합친다',async()=>{
  const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,{textContent:'',innerHTML:'',classList:{toggle(){}}});return elements.get(id);};
  let resolveServer,resolveLatest,listener;const latest={version:'3.97',title:'새 화면 배포',notes:['새 변경']};
