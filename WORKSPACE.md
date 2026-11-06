@@ -41,3 +41,5 @@ GitHub Pages는 main에 push하면 기존 Actions가 검증·배포합니다. �
 이 PC에서 Google Apps Script와 Cloudflare 인증을 완료했습니다. 기존 API 서버를 `.deploy/apps-script-current`에 내려받았고 수정 전 코드는 `.deploy/before-v400`에 보관합니다. 같은 Apps Script 웹 앱 배포 ID를 v68로 갱신했습니다. 인증 파일·서버 원본·백업은 GitHub에 올리지 않습니다. 원본 Code.gs.txt/Index.html.txt를 복원하기 전에는 전체 build/deploy 명령으로 재생성하지 말고, 현재 서버를 다시 내려받아 충돌을 확인한 뒤 필요한 함수만 갱신합니다.
 
 개인 화면의 근무생도 조회는 서버에서 인증된 본인의 기수·중대·이름을 대조합니다. `scripts/personal-duty-server.gs.txt`와 `scripts/duty-requests-server.gs.txt`가 본인 물품 조회·요청·관리자 반영을 담당합니다. 새 개인 API는 `/personal/duty-request`이며 Worker와 Gateway 양쪽에 연결되어 있습니다.
+
+v4.01부터 개인 화면은 기본 정보를 항상 유지하고 근무생도 물품만 아래에 추가합니다. 구분 전환은 인터페이스 관리에만 있으며, 기본 구성과 추가 구성의 순서를 한 설정에서 각각 보관합니다. 현재 서버는 v69이며 수정 전 백업은 `.deploy/before-v401`에 있습니다. 개인 정적 파일은 `scripts/build-personal.mjs`의 `buildPersonal()`로 생성해 미리보기와 실제 화면의 차이를 줄입니다.

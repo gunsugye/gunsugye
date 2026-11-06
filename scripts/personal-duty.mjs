@@ -1,8 +1,8 @@
 export function personalDutyHtmlV400(html){
  const start='<div class="grid">',end='</div><p id="updated"';
  if(!html.includes(start)||!html.includes(end))throw Error('개인 조회 화면 위치를 확인하세요.');
- return html.replace(start,'<div class="personal-profile-tabs" role="tablist" aria-label="군수 정보 구분"><button type="button" id="personalRegularTabV400" role="tab" aria-controls="personalRegularV400" aria-selected="true">평생도</button><button type="button" id="personalDutyTabV400" role="tab" aria-controls="personalDutyV400" aria-selected="false" hidden>근무생도</button></div><div class="grid" id="personalRegularV400" role="tabpanel" aria-labelledby="personalRegularTabV400">')
- .replace(end,'</div><section id="personalDutyV400" role="tabpanel" aria-labelledby="personalDutyTabV400" hidden><p class="hint">본인에게 등록된 근무별 예도·흉장·블럭·명패입니다. 변경이 필요하면 아래에서 수정 요청하세요.</p><div class="grid" id="personalDutyCardsV400"></div></section><p id="updated"');
+ return html.replace(start,'<div class="grid" id="personalRegularV400">')
+ .replace(end,'</div><section id="personalDutyV400" hidden><p class="hint">본인에게 등록된 근무별 예도·흉장·블럭·명패입니다. 변경이 필요하면 아래에서 수정 요청하세요.</p><div class="grid" id="personalDutyCardsV400"></div></section><p id="updated"');
 }
 export function personalDutyPortalV400(js,client){
  const markers=['function render(data){',"function clear(message=''){",'})();'];for(const marker of markers)if(!js.includes(marker))throw Error('개인 조회 코드 위치를 확인하세요: '+marker);

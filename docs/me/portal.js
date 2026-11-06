@@ -78,33 +78,29 @@ function personalInterfaceOrderV359(order){
  for(const id of [...(Array.isArray(order)?order:defaults),...defaults]){if(!known.has(id)||seen.has(id))continue;for(const item of id==='room'||id==='firearm'?['room','firearm']:[id]){if(seen.has(item))continue;seen.add(item);const card=$(item)?.closest('section.card');if(card)grid.appendChild(card);}}
 }
 
-let personalDutyProfileV400='regular';
 let personalDutyDirtyV400=false;
 const personalDutyDraftsV400=new Map();
-function personalDutySwitchV400(profile){
- const duty=profile==='duty'&&!$('personalDutyTabV400').hidden;personalDutyProfileV400=duty?'duty':'regular';
- $('personalRegularV400').hidden=duty;$('personalDutyV400').hidden=!duty;
- $('personalRegularTabV400').setAttribute('aria-selected',String(!duty));$('personalDutyTabV400').setAttribute('aria-selected',String(duty));
-}
-function personalDutyResetV400(){
- personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyTabV400').hidden=true;$('personalDutyCardsV400').replaceChildren();personalDutySwitchV400('regular');
-}
+function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;$('personalRegularV400').hidden=false;}
 function personalDutyRenderV400(data){
  const duty=data.duty;if(!duty||duty.isDuty!==true||!Array.isArray(duty.assignments)||!duty.assignments.length){personalDutyResetV400();return;}
- personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyTabV400').hidden=false;const root=$('personalDutyCardsV400');root.replaceChildren();
- if(duty.requests?.length){const history=element('details','','card wide');history.append(element('summary','수정 요청 내역 '+duty.requests.length+'건'));for(const row of duty.requests)history.append(element('p',row.createdAt.slice(0,10)+' · '+row.status+(row.note?' · '+row.note:''),'hint'));root.append(history);}
- for(const assignment of duty.assignments){
-  const card=element('section','','card wide');card.append(element('h2',assignment.duty),element('p',assignment.organization,'hint'));
-  const table=element('table','','personal-duty-table'),head=document.createElement('thead'),header=document.createElement('tr');
-  for(const title of ['품목','기준','등록 / 상태','부족 / 세부사항'])header.append(element('th',title));head.append(header);table.append(head);const body=document.createElement('tbody');
-  if(assignment.saber){const row=document.createElement('tr'),saber=assignment.saber;row.append(element('th','예도'),element('td','1개'),element('td',saber.status||'미등록'),element('td',saber.conflict?'배정 중복 · 군수 담당자 확인':[saber.role,saber.detail].filter(Boolean).join(' · ')||'—'));body.append(row);}
-  for(const item of assignment.items||[]){if(!(item.required>0))continue;const row=document.createElement('tr');row.append(element('th',item.label),element('td',item.required+'개'),element('td',item.quantity===null?'미등록':item.quantity+'개'),element('td',item.shortage===null?'확인 필요':item.shortage+'개'));body.append(row);}
-  table.append(body);card.append(table);personalDutyRequestFormV400(card,assignment,duty.snapshot);root.append(card);
+ personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalRegularV400').hidden=false;$('personalDutyV400').hidden=false;const root=$('personalDutyCardsV400');root.replaceChildren();
+ if(duty.requests?.length){const history=element('details','','card wide');history.append(element('summary','근무 물품 수정 요청 '+duty.requests.length+'건'));for(const row of duty.requests)history.append(element('p',row.createdAt.slice(0,10)+' · '+row.status+(row.note?' · '+row.note:''),'hint'));root.append(history);}
+ const labels={saber:'예도',badge:'흉장',block:'블럭',door:'방문 앞 명패',triangle:'삼각명패'},order=[...new Set([...(Array.isArray(data.dutyOrder)?data.dutyOrder:[]),...Object.keys(labels)])].filter(kind=>Object.hasOwn(labels,kind));
+ for(const kind of order){
+  const assignments=duty.assignments.filter(assignment=>kind==='saber'?!!assignment.saber:(assignment.items||[]).some(item=>item.item===kind&&item.required>0));if(!assignments.length)continue;
+  const card=element('section','','card wide');card.dataset.dutyKind=kind;card.append(element('h2',labels[kind]));
+  for(const original of assignments){
+   const assignment={...original,saber:kind==='saber'?original.saber:null,items:(original.items||[]).filter(item=>item.item===kind&&item.required>0)};
+   card.append(element('p',[assignment.organization,assignment.duty].filter(Boolean).join(' · '),'hint'));
+   const table=element('table','','personal-duty-table'),head=document.createElement('thead'),header=document.createElement('tr');for(const title of ['품목','기준','등록 / 상태','부족 / 세부사항'])header.append(element('th',title));head.append(header);table.append(head);const body=document.createElement('tbody');
+   if(assignment.saber){const row=document.createElement('tr'),saber=assignment.saber;row.append(element('th','예도'),element('td','1개'),element('td',saber.status||'미등록'),element('td',saber.conflict?'배정 중복 · 군수 담당자 확인':[saber.role,saber.detail].filter(Boolean).join(' · ')||'—'));body.append(row);}
+   for(const item of assignment.items){const row=document.createElement('tr');row.append(element('th',item.label),element('td',item.required+'개'),element('td',item.quantity===null?'미등록':item.quantity+'개'),element('td',item.shortage===null?'확인 필요':item.shortage+'개'));body.append(row);}
+   table.append(body);card.append(table);personalDutyRequestFormV400(card,assignment,duty.snapshot);
+  }
+  root.append(card);
  }
- personalDutySwitchV400(personalDutyProfileV400);
 }
-$('personalRegularTabV400').addEventListener('click',()=>personalDutySwitchV400('regular'));
-$('personalDutyTabV400').addEventListener('click',()=>personalDutySwitchV400('duty'));
+
 function personalDutyRequestFormV400(card,assignment,snapshot){
  const form=element('form'),editors=[];
  for(const item of assignment.items||[]){if(!(item.required>0))continue;const label=element('label',item.label+' 등록 수량'),input=element('input');input.type='number';input.min='0';input.max='1000';input.step='1';input.value=item.quantity??'';input.placeholder='미등록';input.setAttribute('aria-label',item.label+' 등록 수량');label.append(input);form.append(label);editors.push({key:assignment.id+'|'+item.item,before:{quantity:item.quantity},read:()=>({quantity:input.value===''?null:Number(input.value)})});}

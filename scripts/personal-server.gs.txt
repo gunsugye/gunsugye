@@ -30,7 +30,7 @@ function personalPersonV331_(){
  if(matches.length!==1||personalFingerprintV330_(matches[0])!==session.fingerprint){const e=Error('명단이 변경되었습니다. 다시 인증하세요.');e.pagesCode='SESSION_EXPIRED';throw e;}
  return {person:matches[0],ss};
 }
-function personalPreviewV331_(person){return {interfaceOrder:personalInterfaceReadV359_().order,person:{name:person.name,cohort:person.cohort,company:person.company,cadetNumber:person.cadetNumber},firearm:{number:person.firearmNumber?'••••'+String(person.firearmNumber).slice(-2):'',status:person.firearmStatus||''},room:null,assets:null,supplies:[],uniform:null,warnings:[],updatedAt:iso_(),loading:true};}
+function personalPreviewV331_(person){return {interfaceOrder:personalInterfaceReadV359_().order,dutyOrder:personalInterfaceReadV359_().dutyOrder,person:{name:person.name,cohort:person.cohort,company:person.company,cadetNumber:person.cadetNumber},firearm:{number:person.firearmNumber?'••••'+String(person.firearmNumber).slice(-2):'',status:person.firearmStatus||''},room:null,assets:null,supplies:[],uniform:null,warnings:[],updatedAt:iso_(),loading:true};}
 function personalRoomV331_(ss,person){
  const key=p=>smartPersonIdentityV322_(p).join('|'),identity=key(person);
  if(rosterRows_(rosterRequired_(ss)).filter(p=>key(p)===identity).length!==1)throw Error('동명 명단을 관리자에게 확인하세요.');

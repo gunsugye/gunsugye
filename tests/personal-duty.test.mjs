@@ -32,16 +32,16 @@ test('예도 상태 요청과 확인 완료는 원본을 유지하며 수정 반
  const f=fixture(),duty=f.c.personalDutyV400_(f.person,f.ss),changes=[{key:'saber|전대|대장생도',value:{status:'교체 필요',detail:'검증 내용'}}];f.c.personalDutyRequestV400_({snapshot:duty.snapshot,changes});let request=f.c.getDutyRequestsV400().requests[0];f.c.resolveDutyRequestV400(request.id,'confirm',[],'확인만','대기');assert.equal(f.saber.rows[1][6],'정상');
  f.c.personalDutyRequestV400_({snapshot:duty.snapshot,changes});request=f.c.getDutyRequestsV400().requests[0];f.c.resolveDutyRequestV400(request.id,'apply',changes,'반영','대기');assert.equal(f.saber.rows[1][6],'교체 필요');assert.equal(f.saber.rows[1][7],'검증 내용');assert.equal(f.saber.rows[1][5],'serial');
 });
-test('평생도 탭이 기본이고 근무생도 탭은 인증된 배정 정보가 있을 때만 노출하며 로그아웃 시 초기화한다',()=>{
- const source=read('scripts/personal-duty-portal.js.txt');assert.match(source,/duty\.isDuty!==true/);assert.match(source,/personalDutyDraftsV400\.clear/);assert.match(source,/request\('duty-request'/);assert.match(read('docs/me/portal.js'),/personalDutyResetV400\(\);/);assert.match(read('docs/me/index.html'),/id="personalDutyTabV400"[^>]*hidden/);
+test('개인 화면에 구분 탭을 만들지 않고 근무생도 추가 칸만 조건부로 노출한다',()=>{
+ const source=read('scripts/personal-duty-portal.js.txt');assert.match(source,/duty\.isDuty!==true/);assert.match(source,/personalDutyDraftsV400\.clear/);assert.match(source,/request\('duty-request'/);assert.match(read('docs/me/portal.js'),/personalDutyResetV400\(\);/);assert.doesNotMatch(read('docs/me/index.html'),/personalDutyTabV400|personalRegularTabV400/);
 });
 
-test('개인 화면은 본인 물품만 요청하고 로그아웃 시 근무생도 탭·임시 입력을 비운다',async()=>{
- const nodes=new Map(),create=(tag='div')=>({tagName:tag.toUpperCase(),textContent:'',children:[],hidden:false,value:'',events:{},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;},setAttribute(key,value){this[key]=value;},addEventListener(name,fn){this.events[name]=fn;}}),get=id=>{if(!nodes.has(id))nodes.set(id,create());return nodes.get(id);};
+test('개인 화면은 기본 정보와 본인 물품을 함께 보여주고 종료 시 추가 칸·임시 입력을 비운다',async()=>{
+ const nodes=new Map(),create=(tag='div')=>({tagName:tag.toUpperCase(),dataset:{},textContent:'',children:[],hidden:false,value:'',events:{},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;},setAttribute(key,value){this[key]=value;},addEventListener(name,fn){this.events[name]=fn;}}),get=id=>{if(!nodes.has(id))nodes.set(id,create());return nodes.get(id);};
  const calls=[],c=vm.createContext({$:get,element:(tag,text='')=>Object.assign(create(tag),{textContent:text}),document:{createElement:create},window:{addEventListener(){}},busy:false,token:'authenticated',ticket:1,request:async(path,body)=>{calls.push({path,body});return {requested:true};}});
- vm.runInContext(read('scripts/personal-duty-portal.js.txt'),c);c.personalDutyRenderV400({duty:null});assert.equal(get('personalDutyTabV400').hidden,true);
+ vm.runInContext(read('scripts/personal-duty-portal.js.txt'),c);c.personalDutyRenderV400({duty:null});assert.equal(get('personalDutyV400').hidden,true);assert.equal(get('personalRegularV400').hidden,false);
  c.personalDutyRenderV400({duty:{isDuty:true,snapshot:'signed-record-snapshot',assignments:[{id:'own-duty',duty:'보좌관',organization:'중대',items:[{item:'block',label:'블럭',required:2,quantity:1,shortage:1},{item:'badge',label:'흉장',required:0,quantity:0,shortage:0}]}]}});
- assert.equal(get('personalDutyTabV400').hidden,false);const card=get('personalDutyCardsV400').children[0],form=card.children.find(child=>child.tagName==='FORM'),labels=form.children.filter(child=>child.tagName==='LABEL');assert.equal(labels.length,1);
+ assert.equal(get('personalDutyV400').hidden,false);assert.equal(get('personalRegularV400').hidden,false);const card=get('personalDutyCardsV400').children[0],form=card.children.find(child=>child.tagName==='FORM'),labels=form.children.filter(child=>child.tagName==='LABEL');assert.equal(labels.length,1);
  labels[0].children[0].value='2';form.oninput();await form.onsubmit({preventDefault(){}});assert.equal(calls[0].path,'duty-request');assert.equal(calls[0].body.snapshot,'signed-record-snapshot');assert.equal(calls[0].body.changes[0].key,'own-duty|block');assert.equal(calls[0].body.changes[0].value.quantity,2);
- c.personalDutyResetV400();assert.equal(get('personalDutyTabV400').hidden,true);assert.equal(get('personalDutyCardsV400').children.length,0);assert.equal(get('personalRegularV400').hidden,false);
+ c.personalDutyResetV400();assert.equal(get('personalDutyV400').hidden,true);assert.equal(get('personalDutyCardsV400').children.length,0);assert.equal(get('personalRegularV400').hidden,false);
 });
