@@ -11,6 +11,7 @@ import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
 import { updateHistoryJs } from './update-history.mjs';
 import { finalizeRelease } from './finalize-release.mjs';
+import { dutyPersonEditorJsV398 } from './duty-person-editor.mjs';
 import {developmentNavSource,developmentRequestsJs,developmentRequestsHtml,developmentRequestsCSS} from './development-requests.mjs';
 import {assetInspectionModelV382,assetInspectionHtmlV382,assetInspectionJsV382} from './asset-inspection.mjs';
 import {assetInspectionLayoutV384} from './asset-inspection-layout.mjs';
@@ -91,6 +92,7 @@ async function wxLoadAllInnerV314(){\n wxNavigationReadyV314=false;`)
  .replace('navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();navRenderV233();','navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();wxNavigationReadyV314=true;navRenderV233();')
  .replace("catch(e){wxLoaded=false;wxLoadError=String(e.message||e);", "catch(e){window.LOGBOOK_NAVIGATION?.commit(false);wxLoaded=false;wxLoadError=String(e.message||e);");
 js=js.replace("navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴", "navEditToggleV220(false);navUpdateDirtyV220();window.LOGBOOK_NAVIGATION?.commit();toast('메뉴");
+js=dutyPersonEditorJsV398(js,read('scripts/duty-person-editor-client.js.txt'));
 js=updateHistoryJs(js,read('scripts/update-history-client.js.txt'));
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
@@ -99,7 +101,7 @@ js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:swit
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372||dutyVerifyBusyV371||dutyItemsBusyV368||dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyItemDraftV368.size||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
 js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV372||').replace('dirty:!!(','dirty:!!(devDirtyV381()||');
 js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
-const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + developmentRequestsCSS;
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');

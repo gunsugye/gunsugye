@@ -19,6 +19,7 @@ await import('./labor-absence.test.mjs');
 if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./labor-duty-groups.test.mjs');
 await import('./personal-interface.test.mjs');
 await import('./duty-cadets.test.mjs');
+await import('./duty-person-editor.test.mjs');
 await import('./duty-roles.test.mjs');
 await import('./duty-items.test.mjs');
 await import('./duty-manual.test.mjs');

@@ -1,0 +1,63 @@
+const dutyPersonFormV398=$('dutyFormV367'),dutyPersonFieldsV398=['cohort','company','building','floor','room','gradeOverride','battalionOverride'];
+const dutyPersonPanelV398=document.createElement('section');dutyPersonPanelV398.className='duty-person-lookup';dutyPersonPanelV398.setAttribute('aria-label','스마트당직·방 배정 이름 조회');
+dutyPersonPanelV398.innerHTML='<p class="help">이름을 입력하면 스마트당직과 방 배정을 대조해 인적사항을 채웁니다. 동명이인은 한 명을 선택하세요.</p><p id="dutyPersonStatusV398" role="status" aria-live="polite"></p><div id="dutyPersonChoicesV398"></div><button class="btn" id="dutyPersonRetryV398" type="button">명단 다시 조회</button>';
+dutyPersonFormV398.elements.name.closest('label').after(dutyPersonPanelV398);
+const dutyPersonRoleV398=document.createElement('p');dutyPersonRoleV398.className='help';dutyPersonFormV398.querySelector('h2').after(dutyPersonRoleV398);
+let dutyPersonRowsV398=[],dutyPersonMatchesV398=[],dutyPersonSelectedV398=null,dutyPersonInitialV398=null,dutyPersonGenerationV398=0,dutyPersonLoadingV398=false,dutyPersonLoadedV398=false,dutyPersonChangedV398=false,dutyPersonTimerV398=null;
+function dutyPersonLockedV398(){return !!dutyEditRowV367&&dutyOrgKeyV372(dutyEditRowV367)!=='기타';}
+function dutyPersonEditabilityV398(automatic){for(const key of dutyPersonFieldsV398){const field=dutyPersonFormV398.elements[key];if(field.tagName==='SELECT')field.disabled=automatic;else field.readOnly=automatic;}}
+function dutyPersonApplyV398(person){
+ dutyPersonSelectedV398=person;dutyPersonFormV398.elements.name.value=person.name;
+ for(const key of dutyPersonFieldsV398)dutyPersonFormV398.elements[key].value=person[key]||'';
+ dutyPersonEditabilityV398(true);
+ $('dutyPersonStatusV398').textContent=person.cohort+'기 '+person.company+'중대 '+person.name+' · '+(person.assigned?[person.building,person.floor,person.room+'호'].filter(Boolean).join(' '):'방 미배정')+(person.gradeOverride?' · '+person.gradeOverride+'학년':' · 학년 확인 필요')+' · '+person.battalionOverride+'대대';
+ // A future cohort may not have a grade rule yet; keep that field available for confirmation.
+ if(!person.gradeOverride)dutyPersonFormV398.elements.gradeOverride.disabled=false;
+}
+function dutyPersonChoicesV398(){
+ $('dutyPersonChoicesV398').innerHTML=dutyPersonMatchesV398.map((person,index)=>'<label class="duty-person-choice"><input type="checkbox" data-duty-person="'+index+'" '+(person.key===dutyPersonSelectedV398?.key?'checked':'')+'><span><strong>'+escapeH(person.cohort+'기 '+person.company+'중대 '+person.name)+'</strong><small>'+escapeH(person.assigned?[person.building,person.floor,person.room+'호'].filter(Boolean).join(' '):'방 미배정')+'</small></span></label>').join('');
+}
+function dutyPersonSearchFormV398(){
+ if(!dutyDialogV367.open||dutySavingV367)return;
+ const name=dutyPersonFormV398.elements.name.value.trim();if(!name){dutyPersonSelectedV398=null;dutyPersonMatchesV398=[];dutyPersonChoicesV398();$('dutyPersonStatusV398').textContent='이름을 입력하세요.';return;}
+ if(!dutyPersonLoadedV398){$('dutyPersonStatusV398').textContent=dutyPersonLoadingV398?'스마트당직·방 배정 조회 중…':'명단 다시 조회를 눌러 주세요.';return;}
+ const found=dutyPersonSearchV398(name,dutyPersonRowsV398);dutyPersonMatchesV398=found.rows;dutyPersonSelectedV398=null;
+ if(found.exact&&found.rows.length===1)dutyPersonApplyV398(found.rows[0]);
+ else if(!dutyPersonChangedV398&&dutyPersonInitialV398){const same=found.rows.filter(person=>dutyPersonKeyV398(person)===dutyPersonKeyV398(dutyPersonInitialV398));if(same.length===1)dutyPersonApplyV398(same[0]);}
+ if(!dutyPersonSelectedV398){dutyPersonEditabilityV398(!dutyPersonInitialV398||dutyPersonChangedV398);$('dutyPersonStatusV398').textContent=found.rows.length?(found.exact?'동명이인 '+found.rows.length+'명 · 기수·중대·이름을 확인해 한 명을 선택하세요.':'검색 결과 '+found.rows.length+'명 · 이름을 완성하거나 한 명을 선택하세요.'):'스마트당직·방 배정 대조 명단에 없는 이름입니다. 이름과 원본 명단을 확인하세요.';}
+ dutyPersonChoicesV398();
+}
+async function dutyPersonLoadV398(){
+ const generation=++dutyPersonGenerationV398;dutyPersonLoadingV398=true;dutyPersonLoadedV398=false;$('dutyPersonStatusV398').textContent='스마트당직·방 배정 조회 중…';$('dutyPersonRetryV398').disabled=true;
+ try{const plan=await server('getDormPlanV315',false);if(generation!==dutyPersonGenerationV398||!dutyDialogV367.open)return;dutyPersonRowsV398=dutyPersonCandidatesV398(plan);dutyPersonLoadedV398=true;dutyPersonSearchFormV398();}
+ catch(error){if(generation===dutyPersonGenerationV398&&dutyDialogV367.open)$('dutyPersonStatusV398').textContent='자동 입력 조회 실패: '+error.message+' · 명단 다시 조회를 눌러 주세요.';}
+ finally{if(generation===dutyPersonGenerationV398){dutyPersonLoadingV398=false;$('dutyPersonRetryV398').disabled=false;}}
+}
+globalThis.LOGBOOK_DUTY_EDITOR={
+ locked:dutyPersonLockedV398,
+ open(initial){
+  clearTimeout(dutyPersonTimerV398);dutyPersonGenerationV398++;dutyPersonInitialV398=initial?{...initial}:null;dutyPersonChangedV398=false;dutyPersonSelectedV398=null;dutyPersonRowsV398=[];dutyPersonMatchesV398=[];dutyPersonLoadedV398=false;dutyPersonChoicesV398();dutyPersonEditabilityV398(false);
+  const locked=dutyPersonLockedV398(),input=dutyPersonFormV398.elements.duty;
+  for(const control of [input,$('dutyFixedRoleV391'),$('dutyAssignmentV372'),dutyPersonFormV398.elements.familyOverride]){control.disabled=locked;if(locked){control.required=false;control.closest('label').hidden=true;control.closest('label').style.display='none';}}
+  if(!locked){dutyAssignmentLabelV372.hidden=false;dutyAssignmentLabelV372.style.display='block';dutyFamilyLabelV372.hidden=false;dutyFamilyLabelV372.style.display='block';dutySyncFixedRoleV391();}
+  dutyPersonRoleV398.hidden=!locked;dutyPersonRoleV398.textContent=locked?'근무: '+dutyOrgLabelV372(dutyOrgKeyV372(dutyEditRowV367))+' · '+dutyEditRowV367.duty:'';
+  dutyPersonLoadV398();
+ },
+ beforeSubmit(){
+  if(dutyPersonLoadingV398){$('dutyEditStatusV367').textContent='명단 조회를 마친 뒤 저장하세요.';return false;}
+  const unchanged=!!dutyPersonInitialV398&&!dutyPersonChangedV398&&dutyPersonKeyV398({name:dutyPersonFormV398.elements.name.value,cohort:dutyPersonFormV398.elements.cohort.value,company:dutyPersonFormV398.elements.company.value})===dutyPersonKeyV398(dutyPersonInitialV398);
+  if(!dutyPersonSelectedV398&&!unchanged){$('dutyEditStatusV367').textContent=dutyPersonMatchesV398.length?'조회된 인원 중 한 명을 체크하세요.':'이름 조회로 인원을 확인한 뒤 저장하세요.';return false;}
+  if(dutyPersonSelectedV398&&dutyPersonSearchV398(dutyPersonFormV398.elements.name.value,[dutyPersonSelectedV398]).rows.length!==1){$('dutyEditStatusV367').textContent='변경한 이름을 다시 조회하세요.';return false;}
+  return true;
+ },
+ patch(patch){
+  if(dutyPersonLockedV398())for(const key of ['duty','organization','dutyCompanyOverride','familyOverride'])patch[key]=dutyEditRowV367[key]||'';
+  if(dutyPersonSelectedV398)for(const key of ['name',...dutyPersonFieldsV398])patch[key]=key==='name'?dutyPersonSelectedV398.name:dutyPersonFormV398.elements[key].value;
+ }
+};
+dutyPersonFormV398.elements.name.addEventListener('input',()=>{
+ dutyPersonChangedV398=true;dutyPersonSelectedV398=null;dutyPersonMatchesV398=[];dutyPersonChoicesV398();dutyPersonEditabilityV398(true);for(const key of dutyPersonFieldsV398)dutyPersonFormV398.elements[key].value='';clearTimeout(dutyPersonTimerV398);dutyPersonTimerV398=setTimeout(dutyPersonSearchFormV398,250);
+});
+$('dutyPersonChoicesV398').addEventListener('change',event=>{const index=event.target.dataset.dutyPerson;if(index==null||dutySavingV367)return;const person=dutyPersonMatchesV398[Number(index)];if(!person)return;if(event.target.checked)dutyPersonApplyV398(person);else{dutyPersonSelectedV398=null;for(const key of dutyPersonFieldsV398)dutyPersonFormV398.elements[key].value='';$('dutyPersonStatusV398').textContent='인원을 한 명 선택하세요.';}dutyPersonChoicesV398();});
+$('dutyPersonRetryV398').onclick=()=>{if(!dutySavingV367){dutyPersonSelectedV398=null;dutyPersonMatchesV398=[];dutyPersonChoicesV398();dutyPersonLoadV398();}};
+dutyDialogV367.addEventListener('close',()=>{dutyPersonGenerationV398++;clearTimeout(dutyPersonTimerV398);});
