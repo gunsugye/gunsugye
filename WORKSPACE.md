@@ -26,6 +26,8 @@ API: api/worker.mjs. Apps Script 진입점: apps-script/Gateway.gs.
 
 이 파일들이 없는 동안 scripts/build.mjs를 실행하지 않고 생성된 docs를 직접 수정합니다. 나중에 원본 빌드를 복원하면 docs 직접 수정이 덮어써질 수 있으므로 같은 변경을 scripts/ 또는 원본에도 반영해야 합니다.
 
+화면만 수정한 배포에서는 scripts/release.mjs의 버전·제목·설명을 바꾸고 `node scripts/finalize-release.mjs`를 실행합니다. 변경 내역을 docs/releases.json에 누적하고 배포 정보와 파일 캐시를 갱신합니다. 버전은 매 배포마다 올립니다.
+
 GitHub Pages는 main에 push하면 기존 Actions가 검증·배포합니다. 다른 노트북에서 변경한 후에는 로컬 변경과 충돌을 확인하고 origin/main을 병합한 뒤 배포하세요. 강제 push는 사용하지 않습니다. publish-site는 테스트 후 이미 Git으로 추적 중인 파일의 변경과 이 작업 환경의 실행 파일 목록을 커밋·push합니다. 그 외 새 파일은 검토 후 명시적으로 git add 해야 합니다.
 
 미리보기의 Google 로그인 및 API 사용에는 Google OAuth의 localhost 허용과 Cloudflare ALLOWED_ORIGINS의 로컬 주소 허용이 추가로 필요합니다. 이 계정 설정은 아직 변경하지 않았습니다.

@@ -9,6 +9,8 @@ import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
 import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
+import { updateHistoryJs } from './update-history.mjs';
+import { finalizeRelease } from './finalize-release.mjs';
 import {developmentNavSource,developmentRequestsJs,developmentRequestsHtml,developmentRequestsCSS} from './development-requests.mjs';
 import {assetInspectionModelV382,assetInspectionHtmlV382,assetInspectionJsV382} from './asset-inspection.mjs';
 import {assetInspectionLayoutV384} from './asset-inspection-layout.mjs';
@@ -89,6 +91,7 @@ async function wxLoadAllInnerV314(){\n wxNavigationReadyV314=false;`)
  .replace('navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();navRenderV233();','navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();wxNavigationReadyV314=true;navRenderV233();')
  .replace("catch(e){wxLoaded=false;wxLoadError=String(e.message||e);", "catch(e){window.LOGBOOK_NAVIGATION?.commit(false);wxLoaded=false;wxLoadError=String(e.message||e);");
 js=js.replace("navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴", "navEditToggleV220(false);navUpdateDirtyV220();window.LOGBOOK_NAVIGATION?.commit();toast('메뉴");
+js=updateHistoryJs(js,read('scripts/update-history-client.js.txt'));
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
@@ -244,3 +247,5 @@ return {
 write('apps-script/Legacy.gs', prefix + `\nconst navModelV301_ = ${normalizeNavigation.toString()};\n` + legacy + suffix);
 write('apps-script/methods.json', JSON.stringify(uniqueMethods, null, 2) + '\n');
 console.log(`화면/CSS/JS 생성, Apps Script API ${uniqueMethods.length}개 연결 완료`);
+
+finalizeRelease();

@@ -14,18 +14,48 @@ test('업데이트 제목과 설명은 깨진 물음표 없이 한글로 저장�
 });
 
 function noticeFixture(){
- const elements=new Map(),events=new Map(),stored=new Map();let clock=100000,reloads=0,requests=0,release={id:'aaaaaaaaaaaaaaaa',version:'3.08',title:'검증 업데이트',notes:['첫 번째 변경']};
+ const elements=new Map(),events=new Map(),stored=new Map();let clock=100000,reloads=0,requests=0,intervalMs=0,release={id:'aaaaaaaaaaaaaaaa',version:'3.08',title:'검증 업데이트',notes:['첫 번째 변경']};
  const element=id=>{if(!elements.has(id))elements.set(id,{id,hidden:true,textContent:'',children:[],addEventListener:(n,f)=>events.set(id+':'+n,f),replaceChildren(...nodes){this.children=nodes;},append(){}});return elements.get(id);};
  const context=vm.createContext({
   document:{documentElement:{dataset:{releaseId:'aaaaaaaaaaaaaaaa'}},visibilityState:'visible',getElementById:element,createElement:()=>({textContent:''}),querySelector:()=>({append(){}}),addEventListener:(n,f)=>events.set(n,f)},
   window:{addEventListener:(n,f)=>events.set(n,f),logbookReloadState:()=>({dirty:false}),confirm:()=>false},URL,
-  Date:class extends Date{static now(){return clock;}},AbortSignal,setInterval:f=>events.set('interval',f),
+  Date:class extends Date{static now(){return clock;}},AbortSignal,setInterval:(f,ms)=>{intervalMs=ms;events.set('interval',f);},
   localStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v)},
   fetch:async url=>{assert.match(url,/^\.\/release\.json\?t=/);requests++;return {ok:true,json:async()=>release};},location:{href:'https://example.com/app/?keep=1#section',assign:url=>{assert.match(url,/appUpdate=bbbbbbbbbbbbbbbb/);assert.match(url,/keep=1/);assert.ok(url.endsWith('#section'));reloads++;}}
  });
  new vm.Script(read('docs/assets/updates.js')).runInContext(context);
- return {context,events,element,stored,advance:()=>{clock+=61000;},setRelease:r=>release=r,get reloads(){return reloads;},get requests(){return requests;}};
+ return {context,events,element,stored,advance:(ms=61000)=>{clock+=ms;},setRelease:r=>release=r,get reloads(){return reloads;},get requests(){return requests;},get intervalMs(){return intervalMs;}};
 }
+
+test('배포 확인은 10초 간격이며 탭 복귀는 이전 확인 직후에도 최신 기록을 읽는다',async()=>{
+ const f=noticeFixture();await tick();assert.equal(f.intervalMs,10000);
+ f.advance(1000);f.setRelease({id:'bbbbbbbbbbbbbbbb',version:'3.97',title:'즉시 확인',notes:[]});
+ f.events.get('focus')();await tick();assert.equal(f.requests,2);assert.match(f.element('pagesUpdateVersion').textContent,/3.97/);
+ let notified=0;const unsubscribe=f.context.window.LOGBOOK_UPDATES.subscribe(()=>notified++);
+ f.advance(10000);f.events.get('interval')();await tick();assert.equal(notified,0);
+ f.setRelease({id:'cccccccccccccccc',version:'3.98',title:'다음',notes:[]});f.events.get('online')();await tick();assert.equal(notified,1);unsubscribe();
+});
+
+test('업데이트 목록은 서버가 대기 중이어도 배포 기록부터 표시하고 과거 기록을 합친다',async()=>{
+ const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,{textContent:'',innerHTML:'',classList:{toggle(){}}});return elements.get(id);};
+ let resolveServer,resolveLatest,listener;const latest={version:'3.97',title:'새 화면 배포',notes:['새 변경']};
+ const context=vm.createContext({$:get,view:'updates',escapeH:s=>String(s).replaceAll('<','&lt;'),Date,AbortSignal,
+  window:{LOGBOOK_UPDATES:{getLatest:()=>latest,refresh:()=>new Promise(r=>resolveLatest=r),subscribe:fn=>listener=fn}},
+  fetch:async(_url,options)=>{assert.equal(options.cache,'no-store');return {ok:true,json:async()=>[{version:'3.96',title:'물품 칸 수정',notes:['기준 0개 숨김']}]};},
+  server:()=>new Promise(r=>resolveServer=r)});
+ vm.runInContext(read('scripts/update-history-client.js.txt'),context);const pending=context.v285UpdateLoad();await tick();
+ assert.match(get('v285UpdateRows').innerHTML,/새 화면 배포/);assert.match(get('v285UpdateRows').innerHTML,/물품 칸 수정/);
+ resolveServer({version:'2.99',history:[{version:'V3.96',title:'중복',detail:'중복'},{version:'V2.99',title:'과거 기록',detail:'예전 변경'}],canEdit:true});resolveLatest();await pending;
+ assert.match(get('v285UpdateRows').innerHTML,/과거 기록/);assert.doesNotMatch(get('v285UpdateRows').innerHTML,/중복/);
+ latest.version='3.98';latest.title='<새 배포>';listener();assert.match(get('v285UpdateRows').innerHTML,/&lt;새 배포>/);assert.match(get('v285UpdateStatus').textContent,/3.98/);
+});
+
+test('과거 서버 조회가 실패해도 최신 배포 내역과 안내는 남아 있다',async()=>{
+ const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,{textContent:'',innerHTML:'',classList:{toggle(){}}});return elements.get(id);};
+ const context=vm.createContext({$:get,view:'updates',escapeH:String,Date,AbortSignal,window:{LOGBOOK_UPDATES:{getLatest:()=>({version:'3.97',title:'현재 배포',notes:['변경']}),refresh:async()=>{},subscribe(){}}},fetch:async()=>({ok:false}),server:async()=>{throw Error('서버 연결 실패');}});
+ vm.runInContext(read('scripts/update-history-client.js.txt'),context);await context.v285UpdateLoad();
+ assert.match(get('v285UpdateRows').innerHTML,/현재 배포/);assert.match(get('v285UpdateStatus').textContent,/재조회 필요|조회 실패/);
+});
 test('새 업데이트 알림은 배포 정보로 자동 표시하며 닫기·재표시와 저장 전 적용 보류를 지원한다',async()=>{
  const f=noticeFixture();f.context.window.LOGBOOK_UPDATES.start();await tick();
  assert.equal(f.element('pagesUpdateNotice').hidden,false);assert.equal(f.requests,1);

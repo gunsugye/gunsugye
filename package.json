@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "check": "node tests/run.mjs",
+    "release:finalize": "node scripts/finalize-release.mjs",
     "build": "node scripts/build.mjs",
     "test": "node tests/run.mjs",
     "package": "node scripts/package.mjs",

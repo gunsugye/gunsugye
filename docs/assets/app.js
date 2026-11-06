@@ -3789,15 +3789,29 @@ async function v285StaffTermApply(){
   toast(r.existing?'기존 '+term+' 차수로 전환했어요.':term+' 차수를 시작했습니다. '+r.copied+'명 복사 완료');
  }catch(e){alert('근무 차수 설정 실패: '+e.message);}finally{btn.disabled=false;}
 }
-async function v285UpdateLoad(){
- const msg=$('v285UpdateStatus');msg.textContent='업데이트 내역 불러오는 중…';
- try{const r=await server('getUpdateHistoryV285');
- $('v285UpdateForm').classList.toggle('hidden',!r.canEdit);
- const entries=[...(r.additions||[]).slice().reverse(),...(r.history||[])];
+let v397UpdateArchive=[],v397UpdateServer=null,v397UpdateRequest=0,v397UpdateError='';
+function v397UpdateRender(){
+ const latest=window.LOGBOOK_UPDATES?.getLatest(),rows=[...(latest?[latest]:[]),...v397UpdateArchive,...(v397UpdateServer?.additions||[]).slice().reverse(),...(v397UpdateServer?.history||[])],seen=new Set(),entries=[];
+ for(const row of rows){const version=String(row.version||'').replace(/^v/i,'').trim();if(!version||seen.has(version))continue;seen.add(version);entries.push({...row,version,detail:Array.isArray(row.notes)?row.notes.join('\n'):String(row.detail||'')});}
+ entries.sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}));
  $('v285UpdateRows').innerHTML=entries.map(x=>'<div class="v285-release"><span class="v285-release-version">'+escapeH(x.version)+'</span><div><strong>'+escapeH(x.title)+'</strong><p>'+escapeH(x.detail)+'</p>'+(x.at?'<small>등록 '+escapeH(x.at.slice(0,16).replace('T',' '))+'</small>':'')+'</div></div>').join('');
- msg.textContent='주요 업데이트 '+entries.length+'건 · 버전 '+r.version+' (과거 내역은 주요 기능 중심의 요약)';
- }catch(e){msg.textContent='업데이트 내역 조회 실패: '+e.message;}
+ $('v285UpdateStatus').textContent=entries.length?'주요 업데이트 '+entries.length+'건 · 최신 버전 '+entries[0].version+(v397UpdateError?' · '+v397UpdateError:''):'업데이트 내역 불러오는 중…'+(v397UpdateError?' · '+v397UpdateError:'');
 }
+async function v285UpdateLoad(){
+ const request=++v397UpdateRequest;v397UpdateError='';v397UpdateRender();
+ const latestRead=Promise.resolve(window.LOGBOOK_UPDATES?.refresh()).then(()=>{if(request===v397UpdateRequest)v397UpdateRender();});
+ const staticRead=(async()=>{try{
+  const response=await fetch('./releases.json?t='+Date.now(),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw Error('배포 기록 조회 실패');const rows=await response.json();
+  if(!Array.isArray(rows)||rows.length>1000||rows.some(row=>!row||typeof row.version!=='string'||typeof row.title!=='string'||!Array.isArray(row.notes)||row.notes.some(note=>typeof note!=='string')))throw Error('배포 기록 형식 오류');
+  if(request===v397UpdateRequest){v397UpdateArchive=rows;v397UpdateRender();}
+ }catch(e){if(request===v397UpdateRequest){v397UpdateError='배포 기록 재조회 필요';v397UpdateRender();}}})();
+ const serverRead=(async()=>{try{const result=await server('getUpdateHistoryV285');if(request!==v397UpdateRequest)return;v397UpdateServer=result;$('v285UpdateForm').classList.toggle('hidden',!result.canEdit);v397UpdateRender();}
+ catch(e){if(request===v397UpdateRequest){v397UpdateError='과거 서버 기록 조회 실패';v397UpdateRender();}}})();
+ await Promise.allSettled([latestRead,staticRead,serverRead]);
+}
+window.LOGBOOK_UPDATES?.subscribe(()=>{if(view==='updates')v397UpdateRender();});
+
 async function v285UpdateSave(){
  const p={version:$('v285UpdateVersion').value.trim(),title:$('v285UpdateTitle').value.trim(),detail:$('v285UpdateDetail').value.trim()};
  if(!p.version||!p.title||!p.detail)return alert('버전·제목·변경 내용을 입력해 주세요.');
