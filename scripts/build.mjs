@@ -1,3 +1,4 @@
+import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
 import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
@@ -107,6 +108,7 @@ js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372|
 js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV372||').replace('dirty:!!(','dirty:!!(devDirtyV381()||');
 js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
 js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt'));
+js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
 const css = read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
@@ -194,6 +196,8 @@ legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();
 legacy=supplySchemaServerV408(legacy,read('scripts/supply-schema-server.gs.txt'));
+legacy=referenceMenuV409(legacy,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getReferenceBatchV409','previewReferenceBatchV409','applyReferenceBatchV409'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
+legacy+='\n'+read('scripts/reference-batch-server.gs.txt');
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)

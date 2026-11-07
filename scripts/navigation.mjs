@@ -47,7 +47,8 @@ export function normalizeNavigation(value, defaults, available) {
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }
-  return { schemaVersion: 2, groups, labels, dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.inputManagementAddedV409&&defaults.some(g=>g.id==='inputManagement')){const ids=['roster','dutyCadets','dorm'].filter(id=>allowed.has(id));for(const group of groups)group.items=group.items.filter(id=>!ids.includes(id));let group=groups.find(g=>g.id==='inputManagement');if(!group){group={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(group);}group.items=[...ids,...group.items.filter(id=>!ids.includes(id))];}
+  return { schemaVersion: 2, groups, labels, inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {
