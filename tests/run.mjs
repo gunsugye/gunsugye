@@ -48,3 +48,5 @@ if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
 await import('./supply-schema.test.mjs');
 
 await import('./reference-batch.test.mjs');
+
+await import('./firearms.test.mjs');

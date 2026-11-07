@@ -1,6 +1,7 @@
 // schemaVersion 2에는 활성 메뉴만 저장합니다. 삭제 목록이나 숨김 항목을 남기지 않습니다.
 export function normalizeNavigation(value, defaults, available) {
   const known = new Map(defaults.map(g => [g.id, g]));
+  for(const group of Array.isArray(value?.groups)?value.groups:[])if(/^g_[a-z0-9]{8,40}$/.test(group?.id)&&typeof group.title==='string'&&group.title.trim())known.set(group.id,{id:group.id,title:group.title.trim().slice(0,25),items:[]});
   const allowed = new Set(available), used = new Set(), groups = [];
   const valid = value && Array.isArray(value.groups);
   const modern = valid && value.schemaVersion === 2;
@@ -48,7 +49,8 @@ export function normalizeNavigation(value, defaults, available) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }
   if(!value?.inputManagementAddedV409&&defaults.some(g=>g.id==='inputManagement')){const ids=['roster','dutyCadets','dorm'].filter(id=>allowed.has(id));for(const group of groups)group.items=group.items.filter(id=>!ids.includes(id));let group=groups.find(g=>g.id==='inputManagement');if(!group){group={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(group);}group.items=[...ids,...group.items.filter(id=>!ids.includes(id))];}
-  return { schemaVersion: 2, groups, labels, inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.firearmsAddedV410&&allowed.has('firearms')){let group=groups.find(g=>g.id==='devices');if(!group&&defaults.some(g=>g.id==='devices')){group={id:'devices',title:defaults.find(g=>g.id==='devices').title,items:[]};groups.push(group);}if(group&&!groups.some(g=>g.items.includes('firearms')))group.items.unshift('firearms');}
+  return { schemaVersion: 2, groups, labels, firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {

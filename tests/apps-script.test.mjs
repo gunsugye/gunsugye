@@ -8,6 +8,8 @@ const gateway = readFileSync(new URL('../apps-script/Gateway.gs', import.meta.ur
 const legacy = readFileSync(new URL('../apps-script/Legacy.gs', import.meta.url), 'utf8');
 const secret = 'test-secret-with-more-than-thirty-two-characters';
 
+test('설정의 사용자 상위 메뉴 추가·이름 변경·삭제를 실제 서버가 보존한다',()=>{const f=fixture();f.context.Logger={log(){}};f.context.SpreadsheetApp={openById:()=>({getSheetByName:()=>null})};const value={schemaVersion:2,groups:[{id:'g_12345678',title:'추가 항목',items:['roster']}],labels:{roster:'인원 명단'}};const saved=f.rpc(f.signed('owner@gmail.com','saveNavTreeV233',[value]));assert.equal(saved.ok,true,saved.error);assert.equal(saved.result.groups.find(g=>g.id==='g_12345678').title,'추가 항목');const next={...saved.result,groups:saved.result.groups.filter(g=>g.id!=='g_12345678')};const removed=f.rpc(f.signed('owner@gmail.com','saveNavTreeV233',[next]));assert.equal(removed.ok,true,removed.error);assert.equal(removed.result.groups.some(g=>g.id==='g_12345678'),false);});
+
 test('실제 Gateway는 관리의 두 구성을 별도로 저장하고 개인 조회에 같은 순서를 전달한다',()=>{
  const f=fixture(),initial=f.rpc(f.signed('owner@gmail.com','getPersonalInterfaceV359',[]));assert.equal(initial.ok,true,initial.error);assert.deepEqual(initial.result.dutyInterfaceOrder,['room','firearm','duty','assets','uniform','supplies']);
  const regular=[...initial.result.order].reverse(),duty=[...initial.result.dutyInterfaceOrder],saved=f.rpc(f.signed('owner@gmail.com','savePersonalInterfaceV359',[{regular,duty},initial.result.version]));assert.equal(saved.ok,true,saved.error);assert.deepEqual(saved.result.order,regular);assert.deepEqual(saved.result.dutyInterfaceOrder,duty);

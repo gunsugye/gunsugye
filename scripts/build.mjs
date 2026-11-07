@@ -1,3 +1,4 @@
+import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
 import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
 import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -109,7 +110,8 @@ js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV37
 js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
 js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt'));
 js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
-const css = read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
+js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
+const css = read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
@@ -161,6 +163,8 @@ for (const [path, contents] of assets) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
 write('docs/index.html', assetRequestsHtml(assetPlanHtml(dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html)))))))));
+html=html.replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'<div class="setting-box" id="menuSettingsV410"></div>');
+write('docs/index.html',read('docs/index.html').replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'<div class="setting-box" id="menuSettingsV410"></div>'));
 write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
@@ -198,6 +202,7 @@ legacy+='\n'+dormPlaceRoomV344.toString();
 legacy=supplySchemaServerV408(legacy,read('scripts/supply-schema-server.gs.txt'));
 legacy=referenceMenuV409(legacy,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getReferenceBatchV409','previewReferenceBatchV409','applyReferenceBatchV409'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
 legacy+='\n'+read('scripts/reference-batch-server.gs.txt');
+legacy=firearmSourceV410(legacy,true).replace('value.groups.length>NAV_GROUPS_V233.length','value.groups.length>50').replace('NAV_GROUPS_V233.some(g=>g.id===id)',"(NAV_GROUPS_V233.some(g=>g.id===id)||/^g_[a-z0-9]{8,40}$/.test(id))");
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
