@@ -50,7 +50,13 @@ export function normalizeNavigation(value, defaults, available) {
   }
   if(!value?.inputManagementAddedV409&&defaults.some(g=>g.id==='inputManagement')){const ids=['roster','dutyCadets','dorm'].filter(id=>allowed.has(id));for(const group of groups)group.items=group.items.filter(id=>!ids.includes(id));let group=groups.find(g=>g.id==='inputManagement');if(!group){group={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(group);}group.items=[...ids,...group.items.filter(id=>!ids.includes(id))];}
   if(!value?.firearmsAddedV410&&allowed.has('firearms')){let group=groups.find(g=>g.id==='devices');if(!group&&defaults.some(g=>g.id==='devices')){group={id:'devices',title:defaults.find(g=>g.id==='devices').title,items:[]};groups.push(group);}if(group&&!groups.some(g=>g.items.includes('firearms')))group.items.unshift('firearms');}
-  return { schemaVersion: 2, groups, labels, firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.liveMenuPlacementV411){
+    const target=groups.find(g=>g.id!=='devices'&&/총기|장비/.test(g.title)&&g.items.some(id=>['supply','saber','dutyItems'].includes(id)))||groups.find(g=>g.id==='devices');
+    if(target&&allowed.has('firearms')){for(const group of groups)group.items=group.items.filter(id=>id!=='firearms');target.items.unshift('firearms');}
+    for(let i=groups.length-1;i>=0;i--)if(groups[i].id==='departures'||(groups[i].id==='devices'&&groups[i]!==target&&!groups[i].items.length))groups.splice(i,1);
+    let input=groups.find(g=>g.id==='inputManagement');if(!input&&defaults.some(g=>g.id==='inputManagement')){input={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(input);}if(input&&allowed.has('departures')){for(const group of groups)group.items=group.items.filter(id=>id!=='departures');input.items.push('departures');labels.departures='누락자 및 퇴교자 관리';}
+  }
+  return { schemaVersion: 2, groups, labels, liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {
