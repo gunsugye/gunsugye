@@ -1326,14 +1326,14 @@ function supplyRender(){
   $('supplyActive').classList.remove('hidden');$('supplySelectedName').textContent=supplyItem.name;
   $('supplySheetLink').href=supplyItem.sheetUrl;
 
-  $('supplyFieldHint').textContent=`선택 품목: ${supplyItem.name} · 사이즈와 수량은 기본 관리 열입니다. 기존 추가 열은 삭제하지 않고 보존합니다.`;
+  $('supplyFieldHint').textContent=`선택 품목: ${supplyItem.name} · 수량·상태·세부사항은 고정이며 종류·사이즈 항목을 설정할 수 있습니다.`;
   supplyFilters();supplyMetricsOnly();
   const companyFirst=supplyMode==='company';
   $('supplySortCompany').classList.toggle('roster-sort-active',companyFirst);
   $('supplySortCohort').classList.toggle('roster-sort-active',!companyFirst);
-  $('supplyFieldInfo').textContent='기수 · 중대 · 이름 · 교번 · 상태 · 사이즈 · 수량 · 세부내용';
+  $('supplyFieldInfo').textContent='수량 · 상태 · 세부사항 (고정) · '+supplyFieldsV408().map(f=>f==='좌'||f==='우'?f+' 사이즈':f).join(' · ');if(!$('supplySchemaEditV408')){const button=document.createElement('button');button.id='supplySchemaEditV408';button.className='btn';button.textContent='종류·사이즈 항목 설정';button.onclick=()=>supplyConfigureV408(true);$('supplySync').parentElement.append(button);} $('supplySchemaEditV408').disabled=!canManageUsersV281;
   const rows=supplyFiltered();
-  const labels=['기수','중대','이름','교번','상태','사이즈','수량','세부내용','관리','위탁·휴학·퇴교'];
+  const optional=supplyFieldsV408(),labels=['기수','중대','이름','교번','수량','상태',...optional.map(f=>f==='좌'||f==='우'?f+' 사이즈':f),'세부사항','관리','위탁·휴학·퇴교'];
   $('supplyColumns').innerHTML=labels.map(x=>`<th>${escapeH(x)}</th>`).join('');
   const counts=new Map();rows.forEach(r=>{const k=companyFirst?r.company+'|'+r.cohort:r.cohort+'|'+r.company;counts.set(k,(counts.get(k)||0)+1);});
   let lastKey='';
@@ -1343,7 +1343,7 @@ function supplyRender(){
     const v=supplyDrafts.get(p.id)||p,disabled=canEdit?'':'disabled',bad=isRepairV216(v.status);
     const cell=(field,value,size=20)=>`<input class="supply-input" type="text" data-supply-field="${escapeH(field)}" data-id="${escapeH(p.id)}" maxlength="${size}" value="${escapeH(value||'')}" ${disabled} aria-label="${escapeH(p.name)} ${escapeH(field)}">`;
     const details=`<textarea class="supply-note" data-supply-field="detail" data-id="${escapeH(p.id)}" maxlength="3000" rows="1" placeholder="상태 세부내용" ${disabled}>${escapeH(v.detail||'')}</textarea>`;
-    return heading+`<tr data-supply-id="${escapeH(p.id)}" class="${bad?'supply-bad':''}" data-dirty="${supplyDrafts.has(p.id)}"><td>${escapeH(p.cohort)}</td><td>${escapeH(p.company)}</td><td class="supply-name">${escapeH(p.name)}${bad?`<span class="roster-repair-flag">${repairBadgeV216(v.status)}</span>`:''}</td><td>${escapeH(p.cadetNumber||'-')}</td><td><select class="supply-select ${bad?'is-repair':''}" data-supply-field="status" data-id="${escapeH(p.id)}" ${disabled}>${supplyStatusHTML(v.status||'')}</select></td><td>${cell('extra:사이즈',v.extra?.['사이즈']||'',100)}</td><td>${cell('extra:수량',v.extra?.['수량']||'',30)}</td><td>${details}</td><td>${canEdit?`<button class="small-link supply-save-btn" data-supply-save="${escapeH(p.id)}" ${supplyDrafts.has(p.id)?'':'hidden'}>저장</button>`:'조회 전용'}</td><td>${canEdit?`<select class="field supply-special-move-state-v256" data-special-state-for="${escapeH(p.id)}" aria-label="${escapeH(p.name)} 관리상태"><option value="">상태 선택</option><option>위탁</option><option>휴학</option><option>퇴교</option><option>퇴학</option></select><button type="button" class="small-link" data-supply-special-move="${escapeH(p.id)}">이동</button>`:'조회 전용'}</td></tr>`;
+    return heading+`<tr data-supply-id="${escapeH(p.id)}" class="${bad?'supply-bad':''}" data-dirty="${supplyDrafts.has(p.id)}"><td>${escapeH(p.cohort)}</td><td>${escapeH(p.company)}</td><td class="supply-name">${escapeH(p.name)}${bad?`<span class="roster-repair-flag">${repairBadgeV216(v.status)}</span>`:''}</td><td>${escapeH(p.cadetNumber||'-')}</td><td>${cell('extra:수량',v.extra?.['수량']??'',30)}</td><td><select class="supply-select ${bad?'is-repair':''}" data-supply-field="status" data-id="${escapeH(p.id)}" ${disabled}>${supplyStatusHTML(v.status||'')}</select></td>${optional.map(f=>`<td>${cell('extra:'+f,v.extra?.[f]??'',100)}</td>`).join('')}<td>${details}</td><td>${canEdit?`<button class="small-link supply-save-btn" data-supply-save="${escapeH(p.id)}" ${supplyDrafts.has(p.id)?'':'hidden'}>저장</button>`:'조회 전용'}</td><td>${canEdit?`<select class="field supply-special-move-state-v256" data-special-state-for="${escapeH(p.id)}" aria-label="${escapeH(p.name)} 관리상태"><option value="">상태 선택</option><option>위탁</option><option>휴학</option><option>퇴교</option><option>퇴학</option></select><button type="button" class="small-link" data-supply-special-move="${escapeH(p.id)}">이동</button>`:'조회 전용'}</td></tr>`;
   }).join(''):`<tr><td colspan="${labels.length}" style="padding:30px;text-align:center;color:#8899ad">해당 조건의 명단이 없습니다.</td></tr>`;
   $('supplyCount').textContent=`${rows.length.toLocaleString()}명 표시 · 총 ${supplyItem.rows.length.toLocaleString()}명 · ${companyFirst?'중대별':'기수별'} 정렬`;
   supplyBatchScopeText(rows);
@@ -1359,7 +1359,7 @@ function supplyCatalogUI(){
   $('supplyAddItem').disabled=!canEdit;
 
   const existing=supplyCatalog.find(x=>x.id===supplySelected);
-  $('supplyFieldHint').textContent=existing?`선택 품목: ${existing.name} · 사이즈/수량 입력과 일괄 적용 기능을 사용하세요.`:'품목을 추가하거나 목록에서 선택하세요. 새 품목에는 사이즈와 수량 열이 기본 생성됩니다.';
+  $('supplyFieldHint').textContent=existing?`선택 품목: ${existing.name} · 사이즈/수량 입력과 일괄 적용 기능을 사용하세요.`:'품목을 추가하고 종류·사이즈 선택지를 설정하세요.';
 }
 async function supplyLoadCatalog(selectId){
   if(supplyPageLoading)return;supplyPageLoading=true;
@@ -1432,18 +1432,11 @@ async function supplySave(id){
   }
 }
 function supplyCsv(){if(!supplyItem)return;
-  const fields=['기수','중대','이름','교번','상태','사이즈','수량','세부내용'];
-  const rows=[fields,...supplyFiltered().map(r=>{const v=supplyDrafts.get(r.id)||r;return [r.cohort,r.company,r.name,r.cadetNumber,v.status,v.extra?.['사이즈']||'',v.extra?.['수량']||'',v.detail];})];
+  const optional=supplyFieldsV408(),fields=['기수','중대','이름','교번','수량','상태',...optional,'세부사항'];
+  const rows=[fields,...supplyFiltered().map(r=>{const v=supplyDrafts.get(r.id)||r;return [r.cohort,r.company,r.name,r.cadetNumber,v.extra?.['수량']??'',v.status,...optional.map(f=>v.extra?.[f]??''),v.detail];})];
   download(new Blob(['\ufeff',rows.map(row=>row.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'군수품_'+supplyItem.name+'_'+localISO()+'.csv');
 }
-async function supplyMakeItem(){
-  if(!mustEdit()||!supplyConfirmLeave())return;
-  const name=prompt('새 군수품 품목명 입력\n(품목당 Google Sheets 시트 하나 생성됩니다.)','');if(name===null)return;
-  if(!name.trim())return alert('품목명을 입력하세요.');
-  if(!confirm('「'+name.trim()+'」 품목 시트를 생성하고, 현재 명단의 기수·중대·이름·교번만 복사할까요?\n총기번호와 총기상태는 복사하지 않습니다.'))return;
-  try{const r=await enqueue(()=>server('createSupplyItem',name.trim()));await supplyLoadCatalog(r.id);toast('품목 시트가 생성됐습니다. '+r.people+'명 연동');}
-  catch(e){alert('군수품 항목 추가 실패: '+e.message);}
-}
+async function supplyMakeItem(){return supplyConfigureV408(false);}
 async function supplySync(){
   if(!mustEdit()||!supplyItem||!supplyConfirmLeave())return;
   if(!confirm('현재 총기 명단의 인원정보만 동기화할까요?\n기존 품목별 상태·세부내용·사용자 추가 항목은 유지합니다.\n졸업한 인원의 기존 기록은 시트에 보관됩니다.'))return;
@@ -5119,3 +5112,11 @@ $('dutyRequestsListV400').oninput=event=>{const card=event.target.closest('[data
 $('dutyRequestsListV400').onclick=async event=>{const button=event.target.closest('[data-duty-request-action]');if(!button||dutyRequestBusyV400)return;const card=button.closest('[data-duty-request]'),row=dutyRequestsV400.find(row=>row.id===card.dataset.dutyRequest),action=button.dataset.dutyRequestAction;if(!row)return;if([...card.querySelectorAll('input,textarea,select')].some(field=>!field.checkValidity())){card.querySelector(':invalid')?.reportValidity();return;}if(!confirm(action==='apply'?'검토한 내용을 물품 기록에 반영할까요?':action==='confirm'?'물품 기록은 유지하고 확인 완료로 처리할까요?':'요청을 삭제할까요? 반영된 물품 기록은 유지됩니다.'))return;dutyRequestBusyV400=true;card.inert=true;try{const edits=row.changes.map((change,index)=>({key:change.key,value:change.kind==='quantity'?{quantity:Number(card.querySelector('[data-duty-request-quantity="'+index+'"]').value),detail:card.querySelector('[data-duty-request-quantity-detail="'+index+'"]').value}:{status:card.querySelector('[data-duty-request-status="'+index+'"]').value,detail:card.querySelector('[data-duty-request-detail="'+index+'"]').value}}));await enqueue(()=>server('resolveDutyRequestV400',row.id,action,edits,card.querySelector('[data-duty-request-note]').value,row.status));card.removeAttribute('data-request-edited');dutyRequestBusyV400=false;await dutyRequestsLoadV400();toast('근무생도 물품 요청 처리 완료');}catch(error){$('dutyRequestsStatusV400').textContent=error.message;}finally{dutyRequestBusyV400=false;card.inert=false;}};
 
 })();
+
+function supplyFieldsV408(){return supplyItem?.schema?.fields||['사이즈'];}
+async function supplyConfigureV408(edit=false){
+ if(!mustEdit()||!supplyConfirmLeave())return;const initial=edit?supplyItem:null,dialog=document.createElement('dialog');dialog.className='supply-schema-dialog';
+ dialog.innerHTML='<form><h2>'+ (edit?'군수품 항목 설정':'군수품 추가')+'</h2><label>품목명<input name="itemName" maxlength="60" required></label><p>고정 항목: 수량 · 상태 · 세부사항</p><label><input type="checkbox" name="useKind"> 종류 항목 추가</label><label>종류 선택지 (한 줄에 하나)<textarea name="kinds" rows="3" maxlength="10099" placeholder="일반형\n개선형"></textarea></label><label><input type="checkbox" name="useSize"> 사이즈 항목 추가</label><label>사이즈 선택지 (한 줄에 하나)<textarea name="sizes" rows="4" maxlength="10099" placeholder="소\n중\n대"></textarea></label><label data-mask><input type="checkbox" name="useSides"> 방독면 좌·우 사이즈 입력</label><p class="hint">관리 화면에서는 사이즈를 직접 입력할 수 있습니다. 선택지는 추후 내 정보 앱의 객관식 입력에 사용합니다.</p><p role="status" data-message></p><div><button type="button" data-cancel>취소</button><button type="submit">저장</button></div></form>';
+ document.body.append(dialog);const form=dialog.querySelector('form'),field=name=>form.elements.namedItem(name),schema=initial?.schema||{fields:['종류','사이즈'],options:{}};field('itemName').value=initial?.name||'';field('itemName').readOnly=edit;field('useKind').checked=schema.fields.includes('종류');field('useSize').checked=schema.fields.includes('사이즈');field('useSides').checked=initial?schema.fields.includes('좌'):true;field('kinds').value=(schema.options?.종류||[]).join('\n');field('sizes').value=(schema.options?.사이즈||[]).join('\n');const mask=()=>{form.querySelector('[data-mask]').hidden=!/방독면/.test(field('itemName').value);};field('itemName').oninput=mask;mask();form.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();
+ form.onsubmit=async event=>{event.preventDefault();const name=field('itemName').value.trim(),split=key=>[...new Set(field(key).value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean))],fields=[...(field('useKind').checked?['종류']:[]),...(field('useSize').checked?['사이즈']:[]),...(/방독면/.test(name)&&field('useSides').checked?['좌','우']:[])],value={fields,options:{종류:split('kinds'),사이즈:split('sizes')}};form.inert=true;try{if(edit){await enqueue(()=>server('saveSupplySchemaV408',initial.id,value));await supplyLoadItem(initial.id,true);}else{const result=await enqueue(()=>server('createSupplyItem',name,value));await supplyLoadCatalog(result.id);}dialog.close();toast('군수품 항목 저장 완료');}catch(error){form.querySelector('[data-message]').textContent=error.message;}finally{form.inert=false;}};dialog.showModal();
+}

@@ -1,0 +1,22 @@
+function supplySchemaV408_(item){
+ const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_SCHEMA_V408_'+item.id);if(raw)return JSON.parse(raw);
+ return {fields:['사이즈',...(/방독면/.test(item.name)?['좌','우']:[])],options:{종류:[],사이즈:[]}};
+}
+function supplySchemaValidateV408_(value,name){
+ const fields=Array.isArray(value?.fields)?value.fields:[],allowed=['종류','사이즈','좌','우'];if(fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('종류·사이즈·좌·우 항목을 확인하세요.');
+ if(!/방독면/.test(name)&&fields.some(f=>f==='좌'||f==='우'))throw Error('좌·우 항목은 방독면에서 사용하세요.');
+ const options={};for(const key of ['종류','사이즈']){const values=value?.options?.[key]||[];if(!Array.isArray(values)||values.length>100||values.some(v=>typeof v!=='string'||!v.trim()||v.length>100||/[\r\n\t]/.test(v)))throw Error('종류·사이즈 선택지는 각 100개, 항목당 100자 이내로 입력하세요.');options[key]=[...new Set(values.map(v=>v.trim()))];}
+ return {fields,options};
+}
+function supplySchemaEnsureV408_(ss,item,schema){
+ const r=supplyOne_(ss,item.id),missing=schema.fields.filter(f=>!r.headers.includes(f));if(missing.length){const begin=r.headers.length+1;if(r.sh.getMaxColumns()<begin+missing.length-1)r.sh.insertColumnsAfter(r.sh.getMaxColumns(),begin+missing.length-1-r.sh.getMaxColumns());r.sh.getRange(1,begin,1,missing.length).setValues([missing]);}
+ PropertiesService.getScriptProperties().setProperty('SUPPLY_SCHEMA_V408_'+item.id,JSON.stringify(schema));
+}
+function saveSupplySchemaV408(itemId,value){requireOwner_();return lockAndRun_(()=>{const ss=spreadsheet_(),item=supplyOne_(ss,itemId).item,schema=supplySchemaValidateV408_(value,item.name);supplySchemaEnsureV408_(ss,item,schema);return {ok:true,schema};});}
+/** One-off user-authorized reset. The private deployment invokes this once; no public RPC. */
+function supplyResetAuthorizedV408_(){requireOwner_();return lockAndRun_(()=>{
+ const ss=spreadsheet_(),props=PropertiesService.getScriptProperties(),key='SUPPLY_RESET_AUTHORIZED_20261107_V408';let plan=JSON.parse(props.getProperty(key)||'null');if(plan?.done)return plan;
+ if(!plan){const items=supplyRegistryItems_(ss),sheets=items.map(item=>supplyOne_(ss,item.id).sh),registry=supplyRegistry_(ss);if(sheets.some(sh=>!sh.getName().startsWith('군수품_'))||new Set(sheets.map(sh=>sh.getSheetId())).size!==sheets.length)throw Error('군수품 삭제 대상 시트를 확인하세요.');const backup=SpreadsheetApp.create('군수품 초기화 전 백업 2026-11-07');for(const sh of [...sheets,...(registry?[registry]:[])]){const copy=sh.copyTo(backup);copy.setName(sh.getName());if(copy.getLastRow()!==sh.getLastRow()||copy.getLastColumn()!==sh.getLastColumn())throw Error('군수품 백업 검증 실패');}SpreadsheetApp.flush();plan={backupUrl:backup.getUrl(),sheetIds:sheets.map(sh=>sh.getSheetId()),itemIds:items.map(item=>item.id),registryId:registry?.getSheetId()||null,count:items.length,done:false};props.setProperty(key,JSON.stringify(plan));}
+ for(const id of plan.sheetIds){const sh=ss.getSheets().find(sh=>sh.getSheetId()===id);if(sh)ss.deleteSheet(sh);}
+ const registry=ss.getSheets().find(sh=>sh.getSheetId()===plan.registryId);if(registry&&registry.getLastRow()>1)registry.getRange(2,1,registry.getLastRow()-1,4).clearContent();for(const id of plan.itemIds)props.deleteProperty('SUPPLY_SCHEMA_V408_'+id);plan.done=true;props.setProperty(key,JSON.stringify(plan));return plan;
+});}
