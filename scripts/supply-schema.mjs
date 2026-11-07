@@ -1,3 +1,4 @@
+import {insertAppClient} from './app-client.mjs';
 export function supplySchemaServerV408(source,helpers){
  source=source.replace('function createSupplyItem(name){','function createSupplyItem(name,schema){').replace('const roster=supplyRoster_(ss),sh=ss.insertSheet(supplySheetName_(ss,name));',"const setting=supplySchemaValidateV408_(schema||{fields:['사이즈'],options:{}},name),roster=supplyRoster_(ss),sh=ss.insertSheet(supplySheetName_(ss,name));").replace("supplyWriteAudit_(ss,'군수품 시트 추가',id,name);","supplySchemaEnsureV408_(ss,{id,name},setting);supplyWriteAudit_(ss,'군수품 시트 추가',id,name);").replace('return {...r.item,legacy:r.legacy,fields:r.fields,rows:', 'return {...r.item,schema:supplySchemaV408_(r.item),legacy:r.legacy,fields:r.fields,rows:');
  source=source.replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='saveSupplySchemaV408'){dutyRosterAdminV367_();return accessPolicyV284_();}");return source+'\n'+helpers;
@@ -10,5 +11,5 @@ export function supplySchemaClientV408(source,client){
  source=source.replace("$('supplyFieldInfo').textContent='기수 · 중대 · 이름 · 교번 · 상태 · 사이즈 · 수량 · 세부내용';","$('supplyFieldInfo').textContent='수량 · 상태 · 세부사항 (고정) · '+supplyFieldsV408().map(f=>f==='좌'||f==='우'?f+' 사이즈':f).join(' · ');if(!$('supplySchemaEditV408')){const button=document.createElement('button');button.id='supplySchemaEditV408';button.className='btn';button.textContent='종류·사이즈 항목 설정';button.onclick=()=>supplyConfigureV408(true);$('supplySync').parentElement.append(button);} $('supplySchemaEditV408').disabled=!canManageUsersV281;");
  source=source.replace('사이즈와 수량은 기본 관리 열입니다. 기존 추가 열은 삭제하지 않고 보존합니다.','수량·상태·세부사항은 고정이며 종류·사이즈 항목을 설정할 수 있습니다.').replace('품목을 추가하거나 목록에서 선택하세요. 새 품목에는 사이즈와 수량 열이 기본 생성됩니다.','품목을 추가하고 종류·사이즈 선택지를 설정하세요.').replace('기수 · 중대 · 이름 · 교번 · 상태 · 사이즈 · 수량 · 세부내용','기수 · 중대 · 이름 · 교번 · 수량 · 상태 · 세부사항');
  source=source.replace("const fields=['기수','중대','이름','교번','상태','사이즈','수량','세부내용'];","const optional=supplyFieldsV408(),fields=['기수','중대','이름','교번','수량','상태',...optional,'세부사항'];").replace("v.status,v.extra?.['사이즈']||'',v.extra?.['수량']||'',v.detail","v.extra?.['수량']??'',v.status,...optional.map(f=>v.extra?.[f]??''),v.detail");
- return source+'\n'+client;
+ return insertAppClient(source,client);
 }
