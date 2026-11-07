@@ -1,3 +1,10 @@
+function personalSaberRoleV406_(row){
+ const linked=dutySaberRoleV367(row);if(linked)return linked;
+ const duty=String(row.duty||'').normalize('NFKC').replace(/\s/g,'');
+ // Fixed duty names identify their saber even when an older roster has stale classification.
+ if(/^전대(?:장|(?:작전|인사|군수|체육|문화활동|문화)참모)(?:생도)?$/.test(duty))return dutySaberRoleV367({...row,organization:'전대',saberRoleOverride:'auto'});
+ return '';
+}
 function personalDutyV400_(person,ss){
  const key=p=>smartPersonIdentityV322_(p).join('|'),identity=key(person);
  if(rosterRows_(rosterRequired_(ss)).filter(p=>key(p)===identity).length!==1)throw Error('동명 명단을 관리자에게 확인하세요.');
@@ -5,14 +12,14 @@ function personalDutyV400_(person,ss){
  if(props.getProperty('DUTY_INDEX_VERSION_V367')!==version)return {isDuty:false,assignments:[]};
  const roster=dutyRosterRecordsV367_().filter(row=>row.data.version===version).map(dutyRosterPublicV367_),own=roster.filter(row=>key(row)===identity);
  if(!own.length)return {isDuty:false,assignments:[]};
- const quantities=dutyItemDataV368_(),details=dutyItemDetailsV403_(),saberKeys=new Set(own.map(dutySaberRoleV367).filter(Boolean)),saberSheet=saberKeys.size?ss.getSheetByName(SABER_V276.TAB):null;
+ const quantities=dutyItemDataV368_(),details=dutyItemDetailsV403_(),saberKeys=new Set(own.map(personalSaberRoleV406_).filter(Boolean)),saberSheet=saberKeys.size?ss.getSheetByName(SABER_V276.TAB):null;
  if(saberSheet&&saberSheet.getLastRow()>10000)throw Error('예도 기록 보관 한도를 확인하세요.');
  const saberRows=saberSheet&&saberSheet.getLastRow()>1?saberSheet.getRange(2,1,saberSheet.getLastRow()-1,10).getDisplayValues():[];
  const kinds=[['badge','흉장'],['block','블럭'],['door','방문 앞 명패'],['triangle','삼각명패']];
  const result={isDuty:true,assignments:own.map(row=>{
-  const saberKey=dutySaberRoleV367(row),required={...dutyItemRequirementsV368(row),saber:saberKey?1:0},swords=saberRows.filter(item=>item[0]===saberKey);
+  const saberKey=personalSaberRoleV406_(row),required={...dutyItemRequirementsV368(row),saber:saberKey?1:0},swords=saberRows.filter(item=>item[0]===saberKey);
   if(swords.length>1)throw Error('예도 중복 기록을 관리자에게 확인하세요.');
-  const saber=saberKey?{key:saberKey,role:saberKey.replace('|',' · '),status:canonicalRepairStateV216_(swords[0]?.[6]||''),detail:swords[0]?.[7]||'',conflict:roster.filter(other=>dutySaberRoleV367(other)===saberKey).length>1}:null;
+  const saber=saberKey?{key:saberKey,role:saberKey.replace('|',' · '),status:canonicalRepairStateV216_(swords[0]?.[6]||''),detail:swords[0]?.[7]||'',conflict:roster.filter(other=>personalSaberRoleV406_(other)===saberKey).length>1}:null;
   return {id:row.id,duty:String(row.duty||''),organization:dutyOrgKeyV372(row),saber,items:kinds.filter(([item])=>required[item]>0).map(([item,label])=>{
    const records=quantities.filter(record=>record[1]===row.id&&record[2]===item);if(records.length>1)throw Error('물품 중복 기록을 관리자에게 확인하세요.');
    const quantity=records.length?Number(records[0][3]):null;if(quantity!==null&&(!Number.isInteger(quantity)||quantity<0||quantity>1000))throw Error('물품 수량을 관리자에게 확인하세요.');
