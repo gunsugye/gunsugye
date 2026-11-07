@@ -53,3 +53,11 @@ test('세부사항은 요청만으로 기록을 바꾸지 않고 승인 시 저�
 });
 
 test('전대군수참모생도는 과거 분류·연결값과 관계없이 예도 상태 배정을 표시한다',()=>{const f=fixture();f.roster[0].data.source.duty='전대군수참모생도';f.roster[0].data.source.organization='기타';f.roster[0].data.source.saberRoleOverride='none';const assignment=f.c.personalDutyV400_(f.person,f.ss).assignments[0];assert.equal(assignment.saber.key,'전대|군수참모생도');assert.equal(assignment.items.some(item=>item.item==='saber'),false);});
+
+test('전대·대대 전체 참모와 8개 중대장·편대장, 명예위원장의 예도 연결을 점검한다',()=>{
+ const f=fixture();let count=0;
+ for(const unit of ['전대','1대대','2대대'])for(const title of ['장','작전참모','인사참모','군수참모','체육참모','문화활동참모']){const duty=unit+title+'생도',expected=unit+'|'+(title==='장'?'대장':title)+'생도';assert.equal(f.c.personalSaberRoleV406_({duty,organization:'기타',saberRoleOverride:'none'}),expected,duty);count++;}
+ for(let company=1;company<=8;company++)for(const title of ['장','1편대장','2편대장','3편대장','4편대장']){const duty=company+'중대'+title+'생도',expected=company+'중대|'+(title==='장'?'중대장':title)+'생도';assert.equal(f.c.personalSaberRoleV406_({duty,company:'1',organization:'기타'}),expected,duty);count++;}
+ assert.equal(f.c.personalSaberRoleV406_({duty:'명예위원장생도'}),'명예위원회|명예위원장생도');assert.equal(count,58);
+ for(const duty of ['군수보좌관생도','전대군수참모보좌관생도','동기회장','생활발전위원장','편대장'])assert.equal(f.c.personalSaberRoleV406_({duty}), '', duty);
+});

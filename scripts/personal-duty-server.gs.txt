@@ -1,9 +1,10 @@
 function personalSaberRoleV406_(row){
- const linked=dutySaberRoleV367(row);if(linked)return linked;
- const duty=String(row.duty||'').normalize('NFKC').replace(/\s/g,'');
- // Fixed duty names identify their saber even when an older roster has stale classification.
- if(/^전대(?:장|(?:작전|인사|군수|체육|문화활동|문화)참모)(?:생도)?$/.test(duty))return dutySaberRoleV367({...row,organization:'전대',saberRoleOverride:'auto'});
- return '';
+ const duty=String(row.duty||'').normalize('NFKC').replace(/\s/g,''),staff=/^(전대|[12]대대)(?:장|(?:작전|인사|군수|체육|문화활동|문화)참모)(?:생도)?$/.exec(duty),company=/^([1-8])중대(?:장|[1-4]편대장)(?:생도)?$/.exec(duty);
+ if(staff)return dutySaberRoleV367({...row,organization:staff[1],saberRoleOverride:'auto'});
+ if(company)return dutySaberRoleV367({...row,organization:'중대',company:company[1],dutyCompanyOverride:company[1],saberRoleOverride:'auto'});
+ if(/^[1-4]편대장(?:생도)?$/.test(duty))return dutySaberRoleV367({...row,organization:'중대',saberRoleOverride:'auto'});
+ if(/^명예위원장(?:생도)?$/.test(duty))return '명예위원회|명예위원장생도';
+ return dutySaberRoleV367(row);
 }
 function personalDutyV400_(person,ss){
  const key=p=>smartPersonIdentityV322_(p).join('|'),identity=key(person);
