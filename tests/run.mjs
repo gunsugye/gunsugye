@@ -31,6 +31,7 @@ await import('./asset-overview.test.mjs');
 await import('./asset-plan.test.mjs');
 await import('./asset-initialization.test.mjs');
 await import('./personal.test.mjs');
+await import('./personal-duty.test.mjs');
 await import('./personal-session.test.mjs');
 await import('./asset-requests.test.mjs');
 await import('./asset-inspection.test.mjs');

@@ -1,0 +1,27 @@
+let personalDutyDirtyV400=false;
+const personalDutyDraftsV400=new Map();
+function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;}
+function personalDutyRenderV400(data){
+ const duty=data.duty;if(!duty?.isDuty||!duty.assignments?.length){personalDutyResetV400();return;}
+ const root=$('personalDutyCardsV400');root.replaceChildren();$('personalDutyV400').hidden=false;personalDutyDirtyV400=false;personalDutyDraftsV400.clear();
+ const form=element('form'),editors=[];
+ for(const assignment of duty.assignments){
+  const table=element('table','','personal-duty-table'),head=element('thead'),roleRow=element('tr'),role=element('th',assignment.duty);role.colSpan=3;roleRow.append(role);head.append(roleRow);const headings=element('tr');for(const label of ['품목','수량','세부사항'])headings.append(element('th',label));head.append(headings);table.append(head);const body=element('tbody');
+  for(const item of assignment.items||[]){if(!(item.required>0))continue;
+   const row=element('tr'),name=element('th',item.label),quantity=element('td'),details=element('td'),select=element('select'),custom=element('input'),note=element('textarea');row.dataset.dutyItem=item.item;
+   select.setAttribute('aria-label',assignment.duty+' '+item.label+' 수량');const blank=element('option','선택');blank.value='';select.append(blank);
+   for(let count=0;count<=item.required;count++){const option=element('option',count+'개');option.value=String(count);select.append(option);}const direct=element('option','직접 입력');direct.value='direct';select.append(direct);
+   select.value=item.quantity===null?'':item.quantity<=item.required?String(item.quantity):'direct';custom.type='number';custom.min='0';custom.max='1000';custom.step='1';custom.value=item.quantity??'';custom.hidden=select.value!=='direct';custom.setAttribute('aria-label',assignment.duty+' '+item.label+' 직접 입력');custom.placeholder='직접 입력 수량';
+   note.value=item.detail||'';note.maxLength=1500;note.placeholder='세부사항';note.setAttribute('aria-label',assignment.duty+' '+item.label+' 세부사항');note.dataset.dutyDetail='true';
+   select.onchange=()=>{custom.hidden=select.value!=='direct';if(!custom.hidden)custom.focus?.();form.oninput?.();};quantity.append(select,custom);details.append(note);row.append(name,quantity,details);body.append(row);
+   editors.push({key:assignment.id+'|'+item.item,before:{quantity:item.quantity,detail:item.detail||''},read:()=>({quantity:select.value==='direct'?(custom.value===''?null:Number(custom.value)):select.value===''?null:Number(select.value),detail:note.value.trim()})});
+  }
+  table.append(body);form.append(table);
+ }
+ const message=element('p','입력한 내용은 관리자 확인 후 반영됩니다.','hint'),button=element('button','근무생도 물품 수정 요청');button.type='submit';button.disabled=true;form.append(message,button);root.append(form);
+ const changes=()=>editors.map(editor=>({key:editor.key,value:editor.read(),before:editor.before})).filter(change=>JSON.stringify(change.value)!==JSON.stringify(change.before));
+ form.oninput=()=>{personalDutyDirtyV400=changes().length>0;personalDutyDraftsV400.set(form,personalDutyDirtyV400);button.disabled=!personalDutyDirtyV400;};
+ form.onsubmit=async event=>{event.preventDefault();if(busy||!token||!changes().length)return;if(changes().some(change=>!Number.isInteger(change.value.quantity)||change.value.quantity<0||change.value.quantity>1000)){message.textContent='수량을 선택하거나 0~1000 사이 정수로 직접 입력하세요.';return;}busy=true;form.inert=true;$('refresh').disabled=true;const current=ticket;message.textContent='요청 중…';try{await request('duty-request',{snapshot:duty.snapshot,changes:changes().map(({key,value})=>({key,value}))});if(current!==ticket||!token)return;personalDutyDirtyV400=false;personalDutyDraftsV400.clear();for(const editor of editors)editor.before=editor.read();button.disabled=true;message.textContent='수정 요청 접수 · 관리자 확인 대기';}catch(error){if(current===ticket)message.textContent=error.message;}finally{busy=false;form.inert=false;if(current===ticket)$('refresh').disabled=false;}};
+ if(duty.requests?.length){const history=element('details');history.append(element('summary','수정 요청 내역'));for(const request of duty.requests)history.append(element('p',request.createdAt.slice(0,10)+' · '+request.status+(request.note?' · '+request.note:''),'hint'));root.append(history);}
+}
+window.addEventListener('beforeunload',event=>{if(personalDutyDirtyV400){event.preventDefault();event.returnValue='';}});
