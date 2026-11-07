@@ -8,7 +8,7 @@ function personalDutyV400_(person,ss){
  const quantities=dutyItemDataV368_(),details=dutyItemDetailsV403_(),saberKeys=new Set(own.map(dutySaberRoleV367).filter(Boolean)),saberSheet=saberKeys.size?ss.getSheetByName(SABER_V276.TAB):null;
  if(saberSheet&&saberSheet.getLastRow()>10000)throw Error('예도 기록 보관 한도를 확인하세요.');
  const saberRows=saberSheet&&saberSheet.getLastRow()>1?saberSheet.getRange(2,1,saberSheet.getLastRow()-1,10).getDisplayValues():[];
- const kinds=[['saber','예도'],['badge','흉장'],['block','블럭'],['door','방문 앞 명패'],['triangle','삼각명패']];
+ const kinds=[['badge','흉장'],['block','블럭'],['door','방문 앞 명패'],['triangle','삼각명패']];
  const result={isDuty:true,assignments:own.map(row=>{
   const saberKey=dutySaberRoleV367(row),required={...dutyItemRequirementsV368(row),saber:saberKey?1:0},swords=saberRows.filter(item=>item[0]===saberKey);
   if(swords.length>1)throw Error('예도 중복 기록을 관리자에게 확인하세요.');
