@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 await import('./survey-periods.test.mjs');
+await import('./roster-firearm-audit.test.mjs');
 await import('./api.test.mjs');
 await import('./static.test.mjs');
 await import('./journal.test.mjs');

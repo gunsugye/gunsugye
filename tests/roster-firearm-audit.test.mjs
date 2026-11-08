@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {rosterGunAuditV417,rosterGunNumberV417} from '../scripts/roster-firearm-audit.mjs';
+test('총기 수량은 중복 번호를 제외하며 상태 불일치와 번호 누락을 분리한다',()=>{
+ const rows=[{id:'a',firearmNumber:'00123',firearmStatus:'정상'},{id:'b',firearmNumber:' ００１２３ ',firearmStatus:'교체 필요'},{id:'c',firearmNumber:'123',firearmStatus:'수리 필요'},{id:'d',firearmNumber:'',firearmStatus:'정상'},{id:'e',firearmNumber:'—'}],before=JSON.stringify(rows),data=rosterGunAuditV417(rows);
+ assert.equal(data.people,5);assert.equal(data.quantity,2);assert.equal(data.registered,3);assert.equal(data.duplicates.length,1);assert.equal(data.duplicatePeople,2);assert.deepEqual(data.duplicates[0].people.map(p=>p.id),['a','b']);assert.deepEqual(data.missing.map(p=>p.id),['d','e']);assert.equal(data.unknown,1);assert.equal(data.unreported,1);assert.equal(data.normal+data.reported+data.unreported+data.replacement+data.unknown,data.quantity);assert.equal(JSON.stringify(rows),before);assert.equal(rosterGunNumberV417('000123'),'000123');assert.equal(rosterGunNumberV417(0),'0');
+});

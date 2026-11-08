@@ -1,4 +1,5 @@
 import {surveyServerV416,surveyClientV416} from './survey-periods.mjs';
+import {rosterGunAuditClientV417} from './roster-firearm-audit.mjs';
 import {firearmRequestSourceV413,firearmRequestClientV413,firearmRequestsHtmlV413} from './firearm-requests.mjs';
 import * as rosterLinkageV412 from './roster-linkage.mjs';
 import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
@@ -118,6 +119,7 @@ js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('script
 js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
 js=firearmRequestClientV413(js,read('scripts/firearm-requests-client.js.txt'));
 js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
+js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'));
 const css = read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);

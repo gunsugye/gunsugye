@@ -28,3 +28,34 @@ html[data-personal-restoring] #login{display:none}
 #assetPlanV332 .asset-plan-band{padding:5px 10px}#assetPlanV332 .asset-plan-scroll{padding-bottom:8px}
 
 .personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}
+/* 개인 앱 공통 글자·입력 크기: 화면 크기와 항목에 관계없이 같은 기준 사용 */
+:root{--personal-body:14px;--personal-note:13px;--personal-title:16px;--personal-input:16px;--personal-line:1.55;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-size:var(--personal-body);line-height:var(--personal-line)}
+header .brand{font-size:20px;line-height:1.4}header .brand span,header .admin,footer{font-size:var(--personal-note);line-height:var(--personal-line)}
+.login h1,#dashboard .page-head h1{font-size:24px;line-height:1.3;letter-spacing:-.5px}.login .sub,#dashboard .page-head .sub{font-size:var(--personal-body);line-height:var(--personal-line)}
+.login label,#dashboard label{font-size:var(--personal-body);line-height:var(--personal-line)}
+.login :is(input,select,textarea),#dashboard :is(input:not([type=checkbox]),select,textarea){font-family:inherit;font-size:var(--personal-input);line-height:1.5;min-height:44px;padding:8px;border-radius:8px}
+.login button,#dashboard button{font-family:inherit;font-size:var(--personal-body);line-height:1.5;min-height:44px;padding:8px 12px;border-radius:8px}
+#dashboard .card{padding:18px}#dashboard .card h2{font-size:var(--personal-title);line-height:1.4;margin:0 0 12px;font-weight:700}
+#dashboard :is(p,dl,dt,dd,table,th,td),#dashboard .item strong,#dashboard .item p,#dashboard .badge,#dashboard .card table :is(th,td){font-size:var(--personal-body);line-height:var(--personal-line)}
+#dashboard .card .room{font-size:var(--personal-title);line-height:var(--personal-line)}
+#dashboard :is(.hint,.empty,small,.personal-requests,.personal-requests p,.personal-room-plan>strong,.asset-plan-issue,.asset-plan-issue small,.asset-plan-pending,.personal-check-header,.legacy-note){font-size:var(--personal-note);line-height:1.5}
+#dashboard :is(.personal-table,.personal-duty-table,.personal-uniform-table){margin-top:8px;border-collapse:collapse;width:100%;font-size:var(--personal-body)}
+#dashboard :is(.personal-table,.personal-duty-table,.personal-uniform-table) :is(th,td){padding:8px!important;vertical-align:middle;line-height:var(--personal-line)}
+#dashboard :is(.personal-table,.personal-duty-table,.personal-uniform-table) thead th{font-size:var(--personal-body);background:#edf3fa;color:#536980;font-weight:700}
+#dashboard .personal-table .asset-slot td{line-height:var(--personal-line)}
+#dashboard .personal-table .asset-slot textarea,#dashboard .personal-duty-table textarea{height:44px;min-height:44px;font-size:var(--personal-input);line-height:1.5;padding:8px;resize:vertical}
+#dashboard .personal-table .asset-slot textarea:focus{height:66px;min-height:66px;font-size:var(--personal-input);line-height:1.5}
+#dashboard .personal-table .personal-state-select{height:44px;min-height:44px}
+#dashboard .personal-state-label{font-size:var(--personal-body);line-height:1.3;padding:2px 12px 2px 3px}
+#dashboard .personal-state-select:after{font-size:var(--personal-note);top:12px}
+#dashboard .personal-table .personal-state-select select{padding:0;min-height:100%;height:100%}
+#dashboard .personal-table .asset-slot td>label:not(.unavailable){width:100%;margin:0}
+#dashboard :is(.personal-table,.personal-duty-table) th:first-child{width:26%}
+#dashboard .personal-table .asset-slot .unavailable,#dashboard .personal-table tbody th .unavailable{width:20px;height:24px;min-height:24px;margin-right:5px}
+#dashboard input[type=checkbox],#dashboard .personal-table .unavailable input{width:18px;height:18px;min-height:18px;margin:0;padding:0}
+#dashboard .save-bar{gap:12px;padding:10px;margin-top:10px}#dashboard .save-bar span{font-size:var(--personal-note);line-height:1.5}
+#dashboard .personal-requests summary,#dashboard details summary{font-size:var(--personal-note);line-height:1.5;min-height:36px;padding:8px 0;cursor:pointer}
+#dashboard .personal-room-plan.asset-plan-card{max-height:none;min-height:44px;padding:8px}
+#dashboard .personal-room-plan .asset-plan-issue{font-size:var(--personal-note);min-height:36px}
+@media(max-width:600px){header{height:60px}main{padding:12px}.page-head{flex-wrap:wrap;gap:12px}#dashboard .page-head>div:first-child{width:100%}#dashboard .actions{width:100%;gap:8px}#dashboard .actions button{flex:1}#dashboard .grid{gap:12px}#dashboard .grid>.card{grid-column:1/-1}#dashboard .card{padding:14px}#dashboard :is(.personal-table,.personal-duty-table,.personal-uniform-table) :is(th,td){padding:6px 4px!important}}
