@@ -4061,11 +4061,70 @@ firearmRequestsInitV413();setInterval(()=>{if(view==='firearmRequests'&&!documen
 const surveyViewsV416={uniformRequests:'uniform',assetRequests:'asset',dutyRequests:'duty',firearmRequests:'firearm'},surveyPanelsV416=new Map();
 function surveyTimeV416(value){return value?new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}):'종료일 없음';}
 function surveyValueTextV416(value){if(value===null||value===undefined||value==='')return '미입력';if(Array.isArray(value))return value.map(surveyValueTextV416).join(' / ');if(typeof value!=='object')return String(value);const labels={label:'품목',status:'상태',detail:'세부사항',details:'세부사항',quantity:'수량',position:'자리',unavailable:'사용불가',slots:'기록',value:'입력'};return Object.entries(value).map(([key,v])=>(labels[key]||key)+': '+(typeof v==='boolean'?(v?'예':'아니오'):surveyValueTextV416(v))).join(' · ');}
-function surveyViewV416(view){const kind=surveyViewsV416[view];if(!kind||!canEdit||v284Scoped)return;setTimeout(()=>{const root=$(view+'View');if(!root||root.classList.contains('hidden'))return;let state=surveyPanelsV416.get(kind);if(!state){const panel=document.createElement('div');panel.className='panel';panel.dataset.surveyKind=kind;panel.innerHTML='<h2>일반 기간 / 전수조사 기간</h2><p data-survey-mode role="status"></p><p>일반 기간에는 수정 요청을 검토 후 반영합니다. 전수조사 기간에는 본인 입력을 즉시 반영하고, 응답과 변경 이력을 조사별로 보관합니다. 종료되면 자동으로 일반 기간으로 돌아옵니다.</p><form data-survey-form class="supply-actions"><input class="field" name="label" required maxlength="100" placeholder="전수조사 이름"><label>종료 일시<input class="field" name="endsAt" type="datetime-local" required></label><button type="submit" class="btn btn-primary">전수조사 기간 시작</button><button type="button" class="btn" data-survey-stop>종료하고 일반 기간으로</button></form><p data-survey-message role="status"></p><details data-survey-history><summary>저장된 전수조사 기록 열기</summary><div class="supply-actions"><select class="field" data-survey-period aria-label="전수조사 기록 선택"></select><button type="button" class="btn" data-survey-refresh>기록 새로고침</button><input type="search" class="field" data-survey-search placeholder="기수·중대·이름 검색"></div><p data-survey-count></p><div data-survey-records></div></details>';root.prepend(panel);state={kind,panel,busy:false,data:null};surveyPanelsV416.set(kind,state);const form=panel.querySelector('form');form.elements.label.value=({uniform:'피복 사이즈',asset:'생활실 비품',duty:'근무생도 물품',firearm:'총기'})[kind]+' 전수조사';const end=new Date(Date.now()+7*86400000);form.elements.endsAt.value=new Date(end.getTime()-end.getTimezoneOffset()*60000).toISOString().slice(0,16);form.onsubmit=event=>{event.preventDefault();surveySetV416(state,{enabled:true,label:form.elements.label.value,endsAt:new Date(form.elements.endsAt.value).toISOString()});};panel.querySelector('[data-survey-stop]').onclick=()=>surveySetV416(state,{enabled:false,id:state.data?.policy.id});panel.querySelector('[data-survey-period]').onchange=()=>surveyLoadV416(state);panel.querySelector('[data-survey-refresh]').onclick=()=>surveyLoadV416(state);panel.querySelector('[data-survey-search]').oninput=()=>surveyRecordsV416(state);
- if(kind==='firearm'){const oldForm=$('firearmSurveyFormV413');if(oldForm)oldForm.closest('details').hidden=true;const oldTable=$('firearmSurveyRowsV413');if(oldTable)oldTable.closest('.panel').hidden=true;}}
- surveyLoadV416(state);},0);}
-async function surveySetV416(state,input){if(state.busy)return;if(!confirm(input.enabled?'설정한 기간 동안 본인 입력을 바로 반영하고 조사 기록으로 보관할까요?':'조사를 종료하고 일반 수정 요청 기간으로 돌아갈까요?'))return;state.busy=true;state.panel.querySelector('form').inert=true;const message=state.panel.querySelector('[data-survey-message]');message.textContent='기간 변경 중…';try{await server('setSurveyPeriodV416',state.kind,input);state.busy=false;await surveyLoadV416(state,true);message.textContent=input.enabled?'전수조사 기간을 시작했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.';}catch(error){message.textContent=error.message;}finally{state.busy=false;state.panel.querySelector('form').inert=false;}}
-async function surveyLoadV416(state,reset=false){if(state.busy)return;state.busy=true;const panel=state.panel,select=panel.querySelector('[data-survey-period]'),message=panel.querySelector('[data-survey-message]');try{state.data=await server('getSurveyPeriodsV416',state.kind,reset?'':select.value);const d=state.data,p=d.policy;panel.querySelector('[data-survey-mode]').textContent=p.mode==='direct'?'현재: 전수조사 기간 · '+p.label+' · '+surveyTimeV416(p.endsAt)+'까지 입력 즉시 반영':'현재: 일반 기간 · 수정 요청 검토 후 반영';panel.querySelector('[type=submit]').disabled=p.mode==='direct';panel.querySelector('[data-survey-stop]').disabled=p.mode!=='direct';select.replaceChildren(new Option('저장된 조사 선택',''),...d.periods.map(period=>new Option(period.label+' · '+surveyTimeV416(period.startedAt)+(period.id===p.id&&p.mode==='direct'?' · 진행 중':' · 종료'),period.id)));select.value=d.selected;surveyRecordsV416(state);message.textContent='';}catch(error){message.textContent=error.message;}finally{state.busy=false;}}
+function surveyViewV416(view){
+ const kind=surveyViewsV416[view];if(!kind||!canEdit||v284Scoped)return;
+ setTimeout(()=>{
+  const root=$(view+'View');if(!root||root.classList.contains('hidden'))return;
+  let state=surveyPanelsV416.get(kind);
+  if(!state){
+   const panel=document.createElement('div');panel.className='panel';panel.dataset.surveyKind=kind;
+   panel.innerHTML='<h2>일반 기간 / 전수조사 기간</h2><fieldset data-survey-mode-choice style="display:flex;flex-wrap:wrap;gap:12px;border:0;padding:0;margin:16px 0" disabled><legend style="margin-bottom:8px;font-weight:700">운영 기간 선택</legend><label class="btn" style="display:flex;align-items:center;gap:8px"><input type="radio" name="survey-mode-'+kind+'" value="request">일반 기간</label><label class="btn" style="display:flex;align-items:center;gap:8px"><input type="radio" name="survey-mode-'+kind+'" value="direct">전수조사 기간</label></fieldset><p data-survey-mode role="status"></p><p>일반 기간은 수정 요청을 검토 후 반영합니다. 전수조사 기간은 본인 입력을 즉시 반영하고 기록을 보관합니다. 선택하면 바로 전환되며, 종료 일시가 지나면 일반 기간으로 돌아옵니다.</p><details data-survey-settings><summary>전수조사 이름·종료일 설정</summary><form data-survey-form class="supply-actions"><label>조사 이름<input class="field" name="label" required maxlength="100" placeholder="전수조사 이름"></label><label>종료 일시<input class="field" name="endsAt" type="datetime-local" required></label></form><p class="help">기본 조사 기간은 7일입니다. 필요하면 이름·종료일을 바꾼 뒤 위의 전수조사 기간을 선택하세요. 진행 중인 조사 설정을 바꾸려면 일반 기간으로 전환한 후 새 조사를 시작하세요.</p></details><p data-survey-message role="status"></p><details data-survey-history><summary>저장된 전수조사 기록 열기</summary><div class="supply-actions"><select class="field" data-survey-period aria-label="전수조사 기록 선택"></select><button type="button" class="btn" data-survey-refresh>기록 새로고침</button><input type="search" class="field" data-survey-search placeholder="기수·중대·이름 검색"></div><p data-survey-count></p><div data-survey-records></div></details>';
+   root.prepend(panel);state={kind,panel,busy:false,data:null};surveyPanelsV416.set(kind,state);
+   surveyDraftResetV419(state);
+   panel.querySelector('form').onsubmit=event=>event.preventDefault();
+   panel.querySelector('[data-survey-mode-choice]').onchange=event=>{if(event.target.type==='radio')surveyChooseV419(state,event.target.value);};
+   panel.querySelector('[data-survey-period]').onchange=()=>surveyLoadV416(state);
+   panel.querySelector('[data-survey-refresh]').onclick=()=>surveyLoadV416(state);
+   panel.querySelector('[data-survey-search]').oninput=()=>surveyRecordsV416(state);
+   if(kind==='firearm'){const oldForm=$('firearmSurveyFormV413');if(oldForm)oldForm.closest('details').hidden=true;const oldTable=$('firearmSurveyRowsV413');if(oldTable)oldTable.closest('.panel').hidden=true;}
+  }
+  surveyLoadV416(state);
+ },0);
+}
+function surveyDraftResetV419(state){
+ const form=state.panel.querySelector('form'),end=new Date(Date.now()+7*86400000);
+ form.elements.label.value=({uniform:'피복 사이즈',asset:'생활실 비품',duty:'근무생도 물품',firearm:'총기'})[state.kind]+' 전수조사';
+ form.elements.endsAt.value=new Date(end.getTime()-end.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+function surveyModeRenderV419(state){
+ const policy=state.data?.policy,group=state.panel.querySelector('[data-survey-mode-choice]');group.disabled=state.busy||!policy;
+ for(const radio of group.querySelectorAll('input')){radio.checked=radio.value===policy?.mode;radio.closest('label').classList.toggle('btn-primary',radio.checked);}
+ state.panel.querySelector('form').inert=state.busy||policy?.mode==='direct';
+ if(policy)state.panel.querySelector('[data-survey-mode]').textContent=policy.mode==='direct'?'현재: 전수조사 기간 · '+policy.label+' · '+surveyTimeV416(policy.endsAt)+'까지 입력 즉시 반영':'현재: 일반 기간 · 수정 요청 검토 후 반영';
+}
+async function surveyChooseV419(state,mode){
+ if(state.busy||!state.data){surveyModeRenderV419(state);return;}
+ if(mode===state.data.policy.mode)return;
+ if(mode==='request'){await surveySetV416(state,{enabled:false,id:state.data.policy.id});return;}
+ const form=state.panel.querySelector('form'),end=Date.parse(form.elements.endsAt.value);
+ if(!form.checkValidity()||!form.elements.label.value.trim()||!Number.isFinite(end)||end<=Date.now()||end>Date.now()+90*86400000){
+  state.panel.querySelector('[data-survey-settings]').open=true;surveyModeRenderV419(state);
+  state.panel.querySelector('[data-survey-message]').textContent='조사 이름과 90일 이내의 미래 종료 일시를 확인하세요.';form.reportValidity();return;
+ }
+ await surveySetV416(state,{enabled:true,label:form.elements.label.value.trim(),endsAt:new Date(end).toISOString()});
+}
+async function surveySetV416(state,input){
+ if(state.busy)return;state.busy=true;surveyModeRenderV419(state);
+ const message=state.panel.querySelector('[data-survey-message]');message.textContent='기간 변경 중…';
+ try{
+  const policy=await server('setSurveyPeriodV416',state.kind,input);state.data={...state.data,policy};
+  if(!input.enabled)surveyDraftResetV419(state);
+  state.busy=false;const loaded=await surveyLoadV416(state,true);
+  message.textContent=(input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.');
+ }catch(error){message.textContent=error.message;}finally{state.busy=false;surveyModeRenderV419(state);}
+}
+async function surveyLoadV416(state,reset=false){
+ if(state.busy)return false;state.busy=true;surveyModeRenderV419(state);
+ const panel=state.panel,select=panel.querySelector('[data-survey-period]'),message=panel.querySelector('[data-survey-message]');
+ try{
+  state.data=await server('getSurveyPeriodsV416',state.kind,reset?'':select.value);const d=state.data,p=d.policy;
+  if(p.mode==='direct'){const form=panel.querySelector('form'),end=new Date(p.endsAt);form.elements.label.value=p.label;form.elements.endsAt.value=new Date(end.getTime()-end.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+  else if(Date.parse(panel.querySelector('form').elements.endsAt.value)<=Date.now())surveyDraftResetV419(state);
+  select.replaceChildren(new Option('저장된 조사 선택',''),...d.periods.map(period=>new Option(period.label+' · '+surveyTimeV416(period.startedAt)+(period.id===p.id&&p.mode==='direct'?' · 진행 중':' · 종료'),period.id)));
+  select.value=d.selected;surveyRecordsV416(state);message.textContent='';return true;
+ }catch(error){message.textContent=error.message;return false;}finally{state.busy=false;surveyModeRenderV419(state);}
+}
+
 function surveyRecordsV416(state){const {panel,data:d}=state;if(!d)return;const query=panel.querySelector('[data-survey-search]').value.trim().toLowerCase(),match=r=>!query||[r.requester.cohort,r.requester.company,r.requester.name].join(' ').toLowerCase().includes(query);panel.querySelector('[data-survey-count]').textContent='응답 인원 '+d.respondents+'명 · 저장 이력 '+d.totalResponses+'건 · 마지막 응답에서 변경 '+d.changed+'명';panel.querySelector('[data-survey-records]').innerHTML=d.latest.filter(match).map(row=>{const records=d.responses.filter(r=>r.personId===row.personId);const content=r=>'<p>'+escapeH(surveyTimeV416(r.createdAt))+' · '+(r.changed?'변경 즉시 반영':'변경 없음 확인')+'</p>'+(r.changes?.length?'<div class="roster-wrap"><table class="roster-table"><thead><tr><th>품목</th><th>이전 기록</th><th>반영 기록</th></tr></thead><tbody>'+r.changes.map(c=>'<tr><th>'+escapeH(c.label)+'</th><td>'+escapeH(surveyValueTextV416(c.before))+'</td><td>'+escapeH(surveyValueTextV416(c.value))+'</td></tr>').join('')+'</tbody></table></div>':'')+(r.confirmed?'<details><summary>확인한 전체 입력</summary><p>'+escapeH(surveyValueTextV416(r.confirmed))+'</p></details>':'');return '<article class="asset-request-card"><h3>'+escapeH(String(row.requester.cohort||'').replace(/(?:\s*기)+$/u,'')+'기 · '+String(row.requester.company||'').replace(/중대$/,'')+'중대 · '+row.requester.name)+'</h3>'+content(row)+(records.length>1?'<details><summary>이전 저장 이력 '+(records.length-1)+'건</summary>'+records.filter(r=>r.id!==row.id).map(content).join('')+'</details>':'')+'</article>';}).join('')||'<p>저장된 응답이 없습니다. 종료된 조사도 위 목록에서 선택할 수 있습니다.</p>';}
 
 function rosterGunNumberV417(value){const number=String(value??'').normalize('NFKC').replace(/\s/g,'');return ['','-','—','미등록','없음'].includes(number)?'':number;}
