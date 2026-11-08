@@ -1,3 +1,4 @@
+import {surveyServerV416,surveyClientV416} from './survey-periods.mjs';
 import {firearmRequestSourceV413,firearmRequestClientV413,firearmRequestsHtmlV413} from './firearm-requests.mjs';
 import * as rosterLinkageV412 from './roster-linkage.mjs';
 import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
@@ -116,6 +117,7 @@ js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
 js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
 js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
 js=firearmRequestClientV413(js,read('scripts/firearm-requests-client.js.txt'));
+js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
 const css = read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
@@ -213,6 +215,7 @@ legacy=firearmSourceV410(legacy,true).replace('value.groups.length>NAV_GROUPS_V2
 legacy=linkageSourceV412(legacy).replace('function smartReferenceV253_(ss){','function smartReferenceV253_(ss){if(rosterLinkSmartContextV412_)return rosterLinkSmartContextV412_;').replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getRosterLinkagePulseV412')return accessPolicyV284_();if(['getRosterLinkageV412','syncRosterLinkageV412','enableRosterLinkageV412'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
 legacy+='\n'+Object.values(rosterLinkageV412).filter(v=>typeof v==='function').map(f=>f.toString()).join('\n')+'\n'+read('scripts/roster-linkage-server.gs.txt');
 legacy=firearmRequestSourceV413(legacy,true).replace("if(action==='duty-request')return personalDutyRequestV400_(input);","if(action==='duty-request')return personalDutyRequestV400_(input);if(action==='firearm-request')return personalFirearmRequestV413_(input);").replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getFirearmRequestsV413','resolveFirearmRequestsV413','setFirearmSurveyV413'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");legacy+='\n'+read('scripts/firearm-requests-server.gs.txt');
+legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
