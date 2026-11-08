@@ -1,6 +1,7 @@
 // schemaVersion 2에는 활성 메뉴만 저장합니다. 삭제 목록이나 숨김 항목을 남기지 않습니다.
 export function normalizeNavigation(value, defaults, available) {
   const known = new Map(defaults.map(g => [g.id, g]));
+  for(const group of Array.isArray(value?.groups)?value.groups:[])if(/^g_[a-z0-9]{8,40}$/.test(group?.id)&&typeof group.title==='string'&&group.title.trim())known.set(group.id,{id:group.id,title:group.title.trim().slice(0,25),items:[]});
   const allowed = new Set(available), used = new Set(), groups = [];
   const valid = value && Array.isArray(value.groups);
   const modern = valid && value.schemaVersion === 2;
@@ -29,6 +30,7 @@ export function normalizeNavigation(value, defaults, available) {
     }
   }
   const labels = {};
+  if(valid&&!value.dutyRequestsAddedV400&&allowed.has('dutyRequests')&&!used.has('dutyRequests')){const def=defaults.find(g=>g.id==='devices');if(def){let group=groups.find(g=>g.id==='devices');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}const pos=group.items.indexOf('dutyItems');group.items.splice(pos<0?group.items.length:pos+1,0,'dutyRequests');used.add('dutyRequests');}}
   if(valid&&!value.developmentRequestsAddedV381&&allowed.has('developmentRequests')&&!used.has('developmentRequests')){const def=defaults.find(g=>g.id==='other');if(def){let group=groups.find(g=>g.id==='other');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('developmentRequests');used.add('developmentRequests');}}
   if(valid&&!value.dutyCadetsAddedV365&&allowed.has('dutyCadets')&&!used.has('dutyCadets')){const def=defaults.find(g=>g.id==='devices');if(def){let group=groups.find(g=>g.id==='devices');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}const pos=group.items.indexOf('roster');group.items.splice(pos<0?0:pos+1,0,'dutyCadets');used.add('dutyCadets');}}
   if(valid&&!value.personalInterfaceAddedV359&&allowed.has('personalInterface')&&!used.has('personalInterface')){const def=defaults.find(g=>g.id==='personalInfo');if(def){let group=groups.find(g=>g.id==='personalInfo');if(!group){group={id:def.id,title:def.title,items:[]};groups.push(group);}group.items.push('personalInterface');used.add('personalInterface');}}
@@ -46,7 +48,16 @@ export function normalizeNavigation(value, defaults, available) {
   for (const [id, label] of Object.entries(valid ? value.labels || {} : {})) {
     if (used.has(id) && typeof label === 'string' && label.trim()) labels[id] = id==='staff'&&['군수계 명단','편집 권한 부여'].includes(label.trim())?'군수계 명단·권한 관리':label.trim().slice(0, 50);
   }
-  return { schemaVersion: 2, groups, labels, developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.inputManagementAddedV409&&defaults.some(g=>g.id==='inputManagement')){const ids=['roster','dutyCadets','dorm'].filter(id=>allowed.has(id));for(const group of groups)group.items=group.items.filter(id=>!ids.includes(id));let group=groups.find(g=>g.id==='inputManagement');if(!group){group={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(group);}group.items=[...ids,...group.items.filter(id=>!ids.includes(id))];}
+  if(!value?.firearmsAddedV410&&allowed.has('firearms')){let group=groups.find(g=>g.id==='devices');if(!group&&defaults.some(g=>g.id==='devices')){group={id:'devices',title:defaults.find(g=>g.id==='devices').title,items:[]};groups.push(group);}if(group&&!groups.some(g=>g.items.includes('firearms')))group.items.unshift('firearms');}
+  if(!value?.liveMenuPlacementV411){
+    const target=groups.find(g=>g.id!=='devices'&&/총기|장비/.test(g.title)&&g.items.some(id=>['supply','saber','dutyItems'].includes(id)))||groups.find(g=>g.id==='devices');
+    if(target&&allowed.has('firearms')){for(const group of groups)group.items=group.items.filter(id=>id!=='firearms');target.items.unshift('firearms');}
+    for(let i=groups.length-1;i>=0;i--)if(groups[i].id==='departures'||(groups[i].id==='devices'&&groups[i]!==target&&!groups[i].items.length))groups.splice(i,1);
+    let input=groups.find(g=>g.id==='inputManagement');if(!input&&defaults.some(g=>g.id==='inputManagement')){input={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(input);}if(input&&allowed.has('departures')){for(const group of groups)group.items=group.items.filter(id=>id!=='departures');input.items.push('departures');labels.departures='누락자 및 퇴교자 관리';}
+  }
+  if(!value?.firearmRequestsAddedV413&&allowed.has('firearmRequests')){const group=groups.find(g=>g.items.includes('firearms'));if(group&&!groups.some(g=>g.items.includes('firearmRequests')))group.items.splice(group.items.indexOf('firearms')+1,0,'firearmRequests');}
+  return { schemaVersion: 2, groups, labels, firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {

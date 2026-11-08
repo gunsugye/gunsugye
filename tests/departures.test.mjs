@@ -36,9 +36,9 @@ test('스마트당직 미등재만 후보로 만들고 동명·소속 불일치�
 });
 test('스마트당직에 남은 퇴학 인원도 후보로 만들고 퇴학 상태로 총기·군수품·피복을 처리한다',()=>{
  const f=fixture(),base=Array.from({length:100},(_,i)=>({name:'기준'+i,cohort:'78',company:'1'}));
- f.setRef(base.concat([{...f.members[0],duty:'퇴 학'},{...f.members[1],duty:''}]));
+ f.setRef(base.concat([{...f.members[0],duty:'퇴 학'},{...f.members[1],duty:'??'}]));
  f.context.smartReferenceHintsV255_=()=>({url:'configured',rows:[{status:'퇴학',preview:[{value:f.members[1].name}]}]});
- const d=f.context.getDepartureDashboardV305();assert.ok(d.candidates.some(c=>c.name==='대상가'));assert.ok(d.candidates.some(c=>c.name==='대상나'));
+ const d=f.context.getDepartureDashboardV305();assert.ok(d.candidates.some(c=>c.name==='대상가'));assert.ok(!d.candidates.some(c=>c.name==='대상나'));
  const c=d.candidates.find(c=>c.name==='대상가');assert.equal(f.context.processDepartureV305({...f.plan(c),status:'퇴학'}).ok,true);
  assert.equal(f.tables.get('피복_상태이동보관').rows[0][7],'퇴학');assert.equal(f.tables.get('인원일괄처리이력').rows[0][4],'퇴학');
 });

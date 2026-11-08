@@ -1,4 +1,9 @@
+function personalDutyLayoutV404(order){
+ const defaults=['room','firearm','duty','assets','uniform','supplies'],known=new Set(defaults),values=[...new Set([...(Array.isArray(order)?order:[]),...defaults])].filter(id=>known.has(id)),fixed=new Set(['room','firearm','duty','assets']);
+ const before=values.slice(0,values.indexOf('room')).filter(id=>!fixed.has(id)).length,rest=values.filter(id=>!fixed.has(id));rest.splice(before,0,'room','firearm','duty','assets');return rest;
+}
 function personalInterfaceOrderV359(order){
- const defaults=['room','firearm','assets','uniform','supplies'],known=new Set(defaults),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
- for(const id of [...(Array.isArray(order)?order:defaults),...defaults]){if(!known.has(id)||seen.has(id))continue;for(const item of id==='room'||id==='firearm'?['room','firearm']:[id]){if(seen.has(item))continue;seen.add(item);const card=$(item)?.closest('section.card');if(card)grid.appendChild(card);}}
+ const defaults=['room','firearm','assets','uniform','supplies'],duty=$('personalDutyV400'),eligible=!!duty&&!duty.hidden,known=new Set([...defaults,...(eligible?['duty']:[])]),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
+ const values=eligible?personalDutyLayoutV404(order):[...(Array.isArray(order)?order:defaults),...defaults];
+ for(const id of values){if(!known.has(id)||seen.has(id))continue;for(const item of id==='room'||id==='firearm'?['room','firearm']:[id]){if(seen.has(item))continue;seen.add(item);const card=item==='duty'?duty:$(item)?.closest('section.card');if(card)grid.appendChild(card);}}
 }

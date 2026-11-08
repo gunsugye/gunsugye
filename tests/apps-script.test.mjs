@@ -7,6 +7,26 @@ import { createHmac, createHash, randomUUID } from 'node:crypto';
 const gateway = readFileSync(new URL('../apps-script/Gateway.gs', import.meta.url), 'utf8');
 const legacy = readFileSync(new URL('../apps-script/Legacy.gs', import.meta.url), 'utf8');
 const secret = 'test-secret-with-more-than-thirty-two-characters';
+
+test('조회 인증은 동기화 잠금과 독립적이며 같은 요청의 재전송을 차단한다',()=>{
+ const f=fixture();let acquired=0,released=0;
+ f.context.LockService={
+  getScriptLock(){throw Error('background write lock is held');},
+  getUserLock:()=>({waitLock(){acquired++;},releaseLock(){released++;}})
+ };
+ const request=f.signed();
+ assert.equal(f.rpc(request).ok,true);
+ assert.equal(f.rpc(request).ok,false);
+ assert.equal(acquired,2);assert.equal(released,2);
+});
+
+test('설정의 사용자 상위 메뉴 추가·이름 변경·삭제를 실제 서버가 보존한다',()=>{const f=fixture();f.context.Logger={log(){}};f.context.SpreadsheetApp={openById:()=>({getSheetByName:()=>null})};const value={schemaVersion:2,groups:[{id:'g_12345678',title:'추가 항목',items:['roster']}],labels:{roster:'인원 명단'}};const saved=f.rpc(f.signed('owner@gmail.com','saveNavTreeV233',[value]));assert.equal(saved.ok,true,saved.error);assert.equal(saved.result.groups.find(g=>g.id==='g_12345678').title,'추가 항목');const next={...saved.result,groups:saved.result.groups.filter(g=>g.id!=='g_12345678')};const removed=f.rpc(f.signed('owner@gmail.com','saveNavTreeV233',[next]));assert.equal(removed.ok,true,removed.error);assert.equal(removed.result.groups.some(g=>g.id==='g_12345678'),false);});
+
+test('실제 Gateway는 관리의 두 구성을 별도로 저장하고 개인 조회에 같은 순서를 전달한다',()=>{
+ const f=fixture(),initial=f.rpc(f.signed('owner@gmail.com','getPersonalInterfaceV359',[]));assert.equal(initial.ok,true,initial.error);assert.deepEqual(initial.result.dutyInterfaceOrder,['room','firearm','duty','assets','uniform','supplies']);
+ const regular=[...initial.result.order].reverse(),duty=[...initial.result.dutyInterfaceOrder],saved=f.rpc(f.signed('owner@gmail.com','savePersonalInterfaceV359',[{regular,duty},initial.result.version]));assert.equal(saved.ok,true,saved.error);assert.deepEqual(saved.result.order,regular);assert.deepEqual(saved.result.dutyInterfaceOrder,duty);
+ const reread=f.rpc(f.signed('owner@gmail.com','getPersonalInterfaceV359',[]));assert.deepEqual(reread.result.dutyInterfaceOrder,duty);assert.deepEqual(reread.result.order,regular);
+});
 test('개인 조회 인증 주체는 관리자 API와 일반 세션 생성에 접근할 수 없다',()=>{
  const f=fixture();for(const method of ['getBootstrap','listFullEditorsV281','pagesSessionCreate','readCompressedV282','getDormInventoryRequestsV336','resolveDormInventoryRequestV336'])assert.equal(f.rpc(f.signed('personal@portal.invalid',method,[],{sub:'personal:a',sessionId:randomUUID()})).code,'FORBIDDEN');
  assert.equal(f.rpc(f.signed('owner@gmail.com','pagesPersonalGet',[],{sub:'google123',sessionId:randomUUID()})).code,'FORBIDDEN');
@@ -36,7 +56,7 @@ function fixture() {
     console,
     PropertiesService: { getScriptProperties: () => props },
     CacheService: { getScriptCache: () => ({ get: key => cache.get(key), put: (key, value) => cache.set(key, value) }) },
-    LockService: { getScriptLock: () => ({ waitLock() {}, tryLock:()=>true, releaseLock() {} }) },
+    LockService: { getUserLock: () => ({ waitLock() {}, releaseLock() {} }), getScriptLock: () => ({ waitLock() {}, tryLock:()=>true, releaseLock() {} }) },
     Utilities: {
       Charset: { UTF_8: 'utf8' }, DigestAlgorithm: { SHA_256: 'sha256' },
       getUuid: randomUUID,
