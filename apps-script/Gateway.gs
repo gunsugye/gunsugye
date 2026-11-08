@@ -90,7 +90,9 @@ function pagesVerifyRequest_(e) {
       || !Array.isArray(actor.args) || actor.args.length > 30) pagesForbidden_();
   actor.email = actor.email.trim().toLowerCase();
   // 서명된 요청도 재전송을 차단합니다. 쓰기 요청은 서버/화면 모두 자동 재시도하지 않습니다.
-  const lock = LockService.getScriptLock();
+  // 인증의 재전송 검사는 짧은 별도 잠금으로 직렬화합니다.
+  // 시트 저장·명단 동기화의 script lock이 조회 인증을 막지 않도록 합니다.
+  const lock = LockService.getUserLock();
   lock.waitLock(10000);
   try {
     const cache = CacheService.getScriptCache(), key = 'pages:nonce:' + actor.nonce;
