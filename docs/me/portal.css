@@ -29,7 +29,7 @@ html[data-personal-restoring] #login{display:none}
 
 .personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}
 /* 개인 앱 공통 글자·입력 크기: 화면 크기와 항목에 관계없이 같은 기준 사용 */
-:root{--personal-body:14px;--personal-note:13px;--personal-title:16px;--personal-input:16px;--personal-line:1.55;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+:root{--personal-body:13px;--personal-note:12px;--personal-title:15px;--personal-input:14px;--personal-line:1.55;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-size:var(--personal-body);line-height:var(--personal-line)}
 header .brand{font-size:20px;line-height:1.4}header .brand span,header .admin,footer{font-size:var(--personal-note);line-height:var(--personal-line)}
 .login h1,#dashboard .page-head h1{font-size:24px;line-height:1.3;letter-spacing:-.5px}.login .sub,#dashboard .page-head .sub{font-size:var(--personal-body);line-height:var(--personal-line)}
@@ -63,3 +63,9 @@ header .brand{font-size:20px;line-height:1.4}header .brand span,header .admin,fo
 #dashboard .personal-room-plan.asset-plan-card{max-height:none;min-height:44px;padding:8px}
 #dashboard .personal-room-plan .asset-plan-issue{font-size:var(--personal-note);min-height:36px}
 @media(max-width:600px){header{height:60px}main{padding:12px}.page-head{flex-wrap:wrap;gap:12px}#dashboard .page-head>div:first-child{width:100%}#dashboard .actions{width:100%;gap:8px}#dashboard .actions button{flex:1}#dashboard .grid{gap:12px}#dashboard .grid>.card{grid-column:1/-1}#dashboard .card{padding:14px}#dashboard :is(.personal-table,.personal-duty-table,.personal-uniform-table) :is(th,td){padding:6px 4px!important}}
+#dashboard [data-personal-condition="repair"]{--condition-ink:#8a4506;--condition-bg:#fff2d8;--condition-line:#d59837}
+#dashboard [data-personal-condition="replacement"]{--condition-ink:#a12631;--condition-bg:#ffe9ec;--condition-line:#d66c78}
+#dashboard :is(select,.personal-state-select,dd,td)[data-personal-condition]{color:var(--condition-ink);background:var(--condition-bg);border-color:var(--condition-line);font-weight:700}
+#dashboard tr[data-personal-condition]>th{color:var(--condition-ink);background:var(--condition-bg);box-shadow:inset 3px 0 var(--condition-line)}
+#dashboard .personal-state-select[data-personal-condition] .personal-state-label{color:var(--condition-ink);font-weight:700}
+#dashboard dd[data-personal-condition]{padding:3px 8px;border:1px solid var(--condition-line);border-radius:6px}

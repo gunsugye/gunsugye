@@ -123,4 +123,23 @@ function personalFirearmRenderV413(data){personalFirearmResetV413();const info=d
 }
 window.addEventListener('beforeunload',event=>{if(personalFirearmDirtyV413){event.preventDefault();event.returnValue='';}});
 
+function personalConditionV421(value){const text=String(value||'').replace(/\s/g,'');return text.includes('교체')?'replacement':text.includes('수리')?'repair':'';}
+function personalConditionMarkV421(node,value){const condition=personalConditionV421(value);if(condition)node.dataset.personalCondition=condition;else delete node.dataset.personalCondition;}
+function personalConditionsRenderV421(){
+ const root=$('dashboard');if(!root)return;
+ for(const select of root.querySelectorAll('select')){
+  if(![...select.options].some(option=>personalConditionV421(option.value)))continue;
+  personalConditionMarkV421(select,select.value);
+  const box=select.closest('.personal-state-select');if(box)personalConditionMarkV421(box,select.value);
+  const row=select.closest('tr');if(row)personalConditionMarkV421(row,select.value);
+ }
+ for(const row of root.querySelectorAll('#supplies tbody tr')){const cell=row.children[1];if(cell){personalConditionMarkV421(cell,cell.textContent);personalConditionMarkV421(row,cell.textContent);}}
+ for(const row of root.querySelectorAll('#firearm>div')){if(row.querySelector('dt')?.textContent==='상태'){const cell=row.querySelector('dd');if(cell)personalConditionMarkV421(cell,cell.textContent);}}
+}
+let personalConditionFrameV421=0;
+function personalConditionsScheduleV421(){if(personalConditionFrameV421)return;personalConditionFrameV421=requestAnimationFrame(()=>{personalConditionFrameV421=0;personalConditionsRenderV421();});}
+document.addEventListener('change',event=>{if(event.target.closest?.('#dashboard'))personalConditionsRenderV421();});
+new MutationObserver(personalConditionsScheduleV421).observe($('dashboard'),{childList:true,subtree:true,characterData:true});
+personalConditionsScheduleV421();
+
 })();

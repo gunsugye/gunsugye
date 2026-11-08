@@ -7,6 +7,7 @@ export function buildPersonal(){
  source=source.replace('function render(data){','function render(data){personalInterfaceOrderV359(data.interfaceOrder);').replace('})();',()=>read('scripts/personal-interface-portal.js.txt')+'\n})();');
  source=personalDutyPortalV400(source,read('scripts/personal-duty-portal.js.txt')).replaceAll('dirty||uniformDirtyV350','dirty||uniformDirtyV350||personalDutyDirtyV400');
  source=personalFirearmPortalV413(source,read('scripts/personal-firearm.js.txt'));
+ source=source.replace(/\}\)\(\);\s*$/,()=>read('scripts/personal-condition.js.txt')+'\n})();');
  const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+source;
  const personalCss='#personalFirearmV413 form{display:grid;gap:10px;margin-top:12px}#personalFirearmV413 label{display:grid;gap:5px}' + read('scripts/personal-portal.css')+personalDutyCSSV400+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}';
  const finalPersonalCss=personalCss+'\n'+read('scripts/personal-typography.css');
