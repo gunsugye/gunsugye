@@ -24,4 +24,4 @@ export function surveyServerV416(source,code){
  source=requiredReplace(source,'function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getSurveyPeriodsV416','setSurveyPeriodV416'].includes(name)){assetRequestAdminV336_();return accessPolicyV284_();}");
  return source+'\n'+helpers+'\n'+code;
 }
-export function surveyClientV416(source,code){return insertAppClient(source.replace('function switchView(v){','function switchView(v){surveyViewV416(v);'),code);}
+export function surveyClientV416(source,code){return insertAppClient(requiredReplace(source,'function switchView(v){firearmsInitV410();','function switchView(v){firearmsInitV410();surveyViewV416(v);'),code);}
