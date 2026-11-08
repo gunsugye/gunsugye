@@ -3,7 +3,6 @@
  'use strict';
  const $=id=>document.getElementById(id),running=document.documentElement.dataset.releaseId||'',key='logbook.release.seen.v1';
  let latest=null,busy=false,started=false,lastCheck=0,dismissed='';
- const subscribers=new Set();
  const seen=()=>{try{return localStorage.getItem(key)||dismissed;}catch(_){return dismissed;}};
  function dismiss(){if(latest){dismissed=latest.id;try{localStorage.setItem(key,latest.id);}catch(_){}}$('pagesUpdateNotice').hidden=true;}
  function render(force=false){
@@ -17,14 +16,13 @@
   if(force||seen()!==latest.id)$('pagesUpdateNotice').hidden=false;
  }
  async function check(force=false){
-  if(busy||document.visibilityState==='hidden'||(!force&&Date.now()-lastCheck<10000))return;
+  if(busy||document.visibilityState==='hidden'||(!force&&Date.now()-lastCheck<60000))return;
   busy=true;lastCheck=Date.now();
   try{
    const response=await fetch('./release.json?t='+Date.now(),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
    if(!response.ok)return;const r=await response.json();
    if(!r||!/^[a-f0-9]{16}$/.test(r.id)||typeof r.version!=='string'||typeof r.title!=='string'||!Array.isArray(r.notes)||r.notes.length>12||r.notes.some(x=>typeof x!=='string'||x.length>500))return;
-   const changed=latest?.id!==r.id;latest=r;render();
-   if(changed)for(const listener of subscribers){try{listener(latest);}catch(_){}}
+   latest=r;render(force);
   }catch(_){/* 업무 화면을 방해하지 않고 다음 주기에 재확인합니다. */}
   finally{busy=false;}
  }
@@ -48,7 +46,7 @@
   if(button.dataset?.view==='updates'){
    if(!window.LOGBOOK_OPEN_UPDATES)return;
    const handled=window.LOGBOOK_OPEN_UPDATES();if(handled===null)return;
-   check(true);event.preventDefault();event.stopImmediatePropagation();return;
+   event.preventDefault();event.stopImmediatePropagation();return;
   }
   event.preventDefault();event.stopImmediatePropagation();
   if(button.id==='pagesUpdateClose')dismiss();
@@ -56,8 +54,8 @@
   else if(latest)applyUpdate();
   else{check(true).then(()=>{if(latest)applyUpdate();else $('pagesUpdateHelp').textContent='업데이트 정보를 불러오지 못했습니다. 다시 눌러 주세요.';});}
  },true);
- function start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check();setInterval(()=>check(),10000);document.addEventListener('visibilitychange',()=>check(true));window.addEventListener('focus',()=>check(true));window.addEventListener('online',()=>check(true));}
- window.LOGBOOK_UPDATES={start,refresh:()=>check(true),getLatest:()=>latest,subscribe:listener=>{subscribers.add(listener);return()=>subscribers.delete(listener);}};
+ function start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check();setInterval(()=>check(),60000);document.addEventListener('visibilitychange',()=>check());window.addEventListener('focus',()=>check());}
+ window.LOGBOOK_UPDATES={start};
  // 업무 화면의 API 조회·초기화가 늦어져도 업데이트 클릭을 연결합니다.
  start();
 })();

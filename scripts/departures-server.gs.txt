@@ -11,7 +11,7 @@ function departureStateV305_(ss){
  const source=smartReferenceV253_(ss);
  if(!source.items||source.items.length<100)throw Error('스마트당직 기준 명단이 부족합니다. 8개 중대 연결과 명단을 확인하세요.');
  const hints=smartAllStatusHintsV323_();if(hints.error||(hints.url&&!hints.rows.length&&!hints.readOk))throw Error(hints.warning||'퇴학·퇴교 참고 시트를 읽을 수 없습니다.');
- const departed=new Set(source.items.filter(p=>['퇴학','퇴교','휴학'].some(status=>[p.duty,p.locationStatus,p.status].filter(Boolean).join(' ').replace(/\s/g,'').includes(status))).map(uniformKeyV278_));
+ const departed=smartInactiveKeysV322_(source.items,hints.rows,['퇴학','퇴교'],uniformKeyV278_);
  const active=source.items.filter(p=>!departed.has(uniformKeyV278_(p)));
  const refNames=new Set(active.map(r=>uniformNameV278_(r.name))),refKeys=new Set(active.map(uniformKeyV278_));
  const roster=rosterRows_(rosterRequired_(ss)),uniforms=uniformRowsV278_(uniformTabV278_(ss,false));

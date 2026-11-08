@@ -1,11 +1,3 @@
-import {surveyServerV416,surveyClientV416} from './survey-periods.mjs';
-import {rosterGunAuditClientV417} from './roster-firearm-audit.mjs';
-import {firearmRequestSourceV413,firearmRequestClientV413,firearmRequestsHtmlV413} from './firearm-requests.mjs';
-import * as rosterLinkageV412 from './roster-linkage.mjs';
-import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
-import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
-import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
-import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { resolve, dirname } from 'node:path';
@@ -17,12 +9,6 @@ import { updateCalendarJs, calendarCSS } from './calendar.mjs';
 import { updateDeparturesJs, updateDeparturesHtml, departuresCSS } from './departures.mjs';
 import { requestPerformanceCode } from './performance.mjs';
 import { releaseDetails } from './release.mjs';
-import { updateHistoryJs } from './update-history.mjs';
-import { finalizeRelease } from './finalize-release.mjs';
-import { dutyPersonEditorJsV398 } from './duty-person-editor.mjs';
-import { personalDutyCSSV400 } from './personal-duty.mjs';
-import {buildPersonal} from './build-personal.mjs';
-import {dutyRequestsJsV400,dutyRequestsHtmlV400,dutyRequestsNavSourceV400} from './duty-requests.mjs';
 import {developmentNavSource,developmentRequestsJs,developmentRequestsHtml,developmentRequestsCSS} from './development-requests.mjs';
 import {assetInspectionModelV382,assetInspectionHtmlV382,assetInspectionJsV382} from './asset-inspection.mjs';
 import {assetInspectionLayoutV384} from './asset-inspection-layout.mjs';
@@ -40,7 +26,7 @@ import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} 
 import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} from './asset-requests.mjs';
 import {uniformRequestNavSource,uniformRequestNavJs,uniformRequestNavHtml} from './uniform-request-navigation.mjs';
 import {trainingShellJs,trainingShellHtml} from './training-shell.mjs';
-import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,personalInterfaceCSS,personalInterfaceProfileCSSV401} from './personal-interface.mjs';
+import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,personalInterfaceCSS} from './personal-interface.mjs';
 import {personalInterfacePreview} from './personal-interface-preview.mjs';
 import {staffAccessHtml,staffAccessJs} from './staff-access.mjs';
 import {dutyCadetsJs,dutyCadetsHtml} from './duty-cadets.mjs';
@@ -84,7 +70,7 @@ js=uniformRequestNavJs(js);
 js=trainingShellJs(js);
 js=staffAccessJs(js);
 html=staffAccessHtml(html);
-js=personalInterfaceJs(js,'const PERSONAL_PREVIEW_HTML_V360='+JSON.stringify(personalInterfacePreview(read('scripts/personal-portal.html'),read('scripts/personal-portal.css')+personalDutyCSSV400,read('scripts/personal-interface-preview.js.txt')))+';\n'+read('scripts/personal-interface-client.js.txt'));
+js=personalInterfaceJs(js,'const PERSONAL_PREVIEW_HTML_V360='+JSON.stringify(personalInterfacePreview(read('scripts/personal-portal.html'),read('scripts/personal-portal.css'),read('scripts/personal-interface-preview.js.txt')))+';\n'+read('scripts/personal-interface-client.js.txt'));
 js=dutyCadetsJs(js,dutyRoleInfoV367.toString()+'\n'+dutySortV367.toString()+'\n'+dutyFamilyV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-cadets-client.js.txt')+'\n'+read('scripts/duty-roster-client.js.txt')+'\n'+dutyPasteV371.toString()+'\n'+dutyMatchV371.toString()+'\n'+dutyMergeV371.toString()+'\n'+read('scripts/duty-verification-client.js.txt'));
 html=dutyCadetsHtml(html);
 {const end=js.lastIndexOf('})();');js=js.slice(0,end)+'\n'+[dutySplitAssignmentsV391,dutyFixedRolesV391,dutyAssignmentKeyV391,dutyFixedRoleValidV391].map(fn=>fn.toString()).join('\n')+'\n'+js.slice(end);}
@@ -103,9 +89,6 @@ async function wxLoadAllInnerV314(){\n wxNavigationReadyV314=false;`)
  .replace('navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();navRenderV233();','navTreeV233=navNormalizeV233(response.navTree);navSavedTreeV233=navDeepCopyV233(navTreeV233);navUpdateDirtyV220();wxNavigationReadyV314=true;navRenderV233();')
  .replace("catch(e){wxLoaded=false;wxLoadError=String(e.message||e);", "catch(e){window.LOGBOOK_NAVIGATION?.commit(false);wxLoaded=false;wxLoadError=String(e.message||e);");
 js=js.replace("navEditToggleV220(false);navUpdateDirtyV220();toast('메뉴", "navEditToggleV220(false);navUpdateDirtyV220();window.LOGBOOK_NAVIGATION?.commit();toast('메뉴");
-js=dutyPersonEditorJsV398(js,read('scripts/duty-person-editor-client.js.txt'));
-js=updateHistoryJs(js,read('scripts/update-history-client.js.txt'));
-js=dutyRequestsJsV400(js,read('scripts/duty-requests-client.js.txt'));
 const leaveGuard=js.match(/window\.addEventListener\('beforeunload',e=>\{if\((.*?)\)\{e\.preventDefault/);
 if(!leaveGuard)throw Error('업데이트 적용 전 저장 상태 검사 위치를 확인하세요.');
 const hook=js.lastIndexOf('})();');
@@ -113,16 +96,8 @@ js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:swit
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372||dutyVerifyBusyV371||dutyItemsBusyV368||dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyItemDraftV368.size||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
 js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV372||').replace('dirty:!!(','dirty:!!(devDirtyV381()||');
 js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
-js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt'));
-js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
-js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
-js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
-js=firearmRequestClientV413(js,read('scripts/firearm-requests-client.js.txt'));
-js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
-js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'));
-const css = read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
+const css = unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + developmentRequestsCSS;
 html=personalInterfaceHtml(html);
-html=dutyRequestsHtmlV400(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -163,7 +138,10 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 </aside></div><script src="./assets/updates.js"></script><script src="./assets/navigation-start.js"></script><script src="./assets/pages.js"></script>\n</body>`);
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
-const {personalJs,personalCss,personalHtml}=buildPersonal();
+let personalSource=read('scripts/personal-portal.js').replace('function fields(id,values){','function plainFields(id,values){').replace("if(result.uniform)fields('uniform',result.uniform.uniform);","if(result.uniform){uniformEditV350=result.uniform.uniformEdit||null;fields('uniform',result.uniform.uniform);}").replace('function clear(message=\'\'){',"function clear(message=''){uniformEditV350=null;uniformDirtyV350=false;").replaceAll('if(dirty&&','if((dirty||uniformDirtyV350)&&').replace('return;load().catch', 'return;uniformDirtyV350=false;uniformEditV350=null;load().catch').replace('})();',read('scripts/personal-uniform.js.txt')+'\n})();');
+personalSource=personalSource.replace('function render(data){','function render(data){personalInterfaceOrderV359(data.interfaceOrder);').replace('})();',read('scripts/personal-interface-portal.js.txt')+'\n})();');
+const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+personalSource,personalCss=read('scripts/personal-portal.css')+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}',personalHtml=read('scripts/personal-portal.html').replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','비품·피복 변경은 관리자 확인 후 반영').replace('./portal.js','./portal.js?v='+fingerprint(personalJs)).replace('./portal.css','./portal.css?v='+fingerprint(personalCss));
+write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',personalCss);
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
 write('docs/release.json',JSON.stringify(release,null,2)+'\n');
@@ -172,10 +150,6 @@ for (const [path, contents] of assets) {
   html = html.replaceAll(`"./${path}"`, `"./${path}?v=${fingerprint(contents)}"`);
 }
 write('docs/index.html', assetRequestsHtml(assetPlanHtml(dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html)))))))));
-html=html.replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'<div class="setting-box" id="menuSettingsV410"></div>');
-write('docs/index.html',read('docs/index.html').replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'<div class="setting-box" id="menuSettingsV410"></div>'));
-write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearms" type="button">총기 관리 현황</button>'));
-write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearmRequests" type="button">총기 수정 요청·전수조사</button>').replace('<section id="rosterView"',firearmRequestsHtmlV413+'<section id="rosterView"'));
 write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
@@ -189,15 +163,12 @@ legacy=assetPlanServer(legacy);
 legacy=assetRequestsServer(legacy)+'\n'+read('scripts/asset-requests-server.gs.txt');
 legacy=uniformRequestNavSource(legacy);
 legacy=personalInterfaceNavSource(legacy);
-legacy=dutyRequestsNavSourceV400(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDutyRequestsV400','resolveDutyRequestV400'].includes(name)){dutyRosterAdminV367_();return accessPolicyV284_();}");
 legacy=developmentNavSource(legacy).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getDevelopmentRequestsV381','createDevelopmentRequestV381','updateDevelopmentRequestV381'].includes(name))return accessPolicyV284_();").replace('ret.allowedViews=policy.views.slice();',"ret.allowedViews=policy.views.concat('developmentRequests');");
 legacy+='\n'+read('scripts/development-requests-server.gs.txt');
 legacy+='\n'+assetInspectionModelV382.toString()+'\n'+assetInspectionLayoutV384.toString()+'\n'+read('scripts/asset-inspection-native-server.gs.txt');
 legacy=dutyItemsNavSourceV368(legacy);
 legacy+='\n'+read('scripts/smart-inactive.gs.txt')+'\nconst DORM_PLAN_DEFAULT_V315_='+JSON.stringify(privatePlan)+';\n'+read('scripts/dorm-plan-server.gs.txt')+'\n'+read('scripts/dorm-corrections-server.gs.txt');
 legacy+='\n'+read('scripts/personal-server.gs.txt');
-legacy+='\n'+dutyItemRequirementsV368.toString()+'\n'+read('scripts/personal-duty-server.gs.txt');
-legacy+='\n'+read('scripts/duty-requests-server.gs.txt');
 legacy+='\n'+read('scripts/personal-interface-server.gs.txt');
 legacy+='\n'+read('scripts/duty-cadets-server.gs.txt');
 legacy+='\n'+dutyRoleInfoV367.toString()+'\n'+dutySaberRoleV367.toString()+'\n'+read('scripts/duty-roster-server.gs.txt');
@@ -210,14 +181,6 @@ legacy+='\n'+read('scripts/duty-items-server.gs.txt');
 legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();
-legacy=supplySchemaServerV408(legacy,read('scripts/supply-schema-server.gs.txt'));
-legacy=referenceMenuV409(legacy,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getReferenceBatchV409','previewReferenceBatchV409','applyReferenceBatchV409'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
-legacy+='\n'+read('scripts/reference-batch-server.gs.txt');
-legacy=firearmSourceV410(legacy,true).replace('value.groups.length>NAV_GROUPS_V233.length','value.groups.length>50').replace('NAV_GROUPS_V233.some(g=>g.id===id)',"(NAV_GROUPS_V233.some(g=>g.id===id)||/^g_[a-z0-9]{8,40}$/.test(id))");
-legacy=linkageSourceV412(legacy).replace('function smartReferenceV253_(ss){','function smartReferenceV253_(ss){if(rosterLinkSmartContextV412_)return rosterLinkSmartContextV412_;').replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getRosterLinkagePulseV412')return accessPolicyV284_();if(['getRosterLinkageV412','syncRosterLinkageV412','enableRosterLinkageV412'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
-legacy+='\n'+Object.values(rosterLinkageV412).filter(v=>typeof v==='function').map(f=>f.toString()).join('\n')+'\n'+read('scripts/roster-linkage-server.gs.txt');
-legacy=firearmRequestSourceV413(legacy,true).replace("if(action==='duty-request')return personalDutyRequestV400_(input);","if(action==='duty-request')return personalDutyRequestV400_(input);if(action==='firearm-request')return personalFirearmRequestV413_(input);").replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getFirearmRequestsV413','resolveFirearmRequestsV413','setFirearmSurveyV413'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");legacy+='\n'+read('scripts/firearm-requests-server.gs.txt');
-legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
@@ -256,7 +219,6 @@ return {
   if(action==='supplies'||action==='uniform')return personalDetailsV337_(action);
   if(action==='assets')return personalSaveAssetsV331_(input);
   if(action==='uniform-request')return personalUniformRequestV350_(input);
-  if(action==='duty-request')return personalDutyRequestV400_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();
  },
@@ -274,7 +236,6 @@ return {
   const policy = accessGuardV284_(name, args);
   return accessFilterV284_(name, pagesMethods_[name].apply(null, args), policy);
  },
- rosterSyncScheduled: function(){if(PropertiesService.getScriptProperties().getProperty('ROSTER_LINK_AUTO_V412')==='yes')return syncRosterLinkageV412(false);},
  training: function() { return trainingScheduledHandoffV227(); },
  survey: function(event) { return surveysOnSubmitV299(event); }
 };
@@ -283,5 +244,3 @@ return {
 write('apps-script/Legacy.gs', prefix + `\nconst navModelV301_ = ${normalizeNavigation.toString()};\n` + legacy + suffix);
 write('apps-script/methods.json', JSON.stringify(uniqueMethods, null, 2) + '\n');
 console.log(`화면/CSS/JS 생성, Apps Script API ${uniqueMethods.length}개 연결 완료`);
-
-finalizeRelease();

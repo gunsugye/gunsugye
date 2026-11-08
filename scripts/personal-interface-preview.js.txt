@@ -1,9 +1,5 @@
-function personalDutyLayoutV404(order){
- const defaults=['room','firearm','duty','assets','uniform','supplies'],known=new Set(defaults),values=[...new Set([...(Array.isArray(order)?order:[]),...defaults])].filter(id=>known.has(id)),fixed=new Set(['room','firearm','duty','assets']);
- const before=values.slice(0,values.indexOf('room')).filter(id=>!fixed.has(id)).length,rest=values.filter(id=>!fixed.has(id));rest.splice(before,0,'room','firearm','duty','assets');return rest;
-}
 (()=>{
- const ids=['room','assets','firearm','uniform','supplies'],regularGrid=document.querySelector('#dashboard>.grid');let profile='regular',grid=regularGrid;const cards=new Map(ids.map(id=>[id,document.getElementById(id).closest('section.card')]));cards.set('duty',document.getElementById('personalDutyV400'));document.getElementById('personalDutyCardsV400').innerHTML='<table class="personal-duty-table"><thead><tr><th colspan="3">전대군수참모 · 예도 (예시)</th></tr><tr><th>품목</th><th>상태</th><th>세부사항</th></tr></thead><tbody><tr><th>예도</th><td><select disabled><option>정상</option><option>수리 필요(보고)</option><option>수리 필요(미보고)</option><option>교체 필요</option></select></td><td><textarea disabled placeholder="세부사항"></textarea></td></tr></tbody></table><table class="personal-duty-table"><thead><tr><th colspan="3">전대군수참모 (예시)</th></tr><tr><th>품목</th><th>수량</th><th>세부사항</th></tr></thead><tbody>'+[['흉장',2],['블럭',2],['방문 앞 명패',1],['삼각명패',1]].map(([name,required])=>'<tr><th>'+name+'</th><td><select disabled>'+Array.from({length:required+1},(_,i)=>'<option>'+i+'개</option>').join('')+'<option>직접 입력</option></select></td><td><textarea disabled placeholder="세부사항"></textarea></td></tr>').join('')+'</tbody></table>';let enabled=false,drag=null,original=null,pointer=null,scrollTimer=null;
+ const ids=['room','assets','firearm','uniform','supplies'],grid=document.querySelector('#dashboard>.grid'),cards=new Map(ids.map(id=>[id,document.getElementById(id).closest('section.card')]));let enabled=false,drag=null,original=null,pointer=null,scrollTimer=null;
  document.getElementById('personName').textContent='미리보기';document.getElementById('personMeta').textContent='예시 정보 · 실제 개인 정보 아님';document.getElementById('room').textContent='정예 본관 · 1층 · 132호 · 1번';document.getElementById('warnings').hidden=true;
  document.querySelectorAll('.page-head button').forEach(b=>b.disabled=true);
  function table(rows){return '<table class="personal-table"><thead><tr><th>품목</th><th>상태</th><th>세부사항</th></tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map((v,i)=>'<'+(i?'td':'th')+'>'+v+'</'+(i?'td':'th')+'>').join('')+'</tr>').join('')+'</tbody></table>';}
@@ -12,8 +8,8 @@ function personalDutyLayoutV404(order){
  document.getElementById('uniform').innerHTML=table([['전투복','100',''],['근무복','100',''],['체육복','100',''],['외투','100',''],['전투화','270',''],['운동화','270',''],['모자','58','']]);document.getElementById('supplies').innerHTML=table([['공사티','정상','100 · 2개'],['체육복','정상','100 · 1개']]);
  document.getElementById('updated').textContent='예시 화면 · 카드 순서만 변경';
  document.querySelector('footer').textContent='비품·피복 변경은 관리자 확인 후 반영';
- function send(value){parent.postMessage({type:'personal-preview-v360',profile,...value},'*');}
- function order(){return [...grid.children].filter(card=>card.dataset.previewCard&&!card.hidden).map(card=>card.dataset.previewCard);}
+ function send(value){parent.postMessage({type:'personal-preview-v360',...value},'*');}
+ function order(){return [...grid.children].map(card=>card.dataset.previewCard);}
  function setOrder(values){const seen=new Set();for(const id of values)for(const item of id==='room'||id==='firearm'?['room','firearm']:[id]){if(!seen.has(item)&&cards.has(item)){seen.add(item);grid.appendChild(cards.get(item));}}}
  function moveCard(id,target,after){const unit=id==='firearm'?'room':id,to=target==='firearm'?'room':target;if(unit===to)return;const units=order().filter(x=>x!=='firearm'&&x!==unit),index=units.indexOf(to);if(index<0)return;units.splice(index+(after?1:0),0,unit);setOrder(units);}
  function changed(){send({order:order()});}
@@ -34,6 +30,6 @@ function personalDutyLayoutV404(order){
  window.addEventListener('pointerup',e=>{if(pointer!==e.pointerId)return;changed();cleanup();});
  window.addEventListener('pointercancel',()=>{if(pointer!==null)cancel();});document.body.addEventListener('lostpointercapture',()=>{if(pointer!==null)cancel();});
  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag)cancel();});
- window.addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='personal-preview-state-v360')return;cancel();const state=e.data;profile=state.profile==='duty'?'duty':'regular';cards.get('duty').hidden=profile!=='duty';grid=regularGrid;if(profile==='duty')state.order=personalDutyLayoutV404(state.order);enabled=!!state.enabled;if(Array.isArray(state.order))setOrder(state.order);for(const card of cards.values()){card.draggable=enabled;card.querySelectorAll('.preview-drag button').forEach(b=>b.disabled=!enabled);}requestAnimationFrame(()=>send({height:document.documentElement.scrollHeight}));});
+ window.addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='personal-preview-state-v360')return;cancel();const state=e.data;enabled=!!state.enabled;if(Array.isArray(state.order))setOrder(state.order);for(const card of cards.values()){card.draggable=enabled;card.querySelectorAll('.preview-drag button').forEach(b=>b.disabled=!enabled);}requestAnimationFrame(()=>send({height:document.documentElement.scrollHeight}));});
  new ResizeObserver(()=>send({height:document.documentElement.scrollHeight})).observe(document.body);send({ready:true});
 })();

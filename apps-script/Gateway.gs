@@ -11,9 +11,9 @@ function doPost(e) {
       if(actor.email!=='personal@portal.invalid'||actor.sub!=='personal-login'||actor.sessionId)pagesForbidden_();
       return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal('login',actor.args[0])});
     }
-    if(['pagesPersonalGet','pagesPersonalLogout','pagesPersonalAssets','pagesPersonalDetails','pagesPersonalSupplies','pagesPersonalUniform','pagesPersonalUniformRequest','pagesPersonalDutyRequest','pagesPersonalFirearmRequest'].includes(actor.method)){
+    if(['pagesPersonalGet','pagesPersonalLogout','pagesPersonalAssets','pagesPersonalDetails','pagesPersonalSupplies','pagesPersonalUniform','pagesPersonalUniformRequest'].includes(actor.method)){
       if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))pagesForbidden_();
-      const action={pagesPersonalGet:'get',pagesPersonalAssets:'assets',pagesPersonalDetails:'details',pagesPersonalSupplies:'supplies',pagesPersonalUniform:'uniform',pagesPersonalLogout:'logout',pagesPersonalUniformRequest:'uniform-request',pagesPersonalDutyRequest:'duty-request',pagesPersonalFirearmRequest:'firearm-request'}[actor.method];
+      const action={pagesPersonalGet:'get',pagesPersonalAssets:'assets',pagesPersonalDetails:'details',pagesPersonalSupplies:'supplies',pagesPersonalUniform:'uniform',pagesPersonalLogout:'logout',pagesPersonalUniformRequest:'uniform-request'}[actor.method];
       return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal(action,actor.args[0])});
     }
     if(actor.sub.startsWith('personal:')||actor.sub==='personal-login')pagesForbidden_();
@@ -90,9 +90,7 @@ function pagesVerifyRequest_(e) {
       || !Array.isArray(actor.args) || actor.args.length > 30) pagesForbidden_();
   actor.email = actor.email.trim().toLowerCase();
   // 서명된 요청도 재전송을 차단합니다. 쓰기 요청은 서버/화면 모두 자동 재시도하지 않습니다.
-  // 인증의 재전송 검사는 짧은 별도 잠금으로 직렬화합니다.
-  // 시트 저장·명단 동기화의 script lock이 조회 인증을 막지 않도록 합니다.
-  const lock = LockService.getUserLock();
+  const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const cache = CacheService.getScriptCache(), key = 'pages:nonce:' + actor.nonce;
@@ -133,5 +131,3 @@ function pagesMigrateTriggers_() {
   });
   return { migrated: moved };
 }
-
-function pagesRosterSyncScheduled_(){return pagesCreateLegacy_(pagesActorForTrigger_()).rosterSyncScheduled();}

@@ -1,6 +1,4 @@
 tools/
-.tools/
-.setup/
 .deploy/
 .clasp.json
 .clasprc.json

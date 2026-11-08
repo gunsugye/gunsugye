@@ -1,4 +1,4 @@
-export const departureTitle = '누락자 및 퇴교자 관리';
+export const departureTitle = '퇴교자(휴학자/위탁) 일괄 관리';
 export function updateDeparturesHtml(html){
  html=html.replaceAll('<option>퇴교</option>','<option>퇴교</option><option>퇴학</option>').replaceAll('<option value="퇴교">퇴교</option>','<option value="퇴교">퇴교</option><option value="퇴학">퇴학</option>');
  return html.replace('<section id="supplyView"', `<section id="departuresView" class="hidden">

@@ -1,6 +1,4 @@
 import { existsSync } from 'node:fs';
-await import('./survey-periods.test.mjs');
-await import('./roster-firearm-audit.test.mjs');
 await import('./api.test.mjs');
 await import('./static.test.mjs');
 await import('./journal.test.mjs');
@@ -21,7 +19,6 @@ await import('./labor-absence.test.mjs');
 if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./labor-duty-groups.test.mjs');
 await import('./personal-interface.test.mjs');
 await import('./duty-cadets.test.mjs');
-await import('./duty-person-editor.test.mjs');
 await import('./duty-roles.test.mjs');
 await import('./duty-items.test.mjs');
 await import('./duty-manual.test.mjs');
@@ -33,7 +30,6 @@ await import('./asset-overview.test.mjs');
 await import('./asset-plan.test.mjs');
 await import('./asset-initialization.test.mjs');
 await import('./personal.test.mjs');
-await import('./personal-duty.test.mjs');
 await import('./personal-session.test.mjs');
 await import('./asset-requests.test.mjs');
 await import('./asset-inspection.test.mjs');
@@ -46,13 +42,3 @@ if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
 } else {
   console.log('비공개 Legacy.gs가 없어 Apps Script 업무 통합 테스트는 로컬에서 실행합니다.');
 }
-
-await import('./supply-schema.test.mjs');
-
-await import('./reference-batch.test.mjs');
-
-await import('./firearms.test.mjs');
-
-await import('./roster-linkage.test.mjs');
-
-await import('./firearm-requests.test.mjs');
