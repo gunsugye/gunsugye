@@ -1,3 +1,4 @@
+import {firearmRequestSourceV413,firearmRequestClientV413,firearmRequestsHtmlV413} from './firearm-requests.mjs';
 import * as rosterLinkageV412 from './roster-linkage.mjs';
 import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
 import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
@@ -114,6 +115,7 @@ js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt'));
 js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
 js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
 js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
+js=firearmRequestClientV413(js,read('scripts/firearm-requests-client.js.txt'));
 const css = read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
@@ -169,6 +171,7 @@ write('docs/index.html', assetRequestsHtml(assetPlanHtml(dormPlanHtml(roomAssetH
 html=html.replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'<div class="setting-box" id="menuSettingsV410"></div>');
 write('docs/index.html',read('docs/index.html').replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'<div class="setting-box" id="menuSettingsV410"></div>'));
 write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearms" type="button">총기 관리 현황</button>'));
+write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearmRequests" type="button">총기 수정 요청·전수조사</button>').replace('<section id="rosterView"',firearmRequestsHtmlV413+'<section id="rosterView"'));
 write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
@@ -209,6 +212,7 @@ legacy+='\n'+read('scripts/reference-batch-server.gs.txt');
 legacy=firearmSourceV410(legacy,true).replace('value.groups.length>NAV_GROUPS_V233.length','value.groups.length>50').replace('NAV_GROUPS_V233.some(g=>g.id===id)',"(NAV_GROUPS_V233.some(g=>g.id===id)||/^g_[a-z0-9]{8,40}$/.test(id))");
 legacy=linkageSourceV412(legacy).replace('function smartReferenceV253_(ss){','function smartReferenceV253_(ss){if(rosterLinkSmartContextV412_)return rosterLinkSmartContextV412_;').replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getRosterLinkagePulseV412')return accessPolicyV284_();if(['getRosterLinkageV412','syncRosterLinkageV412','enableRosterLinkageV412'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
 legacy+='\n'+Object.values(rosterLinkageV412).filter(v=>typeof v==='function').map(f=>f.toString()).join('\n')+'\n'+read('scripts/roster-linkage-server.gs.txt');
+legacy=firearmRequestSourceV413(legacy,true).replace("if(action==='duty-request')return personalDutyRequestV400_(input);","if(action==='duty-request')return personalDutyRequestV400_(input);if(action==='firearm-request')return personalFirearmRequestV413_(input);").replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getFirearmRequestsV413','resolveFirearmRequestsV413','setFirearmSurveyV413'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");legacy+='\n'+read('scripts/firearm-requests-server.gs.txt');
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)

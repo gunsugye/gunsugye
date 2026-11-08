@@ -56,7 +56,8 @@ export function normalizeNavigation(value, defaults, available) {
     for(let i=groups.length-1;i>=0;i--)if(groups[i].id==='departures'||(groups[i].id==='devices'&&groups[i]!==target&&!groups[i].items.length))groups.splice(i,1);
     let input=groups.find(g=>g.id==='inputManagement');if(!input&&defaults.some(g=>g.id==='inputManagement')){input={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(input);}if(input&&allowed.has('departures')){for(const group of groups)group.items=group.items.filter(id=>id!=='departures');input.items.push('departures');labels.departures='누락자 및 퇴교자 관리';}
   }
-  return { schemaVersion: 2, groups, labels, liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.firearmRequestsAddedV413&&allowed.has('firearmRequests')){const group=groups.find(g=>g.items.includes('firearms'));if(group&&!groups.some(g=>g.items.includes('firearmRequests')))group.items.splice(group.items.indexOf('firearms')+1,0,'firearmRequests');}
+  return { schemaVersion: 2, groups, labels, firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {

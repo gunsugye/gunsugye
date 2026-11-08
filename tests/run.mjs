@@ -52,3 +52,5 @@ await import('./reference-batch.test.mjs');
 await import('./firearms.test.mjs');
 
 await import('./roster-linkage.test.mjs');
+
+await import('./firearm-requests.test.mjs');

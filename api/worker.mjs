@@ -103,7 +103,7 @@ export async function handleRequest(request, env, fetcher = fetch) {
   headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
   headers['Access-Control-Max-Age'] = '600';
   const path = new URL(request.url).pathname;
-  if (!['/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout','/personal/assets','/personal/details','/personal/supplies','/personal/uniform','/personal/uniform-request','/personal/duty-request'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
+  if (!['/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout','/personal/assets','/personal/details','/personal/supplies','/personal/uniform','/personal/uniform-request','/personal/duty-request','/personal/firearm-request'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'POST 요청만 가능합니다.' });
   try {
@@ -155,10 +155,11 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
  }else{
   const token=/^Bearer (\S+)$/.exec(request.headers.get('authorization')||'')?.[1];actor=await verifySession(token,env.API_SHARED_SECRET);
   if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))throw new ApiError(403,'개인 조회 인증이 필요합니다.');
-  method={'/personal/me':'pagesPersonalGet','/personal/assets':'pagesPersonalAssets','/personal/details':'pagesPersonalDetails','/personal/supplies':'pagesPersonalSupplies','/personal/uniform':'pagesPersonalUniform','/personal/logout':'pagesPersonalLogout','/personal/uniform-request':'pagesPersonalUniformRequest','/personal/duty-request':'pagesPersonalDutyRequest'}[path];
+  method={'/personal/me':'pagesPersonalGet','/personal/assets':'pagesPersonalAssets','/personal/details':'pagesPersonalDetails','/personal/supplies':'pagesPersonalSupplies','/personal/uniform':'pagesPersonalUniform','/personal/logout':'pagesPersonalLogout','/personal/uniform-request':'pagesPersonalUniformRequest','/personal/duty-request':'pagesPersonalDutyRequest','/personal/firearm-request':'pagesPersonalFirearmRequest'}[path];
   if(path==='/personal/assets')args=[{changes:body.changes}];
   if(path==='/personal/uniform-request')args=[{changes:body.changes,expectedUpdatedAt:body.expectedUpdatedAt}];
   if(path==='/personal/duty-request')args=[{changes:body.changes,snapshot:body.snapshot}];
+  if(path==='/personal/firearm-request')args=[{snapshot:body.snapshot,status:body.status,detail:body.detail,campaignId:body.campaignId}];
  }
  const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args}),signature=await signPayload(payload,env.API_SHARED_SECRET);
  let response;try{response=await fetcher(env.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,signature}),redirect:'follow',signal:AbortSignal.timeout(85000)});}catch(_){throw new ApiError(504,'조회 서버 연결을 확인하세요.');}
