@@ -33,12 +33,12 @@ test('예도는 수량 대상에서 제외하고 상태 요청을 승인하면 �
 });
 
 function portalFixtureV404(){
- const nodes=new Map(),create=(tag='div')=>({tagName:tag.toUpperCase(),dataset:{},children:[],value:'',hidden:false,append(...nodes){this.children.push(...nodes);},replaceChildren(...nodes){this.children=nodes;},setAttribute(){},addEventListener(){}}),get=id=>{if(!nodes.has(id))nodes.set(id,create());return nodes.get(id);},calls=[];
+ const nodes=new Map(),create=(tag='div')=>({tagName:tag.toUpperCase(),style:{},dataset:{},children:[],value:'',hidden:false,append(...nodes){this.children.push(...nodes);},prepend(...nodes){this.children.unshift(...nodes);},replaceChildren(...nodes){this.children=nodes;},setAttribute(){},addEventListener(){}}),get=id=>{if(!nodes.has(id))nodes.set(id,create());return nodes.get(id);},calls=[];
  const c=vm.createContext({$:get,element:(tag,text='')=>Object.assign(create(tag),{textContent:text}),document:{createElement:create},window:{addEventListener(){}},busy:false,token:'own',ticket:1,request:async(path,body)=>{calls.push({path,body});return {requested:true};}});vm.runInContext(read('scripts/personal-duty-portal.js.txt'),c);const all=node=>[node,...node.children.flatMap(all)];return {c,get,calls,all};
 }
 test('근무명을 첫 행에 표시하고 두 번째 행은 품목·수량·세부사항 3열이며 비대상 품목은 숨긴다',()=>{
  const h=portalFixtureV404();h.c.personalDutyRenderV400({duty:{isDuty:true,snapshot:'s',assignments:[{id:'own',duty:'군수보좌관',items:[{item:'block',label:'블럭',required:2,quantity:1},{item:'badge',label:'흉장',required:0,quantity:null}]}]}});
- const root=h.get('personalDutyCardsV400'),form=root.children[0],table=form.children[0],head=table.children[0];assert.equal(head.children[0].children[0].textContent,'군수보좌관 · 흉장·블럭·명패');assert.equal(head.children[0].children[0].colSpan,3);assert.deepEqual(head.children[1].children.map(node=>node.textContent),['품목','수량','세부사항']);assert.equal(h.all(form).filter(node=>node.tagName==='SELECT').length,1);assert.equal(h.all(form).filter(node=>node.tagName==='BUTTON').length,1);assert.equal(h.get('personalDutyV400').hidden,false);
+ const root=h.get('personalDutyCardsV400'),form=root.children[0],table=form.children[0],head=table.children.find(node=>node.tagName==='THEAD');assert.equal(head.children[0].children[0].textContent,'군수보좌관 · 흉장·블럭·명패');assert.equal(head.children[0].children[0].colSpan,3);assert.deepEqual(head.children[1].children.map(node=>node.textContent),['품목','수량','세부사항']);assert.equal(h.all(form).filter(node=>node.tagName==='SELECT').length,1);assert.equal(h.all(form).filter(node=>node.tagName==='BUTTON').length,1);assert.equal(h.get('personalDutyV400').hidden,false);
  h.c.personalDutyResetV400();assert.equal(h.get('personalDutyV400').hidden,true);assert.equal(h.get('personalRegularV400').hidden,false);assert.doesNotMatch(read('docs/me/index.html'),/personalDutyTabV400|personalRegularTabV400/);
 });
 test('수량 선택지는 0부터 기준값과 직접 입력이며 여러 품목과 세부사항을 한 번에 요청한다',async()=>{
