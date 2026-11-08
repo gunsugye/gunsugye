@@ -1,0 +1,3 @@
+import {insertAppClient} from './app-client.mjs';
+export function linkageSourceV412(source){return source.replace(/\{id:'departures',title:'[^']*',items:\['departures'\]\},?\s*/g,'').replace("items:['roster','dutyCadets','dorm']","items:['roster','dutyCadets','dorm','departures']");}
+export function linkageClientV412(source,client){source=linkageSourceV412(source).replace("if(v==='departures')departuresLoadV305();","if(v==='departures')linkageOpenV412();").replace("$('departuresRefresh').addEventListener('click',departuresLoadV305);","$('departuresRefresh').addEventListener('click',()=>linkageRunV412(true));");return insertAppClient(source,client);}

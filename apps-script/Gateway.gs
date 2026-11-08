@@ -131,3 +131,5 @@ function pagesMigrateTriggers_() {
   });
   return { migrated: moved };
 }
+
+function pagesRosterSyncScheduled_(){return pagesCreateLegacy_(pagesActorForTrigger_()).rosterSyncScheduled();}

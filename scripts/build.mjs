@@ -1,3 +1,5 @@
+import * as rosterLinkageV412 from './roster-linkage.mjs';
+import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
 import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
 import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
 import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
@@ -111,6 +113,7 @@ js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV
 js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt'));
 js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
 js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
+js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
 const css = read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
@@ -204,6 +207,8 @@ legacy=supplySchemaServerV408(legacy,read('scripts/supply-schema-server.gs.txt')
 legacy=referenceMenuV409(legacy,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getReferenceBatchV409','previewReferenceBatchV409','applyReferenceBatchV409'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
 legacy+='\n'+read('scripts/reference-batch-server.gs.txt');
 legacy=firearmSourceV410(legacy,true).replace('value.groups.length>NAV_GROUPS_V233.length','value.groups.length>50').replace('NAV_GROUPS_V233.some(g=>g.id===id)',"(NAV_GROUPS_V233.some(g=>g.id===id)||/^g_[a-z0-9]{8,40}$/.test(id))");
+legacy=linkageSourceV412(legacy).replace('function smartReferenceV253_(ss){','function smartReferenceV253_(ss){if(rosterLinkSmartContextV412_)return rosterLinkSmartContextV412_;').replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getRosterLinkagePulseV412')return accessPolicyV284_();if(['getRosterLinkageV412','syncRosterLinkageV412','enableRosterLinkageV412'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
+legacy+='\n'+Object.values(rosterLinkageV412).filter(v=>typeof v==='function').map(f=>f.toString()).join('\n')+'\n'+read('scripts/roster-linkage-server.gs.txt');
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
@@ -260,6 +265,7 @@ return {
   const policy = accessGuardV284_(name, args);
   return accessFilterV284_(name, pagesMethods_[name].apply(null, args), policy);
  },
+ rosterSyncScheduled: function(){if(PropertiesService.getScriptProperties().getProperty('ROSTER_LINK_AUTO_V412')==='yes')return syncRosterLinkageV412(false);},
  training: function() { return trainingScheduledHandoffV227(); },
  survey: function(event) { return surveysOnSubmitV299(event); }
 };
