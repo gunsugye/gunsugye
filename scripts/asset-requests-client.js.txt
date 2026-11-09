@@ -1,4 +1,4 @@
-let assetRequestsV336=[],assetRequestBusyV336=false;
+﻿let assetRequestsV336=[],assetRequestBusyV336=false;
 document.addEventListener('click',async e=>{
  const button=e.target.closest('[data-request-delete]');if(!button||assetRequestBusyV336)return;
  const card=button.closest('[data-request-id]'),r=assetRequestsV336.find(x=>x.id===card.dataset.requestId);if(!r)return;

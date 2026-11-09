@@ -1,4 +1,4 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import { assetInspectionModelV382 } from '../scripts/asset-inspection.mjs';
 import { assetInspectionLayoutV384 } from '../scripts/asset-inspection-layout.mjs';
@@ -14,7 +14,7 @@ function fixture() {
    { id: 'fan', name: '선풍기', positions: ['common'] }
   ],
   records: [
-   { roomId: 'main', itemId: 'bed', slots: [{ position: '1', status: '수리 필요(보고)', details: '볼트 풀림' }, { position: '2', status: '수리 필요(보고)', details: '볼트 풀림' }] },
+   { roomId: 'main', itemId: 'bed', slots: [{ position: '1', status: '수리 필요', details: '볼트 풀림' }, { position: '2', status: '수리 필요', details: '볼트 풀림' }] },
    { roomId: 'main', itemId: 'fan', slots: [{ position: 'common', status: '교체 필요', details: '모터 고장' }] }
   ]
  };

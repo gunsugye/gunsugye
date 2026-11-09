@@ -2,7 +2,7 @@ import {insertAppClient} from './app-client.mjs';
 export function firearmSummaryV410(rows){
  const guns=new Map();for(const row of rows){const number=String(row.firearmNumber||'').normalize('NFKC').trim();if(!number)continue;if(!guns.has(number))guns.set(number,[]);guns.get(number).push(row);}
  const result={people:rows.length,quantity:guns.size,assigned:rows.filter(r=>String(r.firearmNumber||'').trim()).length,normal:0,reported:0,unreported:0,replacement:0,unknown:0,duplicates:0};
- for(const linked of guns.values()){if(linked.length>1)result.duplicates++;const values=new Set(linked.map(r=>r.firearmStatus||''));const status=values.size===1?[...values][0]:'';result[({'정상':'normal','수리 필요(보고)':'reported','수리 필요(미보고)':'unreported','수리 필요':'unreported','교체 필요':'replacement'})[status]||'unknown']++;}return result;
+ for(const linked of guns.values()){if(linked.length>1)result.duplicates++;const values=new Set(linked.map(r=>r.firearmStatus||''));const status=values.size===1?[...values][0]:'';result[({'정상':'normal','수리 필요(보고)':'reported','수리 필요(미보고)':'reported','수리 필요':'reported','교체 필요':'replacement'})[status]||'unknown']++;}return result;
 }
 export function firearmSourceV410(source,server=false){const fixed=server?'const NAV_FIXED_V233=[':'const NAV_BUILTIN_V233=[';return source.replace(fixed,fixed+"'firearms',").replace("items:['saber','dutyItems','dutyRequests','repairs']","items:['firearms','saber','dutyItems','dutyRequests','repairs']");}
 export function firearmClientV410(source,client){

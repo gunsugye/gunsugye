@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
+﻿import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
 import {dutyRoleInfoV367,dutySaberRoleV367} from '../scripts/duty-roles.mjs';import {dutyOrgKeyV372} from '../scripts/duty-order.mjs';import {dutyItemRequirementsV368} from '../scripts/duty-items.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 function fixture(){
@@ -29,7 +29,7 @@ test('관리자 반영은 해당 수량만 변경하고 요청 상태 충돌과 
  f.c.resolveDutyRequestV400(request.id,'delete',[],'','반영 완료');assert.equal(f.quantities.rows[1][3],2);assert.equal(f.c.getDutyRequestsV400().requests.length,0);
 });
 test('예도는 수량 대상에서 제외하고 상태 요청을 승인하면 기존 예도 기록에 반영한다',()=>{
- const f=fixture(),duty=f.c.personalDutyV400_(f.person,f.ss);assert.equal(duty.assignments[0].items.some(item=>item.item==='saber'),false);const changes=[{key:'saber|전대|대장생도',value:{status:'수리 필요(보고)',detail:'손잡이 확인'}}];assert.throws(()=>f.c.personalDutyRequestV400_({snapshot:duty.snapshot,changes:[{key:'d1|saber',value:{quantity:1}}]}));f.c.personalDutyRequestV400_({snapshot:duty.snapshot,changes});assert.equal(f.saber.rows[1][6],'정상');const request=f.c.getDutyRequestsV400().requests[0];f.c.resolveDutyRequestV400(request.id,'apply',changes,'반영','대기');assert.equal(f.saber.rows[1][6],'수리 필요(보고)');assert.equal(f.saber.rows[1][7],'손잡이 확인');assert.equal(f.saber.rows[1][5],'serial');
+ const f=fixture(),duty=f.c.personalDutyV400_(f.person,f.ss);assert.equal(duty.assignments[0].items.some(item=>item.item==='saber'),false);const changes=[{key:'saber|전대|대장생도',value:{status:'수리 필요',detail:'손잡이 확인'}}];assert.throws(()=>f.c.personalDutyRequestV400_({snapshot:duty.snapshot,changes:[{key:'d1|saber',value:{quantity:1}}]}));f.c.personalDutyRequestV400_({snapshot:duty.snapshot,changes});assert.equal(f.saber.rows[1][6],'정상');const request=f.c.getDutyRequestsV400().requests[0];f.c.resolveDutyRequestV400(request.id,'apply',changes,'반영','대기');assert.equal(f.saber.rows[1][6],'수리 필요');assert.equal(f.saber.rows[1][7],'손잡이 확인');assert.equal(f.saber.rows[1][5],'serial');
 });
 
 function portalFixtureV404(){
@@ -43,8 +43,8 @@ test('근무명을 첫 행에 표시하고 두 번째 행은 품목·수량·세
 });
 test('수량 선택지는 0부터 기준값과 직접 입력이며 여러 품목과 세부사항을 한 번에 요청한다',async()=>{
  const h=portalFixtureV404();h.c.personalDutyRenderV400({duty:{isDuty:true,snapshot:'snapshot',assignments:[{id:'own',duty:'전대장',saber:{key:'전대|대장생도',status:'정상',detail:''},items:[{item:'badge',label:'흉장',required:2,quantity:2,detail:''}]}]}});
- const form=h.get('personalDutyCardsV400').children[0],fields=h.all(form),selects=fields.filter(node=>node.tagName==='SELECT'),numbers=fields.filter(node=>node.tagName==='INPUT');assert.deepEqual(selects[0].children.map(node=>node.value),['','정상','수리 필요(보고)','수리 필요(미보고)','교체 필요']);assert.equal(fields.filter(node=>node.tagName==='TABLE').length,2);assert.deepEqual(selects[1].children.map(node=>node.value),['','0','1','2','direct']);
- selects[0].value='수리 필요(보고)';selects[0].onchange();assert.equal(numbers[0].hidden,true);selects[1].value='direct';selects[1].onchange();assert.equal(numbers[0].hidden,false);numbers[0].value='4';fields.find(node=>node.tagName==='TEXTAREA').value='지급 확인';form.oninput();await form.onsubmit({preventDefault(){}});assert.equal(h.calls.length,1);assert.equal(h.calls[0].path,'duty-request');assert.equal(h.calls[0].body.changes.length,2);assert.equal(h.calls[0].body.changes[0].value.status,'수리 필요(보고)');assert.equal(h.calls[0].body.changes[0].value.detail,'지급 확인');assert.equal(h.calls[0].body.changes[1].value.quantity,4);
+ const form=h.get('personalDutyCardsV400').children[0],fields=h.all(form),selects=fields.filter(node=>node.tagName==='SELECT'),numbers=fields.filter(node=>node.tagName==='INPUT');assert.deepEqual(selects[0].children.map(node=>node.value),['','정상','수리 필요','교체 필요']);assert.equal(fields.filter(node=>node.tagName==='TABLE').length,2);assert.deepEqual(selects[1].children.map(node=>node.value),['','0','1','2','direct']);
+ selects[0].value='수리 필요';selects[0].onchange();assert.equal(numbers[0].hidden,true);selects[1].value='direct';selects[1].onchange();assert.equal(numbers[0].hidden,false);numbers[0].value='4';fields.find(node=>node.tagName==='TEXTAREA').value='지급 확인';form.oninput();await form.onsubmit({preventDefault(){}});assert.equal(h.calls.length,1);assert.equal(h.calls[0].path,'duty-request');assert.equal(h.calls[0].body.changes.length,2);assert.equal(h.calls[0].body.changes[0].value.status,'수리 필요');assert.equal(h.calls[0].body.changes[0].value.detail,'지급 확인');assert.equal(h.calls[0].body.changes[1].value.quantity,4);
 });
 
 test('세부사항은 요청만으로 기록을 바꾸지 않고 승인 시 저장되며 수량만 요청하는 기존 경로에서도 보존한다',()=>{

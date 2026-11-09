@@ -1,10 +1,10 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const server=readFileSync(new URL('../scripts/room-assets-server.gs.txt',import.meta.url),'utf8');
 export function fixture(){
- const rows=[['room','desk','2','1','1','Y','old','수리 필요(미보고)','기존 합산 메모','']];let writes=0;
+ const rows=[['room','desk','2','1','1','Y','old','수리 필요','기존 합산 메모','']];let writes=0;
  const sh={getLastRow:()=>rows.length+1,getMaxColumns:()=>10,getRange:(row,col,n=1,width=1)=>({getDisplayValues:()=>rows.slice(row-2,row-2+n).map(r=>r.slice(col-1,col-1+width)),setValues:values=>{writes++;values.forEach((v,i)=>rows[row-2+i]=v);}})};
  const c=vm.createContext({requireOwner_:()=>{},lockAndRun_:fn=>fn(),spreadsheet_:()=>({getSheetByName:()=>sh}),assetV244Rooms_:()=>[{id:'room'}],assetV244Catalog_:()=>[{id:'desk',name:'책상'},{id:'fridge',name:'냉장고'}],ROOM_ASSET_V244:{CATALOG:'cat',RECORDS:'data'},ROOM_ASSET_STATUSES_V246:['정상','수리 필요','교체 필요'],canonicalRepairStateV216_:v=>v,iso_:()=> 'new',safeCell_:v=>v,assetEnsureV246_:()=>{},ensureRows_:()=>{}});
  vm.runInContext(server,c);return {c,rows,sh,writes:()=>writes};

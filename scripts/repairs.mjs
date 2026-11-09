@@ -1,14 +1,11 @@
 export function normalizeRepairText(text){
- return text.replaceAll('수리필요(보고 완료)','수리 필요(보고)').replaceAll('수리필요(미보고)','수리 필요(미보고)')
- .replaceAll("['정상','수리 필요(보고)','수리 필요(미보고)']","['정상','수리 필요(보고)','수리 필요(미보고)','교체 필요']")
- .replaceAll("['','정상','수리 필요(보고)','수리 필요(미보고)']","['','정상','수리 필요(보고)','수리 필요(미보고)','교체 필요']");
+ return text.replaceAll('수리필요(보고 완료)','수리 필요').replaceAll('수리필요(미보고)','수리 필요').replaceAll('수리 필요(보고)','수리 필요').replaceAll('수리 필요(미보고)','수리 필요');
 }
 export function repairServer(source){
  source=normalizeRepairText(source);
  source=source.replace(/function canonicalRepairStateV216_\(value\)\{[\s\S]*?\n\}/,`function canonicalRepairStateV216_(value){
  const s=String(value==null?'':value).trim(),key=s.replace(/\\s+/g,'');
- if(['수리필요(보고)','수리필요(보고완료)'].includes(key))return '수리 필요(보고)';
- if(['수리필요','수리필요(미보고)'].includes(key))return '수리 필요(미보고)';
+ if(key.includes('수리필요'))return '수리 필요';
  if(key==='교체필요')return '교체 필요';
  return s;
 }`);
