@@ -10,7 +10,7 @@ function bulkSetDormInventoryScopeV246(roomIds,options,expectedRecords){
  requireOwner_();return lockAndRun_(()=>{
   if(!Array.isArray(roomIds)||!roomIds.length||roomIds.length>1000||new Set(roomIds).size!==roomIds.length)throw Error('대상 호실을 확인하세요.');
   if(!options||typeof options!=='object'||!Array.isArray(expectedRecords)||expectedRecords.length>100000)throw Error('일괄 입력 정보를 확인하세요.');
-  const status=canonicalRepairStateV216_(options.status),position=String(options.position||'all'),mode=options.unavailable||'keep',detail=String(options.details||'').trim();
+  const canonical=canonicalRepairStateV216_(options.status),status=/수리/.test(canonical)?'수리 필요':canonical,position=String(options.position||'all'),mode=options.unavailable||'keep',detail=String(options.details||'').trim();
   if(!ROOM_ASSET_STATUSES_V246.includes(status)||!['all','1','2','common'].includes(position)||!['keep','yes','no'].includes(mode)||detail.length>500||typeof options.includeMissing!=='boolean')throw Error('상태·자리·사용불가 입력을 확인하세요.');
   const ss=spreadsheet_(),sh=ss.getSheetByName(ROOM_ASSET_V244.RECORDS),cat=ss.getSheetByName(ROOM_ASSET_V244.CATALOG);
   if(!sh||!cat)throw Error('비품 관리 최초 설정이 필요합니다.');

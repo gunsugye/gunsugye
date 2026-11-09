@@ -8,9 +8,9 @@ const code=readFileSync(new URL('../scripts/room-assets-bulk.gs.txt',import.meta
 function bulkFixture(){const f=fixture();vm.runInContext(code,f.c);return f;}
 test('1번 일괄 입력은 2번의 상태·메모·사용불가를 유지한다',()=>{
  const f=bulkFixture();f.rows[0][9]=JSON.stringify({slots:[{position:'1',status:'정상',details:'1번 유지',unavailable:false},{position:'2',status:'교체 필요',details:'2번 유지',unavailable:true}],legacy:null});
- f.c.bulkSetDormInventoryScopeV246(['room'],{itemId:'desk',position:'1',status:'수리 필요(보고)',details:'',unavailable:'keep',includeMissing:true},[['room|desk','old']]);
+ f.c.bulkSetDormInventoryScopeV246(['room'],{itemId:'desk',position:'1',status:'수리 필요',details:'',unavailable:'keep',includeMissing:true},[['room|desk','old']]);
  const slots=JSON.parse(f.rows[0][9]).slots;
- assert.equal(slots[0].status,'수리 필요(보고)');assert.equal(slots[0].details,'1번 유지');
+ assert.equal(slots[0].status,'수리 필요');assert.equal(slots[0].details,'1번 유지');
  assert.deepEqual(slots[1],{position:'2',status:'교체 필요',details:'2번 유지',unavailable:true});
 });
 test('전체 정상 처리는 개인별 2개와 공용 1개를 만들고 충돌 시 쓰지 않는다',()=>{
