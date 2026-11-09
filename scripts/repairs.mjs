@@ -60,8 +60,10 @@ export function repairJs(js){
 function server(method,...args){`).replace('else {resolve(value);','else {resolve(repairResponseV310(value));');
  js=js.replace("||status==='수리 필요';}","||status==='수리 필요'||status==='교체 필요';}")
  .replace("return status==='수리 필요(보고)'?'보고 완료':'미보고';","return status==='교체 필요'?'교체 필요':status==='수리 필요(보고)'?'보고':'미보고';");
- // 예도 선택기도 동일한 네 상태를 사용합니다.
- js=js.replace(/<option value="수리 필요" [\s\S]*?>수리 필요<\/option>/g,`<option value="수리 필요(보고)" '+(p.status==='수리 필요(보고)'?'selected':'')+'>수리 필요(보고)</option><option value="수리 필요(미보고)" '+(p.status==='수리 필요(미보고)'?'selected':'')+'>수리 필요(미보고)</option>`);
+ // All repair selections use one shared repair state.
+ const repairStateV422='수리 필요';
+ js=js.replaceAll('수리 필요(보고)',repairStateV422).replaceAll('수리 필요(미보고)',repairStateV422).replaceAll('수리필요(보고완료)',repairStateV422);
+ js=js.replace(new RegExp('(<option value="'+repairStateV422+'"[^>]*>'+repairStateV422+'</option>)<option value="'+repairStateV422+'"[^>]*>'+repairStateV422+'</option>','g'),'$1');
  const start="  $('repairStats').innerHTML=";
  const at=js.indexOf(start,js.indexOf('function renderRepairDashboard'));
  const summary=`  const groups=new Map();

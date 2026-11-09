@@ -185,8 +185,8 @@ function repairResponseV310(value){
   if(value&&typeof value==='object'){for(const key of Object.keys(value)){
    if((key==='status'||key==='firearmStatus')&&typeof value[key]==='string'){
     const s=value[key].replace(/\s+/g,'');
-    if(['수리필요(보고완료)','수리필요(보고)'].includes(s))value[key]='수리 필요(보고)';
-    else if(['수리필요','수리필요(미보고)'].includes(s))value[key]='수리 필요(미보고)';
+    if(['수리 필요','수리필요(보고)'].includes(s))value[key]='수리 필요';
+    else if(['수리필요','수리필요(미보고)'].includes(s))value[key]='수리 필요';
     else if(s==='교체필요')value[key]='교체 필요';
    }else repairResponseV310(value[key]);
   }}return value;
@@ -3486,7 +3486,7 @@ function saberRenderV276(){
  const writable=canEdit&&data.canEdit;
  $('saberRowsV276').innerHTML=list.map(p=>{
   const state=p.status==='수리 필요'?'saber-repair-v276':p.status==='교체 필요'?'saber-replace-v277':'';
-  return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+((p.linkedCadets||[]).length?'<small style="display:block">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요(보고)" '+(p.status==='수리 필요(보고)'?'selected':'')+'>수리 필요(보고)</option><option value="수리 필요(미보고)" '+(p.status==='수리 필요(미보고)'?'selected':'')+'>수리 필요(미보고)</option><option value="교체 필요" '+(p.status==='교체 필요'?'selected':'')+'>교체 필요</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
+  return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+((p.linkedCadets||[]).length?'<small style="display:block">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요" '+(p.status==='수리 필요'?'selected':'')+'>수리 필요</option><option value="교체 필요" '+(p.status==='교체 필요'?'selected':'')+'>교체 필요</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
  }).join('')||'<tr><td colspan="4">검색 결과가 없습니다.</td></tr>';
  $('saberInfoV276').textContent=list.length+'개 직책 표시 · 상태 변경과 세부사항 입력은 자동 저장됩니다.';
  $('saberSyncTitlesV277').classList.toggle('hidden',!data.titleSyncNeeded||!writable);
