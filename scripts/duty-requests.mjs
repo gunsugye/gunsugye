@@ -1,6 +1,6 @@
 export function dutyRequestsNavSourceV400(source){return source.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['dutyRequests',").replaceAll("'saber','dutyItems','repairs'","'saber','dutyItems','dutyRequests','repairs'");}
 export function dutyRequestsJsV400(js,client){
- js=dutyRequestsNavSourceV400(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['dutyRequests',").replace('const viewNames={',"const viewNames={dutyRequests:['DUTY ITEM REQUESTS','근무생도 물품 수정 요청','예도·흉장·블럭·명패 요청을 확인하고 반영합니다.'],")
+ js=dutyRequestsNavSourceV400(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['dutyRequests',").replace('const viewNames={',"const viewNames={dutyRequests:['DUTY ITEM REQUESTS','근무생도 물품 수정 요청','예도·흉장·블럭·명패·아크릴판 요청을 확인하고 반영합니다.'],")
  .replace('function navInitV220(){',"function navInitV220(){const dutyRequestButtonV400=document.createElement('button');dutyRequestButtonV400.type='button';dutyRequestButtonV400.className='nav-btn';dutyRequestButtonV400.dataset.view='dutyRequests';dutyRequestButtonV400.textContent='근무생도 물품 수정 요청';$('sidebarMenu').appendChild(dutyRequestButtonV400);")
  .replace("'dutyItems','dutyCadets'","'dutyRequests','dutyItems','dutyCadets'").replace("['dutyItems'].includes(v)||","v==='dutyRequests'||['dutyItems'].includes(v)||")
  .replace("'dutyItems','dutyCadets','developmentRequests'","'dutyRequests','dutyItems','dutyCadets','developmentRequests'")

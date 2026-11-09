@@ -12,7 +12,7 @@ function fixture(){
  return {c,person,other,people,roster,ss,tables,quantities,saber,setAdmin:value=>admin=value};
 }
 test('근무생도 개인 조회는 기수·중대·이름이 일치하는 본인 물품만 반환하고 평생도는 숨긴다',()=>{
- const f=fixture(),result=f.c.personalDutyV400_(f.person,f.ss);assert.equal(result.isDuty,true);assert.equal(result.assignments.length,1);assert.equal(result.assignments[0].items.find(item=>item.item==='badge').quantity,1);assert.equal(result.assignments[0].saber.status,'정상');assert.equal(JSON.stringify(result).includes('전대군수참모'),false);
+ const f=fixture(),result=f.c.personalDutyV400_(f.person,f.ss),acrylic=result.assignments[0].items.find(item=>item.item==='acrylic');assert.equal(result.isDuty,true);assert.equal(result.assignments.length,1);assert.equal(result.assignments[0].items.find(item=>item.item==='badge').quantity,1);assert.equal(acrylic.label,'아크릴판');assert.equal(acrylic.required,2);assert.equal(acrylic.quantity,null);assert.equal(acrylic.shortage,null);assert.equal(result.assignments[0].saber.status,'정상');assert.equal(JSON.stringify(result).includes('전대군수참모'),false);
  f.roster[0].data.source.duty='군수보좌관';f.roster[0].data.source.organization='중대';assert.equal(f.c.personalDutyV400_(f.person,f.ss).assignments[0].items.some(item=>item.item==='badge'),false);
  const regular={...f.person,id:'x',name:'평생도'};f.people.push(regular);assert.equal(f.c.personalDutyV400_(regular,f.ss).isDuty,false);f.people.push({...f.person,id:'duplicate'});assert.throws(()=>f.c.personalDutyV400_(f.person,f.ss),/동명/);
 });
@@ -38,7 +38,7 @@ function portalFixtureV404(){
 }
 test('근무명을 첫 행에 표시하고 두 번째 행은 품목·수량·세부사항 3열이며 비대상 품목은 숨긴다',()=>{
  const h=portalFixtureV404();h.c.personalDutyRenderV400({duty:{isDuty:true,snapshot:'s',assignments:[{id:'own',duty:'군수보좌관',items:[{item:'block',label:'블럭',required:2,quantity:1},{item:'badge',label:'흉장',required:0,quantity:null}]}]}});
- const root=h.get('personalDutyCardsV400'),form=root.children[0],table=form.children[0],head=table.children.find(node=>node.tagName==='THEAD');assert.equal(head.children[0].children[0].textContent,'군수보좌관 · 흉장·블럭·명패');assert.equal(head.children[0].children[0].colSpan,3);assert.deepEqual(head.children[1].children.map(node=>node.textContent),['품목','수량','세부사항']);assert.equal(h.all(form).filter(node=>node.tagName==='SELECT').length,1);assert.equal(h.all(form).filter(node=>node.tagName==='BUTTON').length,1);assert.equal(h.get('personalDutyV400').hidden,false);
+ const root=h.get('personalDutyCardsV400'),form=root.children[0],table=form.children[0],head=table.children.find(node=>node.tagName==='THEAD');assert.equal(head.children[0].children[0].textContent,'군수보좌관 · 흉장·블럭·명패·아크릴판');assert.equal(head.children[0].children[0].colSpan,3);assert.deepEqual(head.children[1].children.map(node=>node.textContent),['품목','수량','세부사항']);assert.equal(h.all(form).filter(node=>node.tagName==='SELECT').length,1);assert.equal(h.all(form).filter(node=>node.tagName==='BUTTON').length,1);assert.equal(h.get('personalDutyV400').hidden,false);
  h.c.personalDutyResetV400();assert.equal(h.get('personalDutyV400').hidden,true);assert.equal(h.get('personalRegularV400').hidden,false);assert.doesNotMatch(read('docs/me/index.html'),/personalDutyTabV400|personalRegularTabV400/);
 });
 test('수량 선택지는 0부터 기준값과 직접 입력이며 여러 품목과 세부사항을 한 번에 요청한다',async()=>{
