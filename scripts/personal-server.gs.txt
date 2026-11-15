@@ -26,9 +26,9 @@ function personalSessionV330_(){
  return stored;
 }
 function personalPersonV331_(){
- const session=personalSessionV330_(),ss=spreadsheet_(),matches=rosterRows_(rosterRequired_(ss)).filter(p=>p.id===session.personId);
- if(matches.length!==1||personalFingerprintV330_(matches[0],session.authType)!==session.fingerprint){const e=Error('명단이 변경되었습니다. 다시 인증하세요.');e.pagesCode='SESSION_EXPIRED';throw e;}
- return {person:matches[0],ss};
+ const session=personalSessionV330_(),ss=spreadsheet_(),roster=rosterRequired_(ss),found=rosterFind_(roster,session.personId),person=found?.item;
+ if(!person||personalFingerprintV330_(person,session.authType)!==session.fingerprint){const e=Error('\uBA85\uB2E8\uC774 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC778\uC99D\uD558\uC138\uC694.');e.pagesCode='SESSION_EXPIRED';throw e;}
+ return {person,ss};
 }
 function personalPreviewV331_(person){return {interfaceOrder:personalInterfaceReadV359_().order,dutyInterfaceOrder:personalInterfaceReadV359_().dutyInterfaceOrder,person:{name:person.name,cohort:person.cohort,company:person.company,cadetNumber:person.cadetNumber},firearm:personalFirearmDTOv413_(person,false),room:null,assets:null,supplies:[],uniform:null,warnings:[],updatedAt:iso_(),loading:true};}
 function personalRoomV331_(ss,person){
