@@ -1,0 +1,34 @@
+.pages-login{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:24px;background:#edf2f7;font-family:system-ui,sans-serif;color:#172b43}
+.pages-login[hidden],.pages-session[hidden]{display:none}
+#deleteJournalEntry[hidden]{display:none!important}
+html[data-session-restoring="true"] .pages-login{display:none}
+.pages-update-notice{position:fixed;right:20px;top:104px;z-index:10001;width:min(390px,calc(100vw - 32px));max-height:calc(100dvh - 150px);overflow:auto;box-sizing:border-box;padding:18px;background:#fff;border:1px solid #cadcf5;border-radius:16px;box-shadow:0 14px 44px #14305638;color:#1d3859;font:14px/1.65 system-ui,sans-serif}
+.pages-update-notice[hidden],#pagesUpdateLauncher[hidden]{display:none!important}.pages-update-head{display:flex;gap:12px;align-items:center;justify-content:space-between}.pages-update-head strong{font-size:16px;color:#165cc0}.pages-update-head button{border:0;background:transparent;font-size:23px;color:#62758a;cursor:pointer}
+.pages-update-notice ul{padding-left:20px}.pages-update-notice li{margin:6px 0}#pagesUpdateVersion,#pagesUpdateHelp{font-size:12px;color:#62758a}#pagesUpdateApply{min-height:40px;padding:8px 16px;border:0;border-radius:8px;background:#276fe9;color:#fff;cursor:pointer}#pagesUpdateLauncher{border:1px solid #c9daf5;border-radius:8px;background:#edf4ff;padding:6px 10px;color:#185cc0;cursor:pointer;white-space:nowrap}
+@media(max-width:650px){.pages-update-notice{right:10px;top:80px;width:calc(100vw - 20px)}}
+@media print{.pages-update-notice,#pagesUpdateLauncher{display:none!important}}
+.notification-dock{position:fixed;right:20px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:10050;display:flex;flex-direction:column;gap:10px;width:min(390px,calc(100vw - 32px));max-height:calc(100dvh - 150px);pointer-events:none}
+.notification-dock>*{pointer-events:auto;min-height:0}
+.notification-dock .pages-update-notice{position:static;top:auto;right:auto;width:100%;max-height:40vh;flex:0 1 auto}
+.notification-dock #changeRightV283.v285-fixed-popup{position:static!important;right:auto!important;bottom:auto!important;left:auto!important;top:auto!important;width:100%!important;margin:0!important;max-height:40vh;flex:0 1 auto;box-sizing:border-box}
+.notification-dock #changeRightV283 .change-items-v283{max-height:25vh}
+@media(max-width:650px){.notification-dock{right:10px;bottom:calc(94px + env(safe-area-inset-bottom));width:calc(100vw - 20px);max-height:calc(100dvh - 160px)}}
+@media print{.notification-dock{display:none!important}}
+.pages-login{overflow-y:auto;box-sizing:border-box}
+.pages-login-card{width:min(100%,540px);box-sizing:border-box;padding:40px;background:white;border:1px solid #d9e2ed;border-radius:20px;box-shadow:0 18px 64px #13243a14}
+.pages-login h1{margin:10px 0 16px;font-size:32px;line-height:1.4}
+.pages-login p{font-size:18px;line-height:1.7}.pages-login .pages-eyebrow{font-weight:750;color:#446b96;font-size:17px}
+#pagesLoginStatus{min-height:48px;font-size:17px;white-space:pre-wrap;color:#52667e}
+#pagesGoogleButton{min-height:48px;margin:26px auto 0;max-width:400px}
+.pages-email-form{margin-top:26px;padding-top:24px;border-top:1px solid #d9e2ed}
+.pages-email-form label{display:block;font-size:19px;font-weight:700;margin-bottom:10px}
+.pages-email-form label span{font-size:16px;font-weight:400;color:#52667e}
+.pages-email-form input{width:100%;box-sizing:border-box;min-height:56px;padding:12px 14px;border:1px solid #8fa3bb;border-radius:10px;font:18px system-ui,sans-serif;color:#172b43;background:#fff}
+.pages-email-form input:focus{outline:3px solid #b5d2ff;outline-offset:2px}
+.pages-email-form #pagesEmailHelp{font-size:16px;margin:10px 0 16px;color:#52667e}
+.pages-login .pages-email-form button{width:100%;min-height:52px;font-size:18px;font-weight:650;background:#edf4ff}
+.pages-login #pagesRetry{min-height:48px;font-size:18px}
+.pages-login button,.pages-session button{border:1px solid #bccbdc;border-radius:7px;background:#fff;padding:8px 12px;color:#172b43;cursor:pointer}
+.pages-session{position:static;display:flex;align-items:center;justify-content:flex-end;gap:8px;max-width:100%;min-width:0;margin:6px 0;padding:4px 0;font:12px system-ui,sans-serif;color:#62758a}#pagesAccount{min-width:0;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pages-session button{flex:none;min-height:40px}
+@media(max-width:560px){.pages-login{padding:16px}.pages-session{width:100%;margin:4px 0;gap:6px}#pagesAccount{max-width:calc(100% - 84px)}.pages-session button{min-height:44px;padding:7px 10px}.pages-login-card{padding:28px 22px}.pages-login h1{font-size:28px}}
+@media print{.pages-session,.pages-login{display:none!important}}

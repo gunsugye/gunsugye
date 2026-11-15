@@ -1,7 +1,8 @@
 export function dutyItemRequirementsV368(row){
- const info=dutyRoleInfoV367(row),text=String(row.duty||'').normalize('NFKC').replace(/\s/g,''),society=['동기회','명예위','생발위'].includes(info.organization),aide=/보좌/.test(text),leader=/전대장|대대장|중대장|편대장/.test(text),staff=/참모/.test(text);
- const known=society||aide||leader||staff;
- return {badge:society?2:aide?0:leader||staff?2:0,block:society?0:aide||leader||staff?2:0,door:1,triangle:1,acrylic:2,review:!known};
+ const info=dutyRoleInfoV367(row),text=String(row.duty||'').normalize('NFKC').replace(/\s/g,''),society=['\uB3D9\uAE30\uD68C','\uBA85\uC608\uC704','\uC0DD\uBC1C\uC704'].includes(info.organization)||/\uB3D9\uAE30\uD68C|\uBA85\uC608\uC704|\uC0DD\uBC1C\uC704|\uC0DD\uB3C4\uC0DD\uD65C\uBC1C\uC804/.test(text),femaleOfficer=/\uC5EC\uC0DD\uB3C4.*\uC784\uC6D0|\uC784\uC6D0.*\uC5EC\uC0DD\uB3C4/.test(text),director=/(?:\uBD80)?\uAD6D\uC7A5/.test(text),aide=/\uBCF4\uC88C\uAD00/.test(text),leader=/\uC7A5|\uCC38\uBAA8|\uC911\uB300\uC7A5|\uD3B8\uB300\uC7A5/.test(text),staff=/\uCC38\uBAA8/.test(text);
+ if(femaleOfficer)return {badge:0,block:0,door:0,triangle:0,acrylic:0,review:false};
+ const known=society||director||aide||leader||staff;
+ return {badge:society?2:aide?0:director||leader||staff?2:0,block:society||director?0:aide||leader||staff?2:0,door:1,triangle:1,acrylic:2,review:!known};
 }
 export const dutyItemsV368=[{id:'badge',view:'dutyItems',label:'흉장'},{id:'block',view:'dutyItems',label:'블럭'},{id:'door',view:'dutyItems',label:'방문 앞 명패'},{id:'triangle',view:'dutyItems',label:'삼각명패'},{id:'acrylic',view:'dutyItems',label:'아크릴판'}];
 export function dutyItemsNavSourceV368(source){source=source.replace("'saber','repairs'","'saber','dutyItems','repairs'");return /const NAV_FIXED_V233=\[[^\]]*'dutyItems'/.test(source)?source:source.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['dutyItems',");}

@@ -57,3 +57,9 @@ test('물품 수량은 일괄 저장하며 미등록/0 구분, 기존 기록 보
  for(const quantity of [-1,1.5,1001,'2',null])assert.throws(()=>context.saveDutyItemsV368('manual-v369',result.revision,[{personId:'p1',item:'badge',quantity}]),/정수/);assert.equal(writes,1);
  const saved=context.saveDutyItemsV368('manual-v369',result.revision,[{personId:'p1',item:'badge',quantity:1}]);assert.equal(context.getDutyItemsV368().items.length,4);assert.equal(context.getDutyItemsV368().revision,saved.revision);indexed=false;assert.throws(()=>context.getDutyItemsV368(),/먼저/);indexed=true;legacy=false;assert.throws(()=>context.getDutyItemsV368(),/권한/);assert.equal(writes,2);
 });
+
+test('?????? ???? ???? ???? ??????? ?? 2? ??? ????',()=>{
+ const req=new vm.Script('('+dutyItemRequirementsV368.toString()+')(row)'),context=vm.createContext({dutyRoleInfoV367,row:null});
+ context.row={duty:'4\uD559\uB144 \uC5EC\uC0DD\uB3C4\uC911\uB300\uC784\uC6D0'};const female=req.runInContext(context);for(const key of ['badge','block','door','triangle','acrylic'])assert.equal(female[key],0,key);
+ for(const duty of ['\uAD6D\uC7A5','\uBD80\uAD6D\uC7A5']){context.row={duty};const result=req.runInContext(context);assert.equal(result.badge,2,duty);assert.equal(result.block,0,duty);assert.equal(result.door,1,duty);assert.equal(result.triangle,1,duty);assert.equal(result.acrylic,2,duty);}
+});
