@@ -1,1 +1,1 @@
-export const releaseDetails={"version":"4.36","title":"근무물품 세부사항 한 줄 표시","notes":["세부사항 버튼 이름을 통일하고 기준·등록 수량과 같은 줄에 배치했습니다."]};
+export const releaseDetails={"version":"4.37","title":"근무물품 수량 입력 정렬","notes":["근무생도 물품의 등록 수량 입력칸을 가운데 정렬했습니다."]};
