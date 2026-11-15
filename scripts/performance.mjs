@@ -39,4 +39,7 @@ if(typeof dormRosterReadV240_==='function')dormRosterReadV240_=pagesObjectMemoV3
 if(typeof assetV244Catalog_==='function')assetV244Catalog_=pagesObjectMemoV307_(assetV244Catalog_,pagesMemoEnabledV307_);
 if(typeof assetV244Records_==='function')assetV244Records_=pagesObjectMemoV307_(assetV244Records_,pagesMemoEnabledV307_);
 if(typeof assetRequestRowsV336_==='function')assetRequestRowsV336_=pagesObjectMemoV307_(assetRequestRowsV336_,pagesMemoEnabledV307_);
+if(typeof uniformTabV278_==='function')uniformTabV278_=pagesObjectMemoV307_(uniformTabV278_,pagesMemoEnabledV307_);
+if(typeof uniformRowsV278_==='function')uniformRowsV278_=pagesObjectMemoV307_(uniformRowsV278_,pagesMemoEnabledV307_);
+if(typeof uniformRequestRowsV350_==='function')uniformRequestRowsV350_=pagesObjectMemoV307_(uniformRequestRowsV350_,pagesMemoEnabledV307_);
 `;

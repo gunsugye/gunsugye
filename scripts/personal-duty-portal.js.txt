@@ -3,6 +3,7 @@ function personalDutyColumnsV420(table){const columns=element('colgroup');for(co
 const personalDutyDraftsV400=new Map();
 function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;}
 function personalDutyRenderV400(data){
+ if(data.loading){personalDutyResetV400();if(data.duty?.isDuty){$('personalDutyV400').hidden=false;$('personalDutyCardsV400').append(element('p','불러오는 중…','hint'));}return;}
  const duty=data.duty;if(!duty?.isDuty||!duty.assignments?.length){personalDutyResetV400();return;}
  const root=$('personalDutyCardsV400');root.replaceChildren();$('personalDutyV400').hidden=false;personalDutyDirtyV400=false;personalDutyDraftsV400.clear();
  const form=element('form'),editors=[];
