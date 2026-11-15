@@ -4948,6 +4948,7 @@ async function staffAccessFocusV364(job,name,email,views){
  $('v284StaffForm').scrollIntoView({behavior:'smooth',block:'start'});$('v284AccessEmail').focus({preventScroll:true});
 }
 $('v284StaffJob').addEventListener('change',staffAccessPopulateV366);
+$('staffDutyImportV441').addEventListener('click',async()=>{if(v284Busy)return;const button=$('staffDutyImportV441');button.disabled=true;$('v284StaffStatus').textContent='근무생도 명단과 전화번호부를 확인 중…';try{const result=await server('staffImportDutyCadetsV441');await v284StaffLoad();$('v284StaffStatus').textContent='근무생도 명단 반영 · 신규 '+result.created+'명 / 전화번호 갱신 '+result.updated+'명 / 전화번호 확인 필요 '+result.unmatched+'명';}catch(error){$('v284StaffStatus').textContent='근무생도 명단 반영 실패: '+error.message;}finally{button.disabled=false;}});
 $('v284StaffRows').addEventListener('click',event=>{const button=event.target.closest('[data-staff-access]');if(!button)return;const person=v284StaffItems[Number(button.dataset.staffAccess)];if(person)staffAccessFocusV364(person.job,person.name,person.email||'');});
 $('v284AccessUsers').addEventListener('click',event=>{const button=event.target.closest('[data-staff-access-edit]');if(!button)return;const user=v284AccessUsers.find(p=>p.email===button.dataset.staffAccessEdit);if(user)staffAccessFocusV364(user.job,'',user.email,user.views);});
 

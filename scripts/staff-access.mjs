@@ -1,7 +1,7 @@
 export function staffAccessHtml(html){
  const access=html.match(/<section id="accessView"[^>]*>([\s\S]*?)<\/section>/);if(!access)throw Error('권한 관리 화면 위치 확인');
  html=html.replace(access[0],'<section id="accessView" class="hidden"></section>');
- return html.replace(/(<section id="staffView"[\s\S]*?)(<\/section>)/,(_all,body,end)=>body.replace('<th>전화번호</th><th>근무 차수</th>','<th>전화번호</th><th>이메일</th><th>근무 차수</th>')+'<div id="staffPermissionsV364" class="hidden"><p id="staffPermissionPersonV364" class="notice" role="status">권한을 관리할 직책과 Google 계정을 선택하세요.</p>'+access[1]+'</div>'+end);
+ return html.replace(/(<section id="staffView"[\s\S]*?)(<\/section>)/,(_all,body,end)=>body.replace('<th>전화번호</th><th>근무 차수</th>','<th>전화번호</th><th>이메일</th><th>근무 차수</th>').replace('<button class="btn btn-primary" id="v284StaffSave" type="button">명단 저장</button>','<button class="btn" id="staffDutyImportV441" type="button">근무생도 명단 불러오기</button><button class="btn btn-primary" id="v284StaffSave" type="button">명단 저장</button>')+'<div id="staffPermissionsV364" class="hidden"><p id="staffPermissionPersonV364" class="notice" role="status">권한을 관리할 직책과 Google 계정을 선택하세요.</p>'+access[1]+'</div>'+end);
 }
 export function staffAccessJs(js){
  js=js.replace("items:['settings','changes','access','staff','updates']","items:['settings','changes','staff','updates']")
@@ -45,6 +45,7 @@ async function staffAccessFocusV364(job,name,email,views){
  $('v284StaffForm').scrollIntoView({behavior:'smooth',block:'start'});$('v284AccessEmail').focus({preventScroll:true});
 }
 $('v284StaffJob').addEventListener('change',staffAccessPopulateV366);
+$('staffDutyImportV441').addEventListener('click',async()=>{if(v284Busy)return;const button=$('staffDutyImportV441');button.disabled=true;$('v284StaffStatus').textContent='근무생도 명단과 전화번호부를 확인 중…';try{const result=await server('staffImportDutyCadetsV441');await v284StaffLoad();$('v284StaffStatus').textContent='근무생도 명단 반영 · 신규 '+result.created+'명 / 전화번호 갱신 '+result.updated+'명 / 전화번호 확인 필요 '+result.unmatched+'명';}catch(error){$('v284StaffStatus').textContent='근무생도 명단 반영 실패: '+error.message;}finally{button.disabled=false;}});
 $('v284StaffRows').addEventListener('click',event=>{const button=event.target.closest('[data-staff-access]');if(!button)return;const person=v284StaffItems[Number(button.dataset.staffAccess)];if(person)staffAccessFocusV364(person.job,person.name,person.email||'');});
 $('v284AccessUsers').addEventListener('click',event=>{const button=event.target.closest('[data-staff-access-edit]');if(!button)return;const user=v284AccessUsers.find(p=>p.email===button.dataset.staffAccessEdit);if(user)staffAccessFocusV364(user.job,'',user.email,user.views);});
 `+js.slice(end);
