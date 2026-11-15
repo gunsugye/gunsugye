@@ -1,0 +1,3 @@
+import {insertAppClient} from './app-client.mjs';
+export function managedDeleteClientV426(source,client){source=source.replace("$('rosterBackdrop').classList.remove('hidden');","$('rosterBackdrop').classList.remove('hidden');managedDeleteRosterV426();").replace(/(function firearmsEditV410[\s\S]*?)dialog.showModal\(\);/,'$1managedDeleteFirearmV426(dialog,record);dialog.showModal();');return insertAppClient(source,client);}
+export function managedDeleteServerV426(source,code){return source.replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getManagedDeletePlanV426','deleteManagedRecordV426'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}")+'\n'+code;}
