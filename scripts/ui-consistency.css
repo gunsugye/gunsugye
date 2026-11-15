@@ -50,24 +50,26 @@ textarea.field{min-height:88px;line-height:1.5}
 .eq-table td,.asset-table td,.data-table td,.table-wrap td{vertical-align:middle}
 
 /* 편집 팝업은 저장·취소·삭제 순서를 유지하고 같은 크기로 표시한다. */
-.modal-actions{
-  display:flex;
-  flex-wrap:wrap;
+.supply-schema-dialog .modal-actions{
+  display:grid !important;
+  grid-template-columns:repeat(3,84px);
   align-items:center;
   gap:8px;
   margin-top:8px;
 }
-.modal-actions .btn{
-  min-width:76px;
-  min-height:40px;
-  margin:0;
+.supply-schema-dialog .modal-actions .btn{
+  width:84px !important;
+  min-width:84px !important;
+  min-height:40px !important;
+  margin:0 !important;
 }
-.modal-actions button[type="submit"]{order:1}
-.modal-actions [data-close],.modal-actions [data-cancel]{order:2}
-.modal-actions [data-delete],.modal-actions [data-managed-delete]{order:3}
+.supply-schema-dialog .modal-actions button[type="submit"]{grid-column:1;grid-row:1}
+.supply-schema-dialog .modal-actions [data-close],.supply-schema-dialog .modal-actions [data-cancel]{grid-column:2;grid-row:1}
+.supply-schema-dialog .modal-actions [data-delete],.supply-schema-dialog .modal-actions [data-managed-delete]{grid-column:3;grid-row:1}
 
-@media(max-width:700px){
-  .modal-actions .btn{flex:1 1 76px}
+@media(max-width:400px){
+  .supply-schema-dialog .modal-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .supply-schema-dialog .modal-actions .btn{width:100% !important;min-width:0 !important;padding-inline:6px}
 }
 
 @media(max-width:700px){
