@@ -124,7 +124,7 @@ js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
 js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'));
 js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
 js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
-const css = read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css');
+const css = read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.

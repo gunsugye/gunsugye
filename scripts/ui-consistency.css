@@ -1,0 +1,55 @@
+/* 공통 조작 요소: 화면마다 다른 높이·글자 크기를 하나의 기준으로 맞춘다. */
+:root{
+  --control-height:40px;
+  --control-height-compact:34px;
+  --control-font-size:14px;
+  --control-font-size-compact:13px;
+  --control-gap:8px;
+}
+
+button.btn,a.btn{
+  box-sizing:border-box;
+  min-height:var(--control-height);
+  padding:9px 12px;
+  font-size:var(--control-font-size);
+  line-height:20px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+}
+
+input.field,select.field,textarea.field,.field{
+  box-sizing:border-box;
+  min-height:var(--control-height);
+  font-size:var(--control-font-size);
+  line-height:20px;
+}
+
+textarea.field{min-height:88px;line-height:1.5}
+
+.asset-actions,.supply-actions,.dorm-actions,.v292-actions,.panel-actions{
+  align-items:center;
+  gap:var(--control-gap);
+}
+
+/* 표 안의 수정·저장 조작은 같은 규격으로 한 단계 작게 유지한다. */
+.eq-table .btn,.asset-table .btn,.data-table .btn,.table-wrap .btn{
+  min-height:var(--control-height-compact);
+  padding:6px 10px;
+  font-size:var(--control-font-size-compact);
+  line-height:20px;
+}
+
+.eq-table .field,.asset-table .field,.data-table .field,.table-wrap .field{
+  min-height:var(--control-height-compact);
+  font-size:var(--control-font-size-compact);
+  line-height:20px;
+}
+
+.eq-table td,.asset-table td,.data-table td,.table-wrap td{vertical-align:middle}
+
+@media(max-width:700px){
+  button.btn,a.btn{min-height:40px}
+  .asset-actions,.supply-actions,.dorm-actions,.v292-actions,.panel-actions{gap:8px}
+}
