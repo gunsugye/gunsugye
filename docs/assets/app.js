@@ -3822,7 +3822,7 @@ async function v285UpdateSave(){
 function v284Init(){
  $('staffPermissionsV364').appendChild($('accessManageV281'));
  $('v284StaffPhone').closest('.v284-grid').appendChild($('v284AccessEmail').closest('label'));
- const rightsPanel=$('v284AccessJob').closest('.panel'),staffForm=$('v284StaffForm');staffForm.insertBefore(rightsPanel,staffForm.querySelector('.setting-actions'));$('v284AccessJob').closest('label').hidden=true;rightsPanel.querySelector('.panel-title').textContent='허용 메뉴 · 권한 부여';rightsPanel.prepend($('staffPermissionPersonV364'));
+ const rightsPanel=$('v284AccessJob').closest('.panel'),staffForm=$('v284StaffForm');staffForm.insertBefore(rightsPanel,staffForm.querySelector('.setting-actions'));$('v284AccessJob').closest('label').hidden=true;rightsPanel.querySelector('.panel-title').textContent='권한 부여';rightsPanel.prepend($('staffPermissionPersonV364'));
  const accounts=document.createElement('div');accounts.className='panel v284-panel';accounts.innerHTML='<h2 class="panel-title">등록된 계정 권한</h2>';accounts.append($('v284AccessStatus'),$('v284AccessUsers'));$('staffPermissionsV364').prepend(accounts);
  
  v284JobsSelect('v284AccessJob');v284JobsSelect('v284StaffJob');v284CheckboxRender();
