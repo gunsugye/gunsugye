@@ -17,7 +17,7 @@ test('기준 0개 칸은 비우고 기준이 있는 등록 0개와 미등록 입
  assert.doesNotMatch(html,/data-item-person="society" data-item-quantity="block"/);
  assert.match(html,/data-item-person="aide" data-item-quantity="block"/);
  assert.match(html,/data-item-person="society" data-item-quantity="badge"/);
- assert.match(html,/data-item-person="leader" data-item-quantity="door"/);assert.match(html,/data-item-person="leader" data-item-quantity="acrylic"/);assert.equal(element('[data-item-shortage]').innerHTML,'');
+ assert.match(html,/data-item-person="leader" data-item-quantity="door"/);assert.match(html,/data-item-person="leader" data-item-quantity="acrylic"/);assert.match(element('[data-item-shortage]').innerHTML,/품목/);assert.match(element('[data-item-shortage]').innerHTML,/기준/);assert.match(element('[data-item-shortage]').innerHTML,/미등록/);
  assert.equal(vm.runInContext("dutyItemsDataV368.items[0].quantity",context),3);
  vm.runInContext("dutyItemSetDraftV368('leader','badge',0);dutyItemsRenderV368();",context);
  assert.match(element('[data-item-rows]').innerHTML,/data-item-person="leader" data-item-quantity="badge"[^>]*value="0"/);

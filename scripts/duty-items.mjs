@@ -13,7 +13,7 @@ export function dutyItemsJsV368(js,client){
  .replace("'dutyCadets','personalInterface'","'dutyItems','dutyCadets','personalInterface'")
  .replace("v==='dutyCadets'||", "['dutyItems'].includes(v)||v==='dutyCadets'||")
  .replace("if(v==='dutyCadets')dutyCadetsLoadV365();","if(v==='dutyCadets')dutyCadetsLoadV365();if(['dutyItems'].includes(v))dutyItemsLoadV368(v);")
- .replace("if(id==='dutyCadets'&&", "if(['dutyItems'].includes(id)&&(!canEdit||v284Scoped))return;if(id==='dutyCadets'&&");
+ .replace("if(id==='dutyCadets'&&", "if(['dutyItems'].includes(id)&&(!canEdit&&!v284Scoped))return;if(id==='dutyCadets'&&");
  js=js.replace('trainSharedModeV289=[',"if(['dutyItems'].includes(view)&&v!==view){if(dutyItemsBusyV368)return false;if(dutyItemDraftV368.size){if(!confirm('저장하지 않은 수량 변경을 지우고 이동할까요?'))return false;dutyItemDraftV368.clear();}}trainSharedModeV289=[");
  const end=js.lastIndexOf('})();');return js.slice(0,end)+'\n'+client+'\n'+js.slice(end);
 }
