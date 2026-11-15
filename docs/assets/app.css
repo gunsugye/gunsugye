@@ -1332,9 +1332,9 @@ textarea.field{min-height:88px;line-height:1.5}
   min-height:40px !important;
   margin:0 !important;
 }
-.supply-schema-dialog .modal-actions button[type="submit"]{grid-column:1;grid-row:1}
+.supply-schema-dialog .modal-actions button[type="submit"]{grid-column:3;grid-row:1}
 .supply-schema-dialog .modal-actions [data-close],.supply-schema-dialog .modal-actions [data-cancel]{grid-column:2;grid-row:1}
-.supply-schema-dialog .modal-actions [data-delete],.supply-schema-dialog .modal-actions [data-managed-delete]{grid-column:3;grid-row:1}
+.supply-schema-dialog .modal-actions [data-delete],.supply-schema-dialog .modal-actions [data-managed-delete]{grid-column:1;grid-row:1}
 
 @media(max-width:400px){
   .supply-schema-dialog .modal-actions{grid-template-columns:repeat(3,minmax(0,1fr));justify-content:stretch}
