@@ -65,7 +65,7 @@ async function departuresApplyV305(){
  }}finally{departuresBusyV305=false;$('departuresView').removeAttribute('aria-busy');$('departuresView').querySelectorAll('button,input,select').forEach(x=>x.disabled=false);rosterLoaded=false;supplyLoaded=false;uniformStateV278.loaded=false;await departuresLoadV305();$('departuresResult').textContent=results.join('\\n');}
 }
 $('departuresRefresh').addEventListener('click',departuresLoadV305);
-$('departuresSearch').addEventListener('input',()=>{const q=$('departuresSearch').value.trim().toLowerCase();for(const row of $('departuresCandidates').children)row.hidden=!!q&&!row.textContent.toLowerCase().includes(q);});
+$('departuresSearch').addEventListener('input',()=>{const q=$('departuresSearch').value.trim().toLowerCase();for(const row of $('departuresCandidates').querySelectorAll('[data-departure-id]'))row.hidden=!!q&&!row.textContent.toLowerCase().includes(q);});
 $('departuresSelect').addEventListener('click',()=>{$('departuresCandidates').querySelectorAll('[data-departure-id]').forEach(r=>{if(!r.hidden)r.querySelector('.departure-pick').checked=true;});});
 $('departuresClear').addEventListener('click',()=>{$('departuresCandidates').querySelectorAll('.departure-pick').forEach(x=>x.checked=false);});
 $('departuresApply').addEventListener('click',departuresApplyV305);
