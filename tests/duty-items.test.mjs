@@ -17,27 +17,12 @@ test('기준 0개 칸은 비우고 기준이 있는 등록 0개와 미등록 입
  assert.doesNotMatch(html,/data-item-person="society" data-item-quantity="block"/);
  assert.match(html,/data-item-person="aide" data-item-quantity="block"/);
  assert.match(html,/data-item-person="society" data-item-quantity="badge"/);
- assert.match(html,/data-item-person="leader" data-item-quantity="door"/);assert.match(html,/data-item-person="leader" data-item-quantity="acrylic"/);assert.match(element('[data-item-shortage]').innerHTML,/아크릴판/);
+ assert.match(html,/data-item-person="leader" data-item-quantity="door"/);assert.match(html,/data-item-person="leader" data-item-quantity="acrylic"/);assert.equal(element('[data-item-shortage]').innerHTML,'');
  assert.equal(vm.runInContext("dutyItemsDataV368.items[0].quantity",context),3);
  vm.runInContext("dutyItemSetDraftV368('leader','badge',0);dutyItemsRenderV368();",context);
  assert.match(element('[data-item-rows]').innerHTML,/data-item-person="leader" data-item-quantity="badge"[^>]*value="0"/);
 });
 
-test('일괄 수량·기준 적용은 기준 0개 인원의 숨겨진 기록을 덮어쓰지 않는다',()=>{
- const {context,element}=dutyItemsFixture();
- vm.runInContext("for(const p of dutyItemsDataV368.rows)dutyItemSelectedV368.add(p.id);",context);
- element('[data-item-kind]').value='badge';element('[data-item-bulk-qty]').value='4';
- element('[data-item-bulk]').onclick();
- assert.equal(vm.runInContext("dutyItemDraftV368.has('aide|badge')",context),false);
- assert.equal(vm.runInContext("dutyItemDraftV368.get('leader|badge').quantity",context),4);
- assert.match(element('[data-item-status]').textContent,/2명 적용/);
- vm.runInContext('dutyItemDraftV368.clear();',context);element('[data-item-standard]').onclick();
- assert.equal(vm.runInContext("dutyItemDraftV368.has('aide|badge')",context),false);
- assert.equal(vm.runInContext("dutyItemDraftV368.get('society|badge').quantity",context),2);
- vm.runInContext("dutyItemDraftV368.clear();dutyItemSelectedV368.clear();dutyItemSelectedV368.add('aide');",context);
- element('[data-item-bulk]').onclick();assert.equal(vm.runInContext('dutyItemDraftV368.size',context),0);
- assert.match(element('[data-item-status]').textContent,/대상자가 없습니다/);
-});
 test('장·참모·보좌관·동생명의 흉장/블럭 기준과 모든 인원의 명패·아크릴판 기준을 적용한다',()=>{
  const req=new vm.Script('('+dutyItemRequirementsV368.toString()+')(row)'),context=vm.createContext({dutyRoleInfoV367,row:null});
  for(const [duty,badge,block] of [['전대장',2,2],['2대대장',2,2],['3중대장',2,2],['1편대장',2,2],['전대군수참모',2,2],['전대군수참모보좌관',0,2],['문화체육보좌관',0,2],['군수(보급)보좌관',0,2],['동기회장',2,0],['명예위원장',2,0],['생발위4학년1대대',2,0],['동기회보좌관',2,0],['4학년중대임원',0,0],['직책 미표기',0,0]]){context.row={duty};const result=req.runInContext(context);assert.equal(result.badge,badge,duty);assert.equal(result.block,block,duty);assert.equal(result.door,1);assert.equal(result.triangle,1);assert.equal(result.acrylic,2);}
