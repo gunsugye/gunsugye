@@ -1321,6 +1321,7 @@ textarea.field{min-height:88px;line-height:1.5}
 .supply-schema-dialog .modal-actions{
   display:grid !important;
   grid-template-columns:repeat(3,84px);
+  justify-content:end;
   align-items:center;
   gap:8px;
   margin-top:8px;
@@ -1336,7 +1337,7 @@ textarea.field{min-height:88px;line-height:1.5}
 .supply-schema-dialog .modal-actions [data-delete],.supply-schema-dialog .modal-actions [data-managed-delete]{grid-column:3;grid-row:1}
 
 @media(max-width:400px){
-  .supply-schema-dialog .modal-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .supply-schema-dialog .modal-actions{grid-template-columns:repeat(3,minmax(0,1fr));justify-content:stretch}
   .supply-schema-dialog .modal-actions .btn{width:100% !important;min-width:0 !important;padding-inline:6px}
 }
 
