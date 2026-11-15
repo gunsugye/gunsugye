@@ -3,8 +3,8 @@ export function rosterGunNumberV417(value){const number=String(value??'').normal
 export function rosterGunAuditV417(rows){
  const groups=new Map(),missing=[];
  for(const person of rows){const number=rosterGunNumberV417(person.firearmNumber);if(!number){missing.push(person);continue;}if(!groups.has(number))groups.set(number,[]);groups.get(number).push(person);}
- const counts={normal:0,reported:0,unreported:0,replacement:0,unknown:0};
- for(const people of groups.values()){const states=new Set(people.map(p=>p.firearmStatus==='수리 필요'?'수리 필요(미보고)':p.firearmStatus||'')),status=states.size===1?[...states][0]:'';counts[({'정상':'normal','수리 필요(보고)':'reported','수리 필요(미보고)':'unreported','교체 필요':'replacement'})[status]||'unknown']++;}
+ const counts={normal:0,repair:0,reported:0,unreported:0,replacement:0,unknown:0};
+ for(const people of groups.values()){const states=new Set(people.map(p=>String(p.firearmStatus||'').replace(/\s/g,'').includes('수리필요')?'수리 필요':p.firearmStatus||'')),status=states.size===1?[...states][0]:'';counts[({'정상':'normal','수리 필요':'repair','교체 필요':'replacement'})[status]||'unknown']++;}counts.reported=counts.repair;
  const duplicates=[...groups].filter(([,people])=>people.length>1).map(([number,people])=>({number,people}));
  return {people:rows.length,registered:rows.length-missing.length,quantity:groups.size,missing,duplicates,duplicatePeople:duplicates.reduce((n,g)=>n+g.people.length,0),...counts};
 }

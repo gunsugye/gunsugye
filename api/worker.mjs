@@ -149,9 +149,10 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
  const body=await readBody(request),login=path==='/personal/login';
  let actor,args=[],method;
  if(login){
-  if(typeof body?.name!=='string'||typeof body?.firearmNumber!=='string'||body.name.length>60||body.firearmNumber.length>60)throw new ApiError(400,'이름과 총기번호를 확인하세요.');
+  const authType=body?.authType===undefined?'firearm':body.authType,field=authType==='cadet'?'cadetNumber':'firearmNumber';
+  if(!['firearm','cadet'].includes(authType)||typeof body?.name!=='string'||typeof body?.[field]!=='string'||body.name.length>60||body[field].length>60)throw new ApiError(400,'이름과 총기번호 또는 교번을 확인하세요.');
   actor={email:'personal@portal.invalid',sub:'personal-login',rateKey:await signPayload('personal-rate:'+request.headers.get('CF-Connecting-IP'),env.API_SHARED_SECRET)};
-  args=[{name:body.name,firearmNumber:body.firearmNumber}];method='pagesPersonalLogin';
+  args=[{name:body.name,...(authType==='cadet'?{authType:'cadet',cadetNumber:body.cadetNumber}:{firearmNumber:body.firearmNumber})}];method='pagesPersonalLogin';
  }else{
   const token=/^Bearer (\S+)$/.exec(request.headers.get('authorization')||'')?.[1];actor=await verifySession(token,env.API_SHARED_SECRET);
   if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))throw new ApiError(403,'개인 조회 인증이 필요합니다.');
