@@ -27,12 +27,12 @@ function noticeFixture(){
  return {context,events,element,stored,advance:(ms=61000)=>{clock+=ms;},setRelease:r=>release=r,get reloads(){return reloads;},get requests(){return requests;},get intervalMs(){return intervalMs;}};
 }
 
-test('배포 확인은 10초 간격이며 탭 복귀는 이전 확인 직후에도 최신 기록을 읽는다',async()=>{
- const f=noticeFixture();await tick();assert.equal(f.intervalMs,10000);
+test('배포 확인은 2초 간격이며 탭 복귀는 이전 확인 직후에도 최신 기록을 읽는다',async()=>{
+ const f=noticeFixture();await tick();assert.equal(f.intervalMs,2000);
  f.advance(1000);f.setRelease({id:'bbbbbbbbbbbbbbbb',version:'3.97',title:'즉시 확인',notes:[]});
  f.events.get('focus')();await tick();assert.equal(f.requests,2);assert.match(f.element('pagesUpdateVersion').textContent,/3.97/);
  let notified=0;const unsubscribe=f.context.window.LOGBOOK_UPDATES.subscribe(()=>notified++);
- f.advance(10000);f.events.get('interval')();await tick();assert.equal(notified,0);
+ f.advance(2000);f.events.get('interval')();await tick();assert.equal(notified,0);
  f.setRelease({id:'cccccccccccccccc',version:'3.98',title:'다음',notes:[]});f.events.get('online')();await tick();assert.equal(notified,1);unsubscribe();
 });
 

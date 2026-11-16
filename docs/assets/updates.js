@@ -17,7 +17,7 @@
   if(force||seen()!==latest.id)$('pagesUpdateNotice').hidden=false;
  }
  async function check(force=false){
-  if(busy||document.visibilityState==='hidden'||(!force&&Date.now()-lastCheck<10000))return;
+  if(busy||document.visibilityState==='hidden'||(!force&&Date.now()-lastCheck<2000))return;
   busy=true;lastCheck=Date.now();
   try{
    const response=await fetch('./release.json?t='+Date.now(),{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(10000)});
@@ -56,7 +56,7 @@
   else if(latest)applyUpdate();
   else{check(true).then(()=>{if(latest)applyUpdate();else $('pagesUpdateHelp').textContent='업데이트 정보를 불러오지 못했습니다. 다시 눌러 주세요.';});}
  },true);
- function start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check();setInterval(()=>check(),10000);document.addEventListener('visibilitychange',()=>check(true));window.addEventListener('focus',()=>check(true));window.addEventListener('online',()=>check(true));}
+ function start(){if(started)return;started=true;const host=document.querySelector('.topbar-right');if(host)host.append($('pagesUpdateLauncher'));check(true);setInterval(()=>check(),2000);document.addEventListener('visibilitychange',()=>check(true));window.addEventListener('focus',()=>check(true));window.addEventListener('online',()=>check(true));}
  window.LOGBOOK_UPDATES={start,refresh:()=>check(true),getLatest:()=>latest,subscribe:listener=>{subscribers.add(listener);return()=>subscribers.delete(listener);}};
  // 업무 화면의 API 조회·초기화가 늦어져도 업데이트 클릭을 연결합니다.
  start();
