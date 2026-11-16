@@ -77,3 +77,12 @@ textarea.field{min-height:88px;line-height:1.5}
   button.btn,a.btn{min-height:40px}
   .asset-actions,.supply-actions,.dorm-actions,.v292-actions,.panel-actions{gap:8px}
 }
+
+/* 모바일도 축소된 PC 화면을 유지한다. 하단 전용 메뉴 대신 좌측 전체 메뉴와 표 구성을 그대로 사용한다. */
+@media (pointer:coarse){
+  .sidebar{padding-bottom:20px}
+  .sidebar .nav-btn{min-height:42px}
+  .main{padding-bottom:42px}
+  .eq-scroll,.roster-wrap,.wx-scroll,.labor-table-wrap,.train-scroll{scrollbar-width:thin;scrollbar-color:#9fb6d1 transparent}
+  button,.btn{touch-action:manipulation}
+}
