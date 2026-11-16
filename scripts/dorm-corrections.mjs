@@ -23,5 +23,11 @@ export function correctDormClient(js){
  });
  const hook='ready=true;navAfterCloudV220(result);';
  if(!js.includes(hook))throw Error('생활실 정정 시작 위치를 확인하세요.');
- return js.replace(hook,`ready=true;if(canManageUsersV281)server('applyDormCorrectionsV315').then(r=>{if(r.changed){dormLoadedV234=false;toast('343-3호 배정 정정 완료 · 변경 전 기록을 백업했습니다.');if(view==='dorm'){dormReloadV234();if(dormPlanV315)dormPlanLoadV315();}}else if(r.review)toast('343-3호 정정 확인 필요: '+r.message);}).catch(e=>toast('생활실 정정 확인 실패: '+e.message));navAfterCloudV220(result);`);
+ const scope=`function dormScopeCompanyV467_(value){return String(value||'').normalize('NFKC').replace(/\\s|중대/g,'');}
+function dormScopeRoomsV467_(rooms){if(!v284Scoped||!v284Company)return rooms;const company=dormScopeCompanyV467_(v284Company);return rooms.filter(room=>{const members=Array.isArray(room.members)?room.members:[];return members.some(person=>dormScopeCompanyV467_(person.company)===company)||Number(room.companyCounts?.[company+'중대']?.total||0)>0;}).map(room=>{const members=(room.members||[]).filter(person=>dormScopeCompanyV467_(person.company)===company),count=members.length||Number(room.companyCounts?.[company+'중대']?.total||0);return {...room,members,capacity:count,slots:Array.from({length:count},()=>({occupied:true,female:false})),outsideCount:0,externalOutsideCount:0};});}
+`;
+ js=js.replace("dormRoomsV234=result.rooms||[];","dormRoomsV234=dormScopeRoomsV467_(result.rooms||[]);")
+   .replace("const canChange=canEdit&&!dormBulkBusyV237;","const canChange=canEdit&&!v284Scoped&&!dormBulkBusyV237;")
+   .replace("qsa('.dorm-edit-only').forEach(x=>x.classList.toggle('hidden',!canEdit));","qsa('.dorm-edit-only').forEach(x=>x.classList.toggle('hidden',!canEdit||v284Scoped));");
+ return js.replace(hook,scope+`ready=true;if(canManageUsersV281)server('applyDormCorrectionsV315').then(r=>{if(r.changed){dormLoadedV234=false;toast('343-3호 배정 정정 완료 · 변경 전 기록을 백업했습니다.');if(view==='dorm'){dormReloadV234();if(dormPlanV315)dormPlanLoadV315();}}else if(r.review)toast('343-3호 정정 확인 필요: '+r.message);}).catch(e=>toast('생활실 정정 확인 실패: '+e.message));navAfterCloudV220(result);`);
 }

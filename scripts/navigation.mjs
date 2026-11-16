@@ -65,6 +65,7 @@ export function updateNavigationJs(js) {
   js = js.replace("const t={groups:navDeepCopyV233(NAV_GROUP_DEFAULT_V233),labels:{},hiddenGroups:[],hiddenItems:[]}", "const t={schemaVersion:2,groups:navDeepCopyV233(NAV_GROUP_DEFAULT_V233),labels:{}}")
     .replace("nav.replaceChildren(frag);v284AddUtilityNav();", "nav.replaceChildren(frag);v284AddUtilityNav();const activeItemsV301=new Set(navTreeV233.groups.flatMap(g=>g.items));qsa('.mobile-nav [data-view]').forEach(button=>button.classList.toggle('nav-removed-v301',!activeItemsV301.has(button.dataset.view)));" )
     .replace("if(navExpandedV233.has(group.id)||navEditModeV220){", "if(navExpandedV233.has(group.id)){")
+    .replace("if(v!==previousViewV285)requestAnimationFrame(()=>window.scrollTo({top:viewScrollV285[v]??0,behavior:'instant'}));", "if(v!==previousViewV285&&Object.prototype.hasOwnProperty.call(viewScrollV285,v))requestAnimationFrame(()=>window.scrollTo({top:viewScrollV285[v],behavior:'instant'}));")
     .replace("삭제(숨김)가 구글 계정에 저장되었습니다.", "삭제가 저장되었습니다.")
     .replace(/const prop=isGroup\?'hiddenGroups':'hiddenItems';[\s\S]*?navTreeV233\[prop\]=old\?existing\.filter\(x=>x!==key\):existing\.concat\(key\);/, `if(isGroup){navExpandedV233.delete(key);navRenderV233();return;}
   if(!confirm('이 하위 메뉴를 구성에서 삭제할까요? 저장 후 적용됩니다.'))return;
