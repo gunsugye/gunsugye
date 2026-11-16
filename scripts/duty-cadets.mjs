@@ -27,6 +27,7 @@ export function dutyAdditionalRowV391(row){const info=dutyRoleInfoV367(row),pers
 export function dutyCandidateRowsV391(rows){return rows.flatMap(row=>dutySplitAssignmentsV391(row.duty).map(duty=>({...row,duty})));}
 export function dutyCadetsNavSource(source){source=source.replace("{id:'devices',title:'장비',items:['roster','saber','repairs']}","{id:'devices',title:'총기/군수품/장비',items:['roster','dutyCadets','saber','repairs']}");return source.match(/const NAV_FIXED_V233=\[([^\]]*)\]/)?.[1].includes("'dutyCadets'")?source:source.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['dutyCadets',");}
 export function dutyCadetsJs(js,client){
+ client=client.replace('const dutyVerifyPanelV371=', 'if(!v284Scoped){const dutyVerifyPanelV371=')+'\n}';
  js=dutyCadetsNavSource(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['dutyCadets',").replace('const viewNames={',"const viewNames={dutyCadets:['DUTY CADET ROSTER','근무생도 명단','직접 등록한 근무생도 명단을 관리합니다.'],")
  .replace('function navInitV220(){',`function navInitV220(){const dutyButton=document.createElement('button');dutyButton.type='button';dutyButton.className='nav-btn';dutyButton.dataset.view='dutyCadets';dutyButton.textContent='근무생도 명단';$('sidebarMenu').appendChild(dutyButton);`)
  .replace("'personalInterface','uniformRequests','assetRequests','departures','today'","'dutyCadets','personalInterface','uniformRequests','assetRequests','departures','today'")
