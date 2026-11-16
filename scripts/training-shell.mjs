@@ -31,5 +31,6 @@ export function trainingShellJs(js){
  .replace("['uniformRequests','assetRequests','departures','today'",JSON.stringify(placeholders.map(([id])=>id)).slice(0,-1)+",'uniformRequests','assetRequests','departures','today'")
  .replace("v==='uniformRequests'||v==='assetRequests'",placeholders.map(([id])=>"v==='"+id+"'").join('||')+"||v==='uniformRequests'||v==='assetRequests'");
  return js.replace("badge.textContent='현재 근무: '+(v288ActiveTerm||'미설정');", "badge.textContent='현재 근무: '+(document.body.classList.contains('v294-training-mode')?'00기 성무기초군사훈련':v288ActiveTerm||'미설정');")
+ .replace('const training='+literal+'.includes(v);','const training=!v284Scoped&&'+literal+'.includes(v);')
  .replace("document.body.classList.toggle('v294-training-mode',training);", "document.body.classList.toggle('v294-training-mode',training);v288ShowActiveTerm(v288ActiveTerm);");
 }
