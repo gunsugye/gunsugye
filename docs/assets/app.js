@@ -539,12 +539,12 @@ function navRenderV233(){
   if(navEditModeV220){const grip=document.createElement('span');grip.className='tree-grip';grip.textContent='⠿';grip.title='상위 메뉴 드래그';head.appendChild(grip);head.draggable=true;}
   head.appendChild(navGroupButtonV233(group));
   if(navEditModeV220){
-   const del=document.createElement('button');del.type='button';del.className='tree-delete-v266';del.dataset.hideGroup=group.id;del.textContent='×';del.title='상위 메뉴 삭제';head.appendChild(del);
+   const del=document.createElement('button');del.type='button';del.className='tree-delete-v266';del.dataset.hideGroup=group.id;del.textContent='접기';del.title='하위 메뉴 접기';head.appendChild(del);
   }
   if(navEditModeV220){const rename=document.createElement('button');rename.className='tree-rename';rename.type='button';rename.title='상위 메뉴 이름 변경';rename.textContent='✎';rename.dataset.renameGroup=group.id;head.appendChild(rename);}
   el.appendChild(head);
   const list=document.createElement('div');list.className='tree-items';list.dataset.group=group.id;
-  if(navExpandedV233.has(group.id)||navEditModeV220){
+  if(navExpandedV233.has(group.id)){
    group.items.forEach(id=>{
     if(!navEditModeV220&&(navTreeV233.hiddenItems||[]).includes(id))return;if(['dutyItems','dutyRequests','firearmRequests'].includes(id)&&(!canEdit&&!v284Scoped))return;if(id==='dutyCadets'&&(!canEdit&&!v284Scoped))return;if(id==='access'&&!canManageUsersV281)return;if(id==='surveys'&&!canManageUsersV281)return;if(id==='staff'&&!v284CanViewStaff)return;if(v284Scoped&&!v284IsAllowed(id)&&id!=='updates')return;
     const btn=navButtonsV233[id];if(!btn)return;
@@ -628,9 +628,9 @@ function navInitV220(){const dutyRequestButtonV400=document.createElement('butto
   if(!hiddenGroup&&!hiddenItem)return;
   ev.preventDefault();ev.stopPropagation();
   const isGroup=!!hiddenGroup,key=(hiddenGroup||hiddenItem).dataset[isGroup?'hideGroup':'hideItem'];
-  if(!confirm('이 메뉴를 구성에서 삭제할까요? 상위 메뉴는 포함된 하위 메뉴도 함께 제거됩니다. 저장 후 적용됩니다.'))return;
-  if(isGroup){const group=navTreeV233.groups.find(g=>g.id===key);(group?.items||[]).forEach(id=>delete navTreeV233.labels[id]);navTreeV233.groups=navTreeV233.groups.filter(g=>g.id!==key);}
-  else{navTreeV233.groups.forEach(g=>{g.items=g.items.filter(id=>id!==key);});delete navTreeV233.labels[key];}
+  if(isGroup){navExpandedV233.delete(key);navRenderV233();return;}
+  if(!confirm('이 하위 메뉴를 구성에서 삭제할까요? 저장 후 적용됩니다.'))return;
+  navTreeV233.groups.forEach(g=>{g.items=g.items.filter(id=>id!==key);});delete navTreeV233.labels[key];
   navTreeV233.schemaVersion=2;
   navRenderV233();navUpdateDirtyV220();
  });
@@ -5023,7 +5023,8 @@ function dutySaberRoleV367(row){
  if(info.organization==='중대'&&info.company){if(/중대장/.test(text))return info.company+'중대|중대장생도';const flight=text.match(/([1-4])편대장/);if(flight)return info.company+'중대|'+flight[1]+'편대장생도';}
  if(info.organization==='명예위'&&/위원장/.test(text))return '명예위원회|명예위원장생도';return '';
 }
-function dutyCadetScopeCleanupV456(){if(!v284Scoped)return;document.querySelectorAll('.reference-batch-v409,#dutyVerifyPanelV371').forEach(node=>node.remove());$('dutyCadetsStaffImportV440').hidden=true;$('dutyCadetsAddV365').hidden=true;$('dutyCadetsView').querySelector('.panel-head .panel-sub').hidden=true;}let dutyCadetsBusyV365=false,dutyCadetsDataV365=[],dutyCadetsMetaV365=null;
+function dutyCadetScopeHideSourceLinksV465(root=document){const selector='[data-source],a[id*="Sheet"],a[id*="Book"],a[id*="PageLink"],a[href*="docs.google.com/spreadsheets"]';if(root.nodeType===1&&root.matches?.(selector))root.hidden=true;root.querySelectorAll?.(selector).forEach(node=>node.hidden=true);}
+function dutyCadetScopeCleanupV456(){if(!v284Scoped)return;document.querySelectorAll('.reference-batch-v409,#dutyVerifyPanelV371').forEach(node=>node.remove());dutyCadetScopeHideSourceLinksV465();$('supplyBatchPanel').hidden=true;$('dutyCadetsStaffImportV440').hidden=true;$('dutyCadetsAddV365').hidden=true;$('dutyCadetsView').querySelector('.panel-head .panel-sub').hidden=true;if(!globalThis.dutyCadetScopeSourceObserverV465){globalThis.dutyCadetScopeSourceObserverV465=new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>dutyCadetScopeHideSourceLinksV465(node))));globalThis.dutyCadetScopeSourceObserverV465.observe(document.body,{childList:true,subtree:true});}}let dutyCadetsBusyV365=false,dutyCadetsDataV365=[],dutyCadetsMetaV365=null;
 function dutyCadetsReadOnlyV456(){return !!(v284Scoped||!canEdit);}
 function dutyCadetsRenderV365(){return dutyCadetsRenderV367();}
 async function dutyCadetsLoadV365(){if(dutyCadetsBusyV365)return;dutyCadetsBusyV365=true;$('dutyCadetsReloadV365').disabled=true;$('dutyCadetsStatusV365').textContent='명단 조회 중…';try{const meta=await server('getDutyCadetsV369');dutyCadetsMetaV365=meta;dutyCadetsDataV365=meta.records||[];dutyCadetsSetBuildingsV367();dutyCadetsRenderV365();}catch(e){$('dutyCadetsStatusV365').textContent='명단 조회 실패: '+e.message;}finally{dutyCadetsBusyV365=false;$('dutyCadetsReloadV365').disabled=false;}}

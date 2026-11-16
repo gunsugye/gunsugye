@@ -64,13 +64,14 @@ export function updateNavigationJs(js) {
   js = js.replace(/function navNormalizeV233\(input\)\{[\s\S]*?\n\}\n/, `function navNormalizeV233(input){return navModelV301_(input,NAV_GROUP_DEFAULT_V233,navAllowedV221());}\n`);
   js = js.replace("const t={groups:navDeepCopyV233(NAV_GROUP_DEFAULT_V233),labels:{},hiddenGroups:[],hiddenItems:[]}", "const t={schemaVersion:2,groups:navDeepCopyV233(NAV_GROUP_DEFAULT_V233),labels:{}}")
     .replace("nav.replaceChildren(frag);v284AddUtilityNav();", "nav.replaceChildren(frag);v284AddUtilityNav();const activeItemsV301=new Set(navTreeV233.groups.flatMap(g=>g.items));qsa('.mobile-nav [data-view]').forEach(button=>button.classList.toggle('nav-removed-v301',!activeItemsV301.has(button.dataset.view)));" )
+    .replace("if(navExpandedV233.has(group.id)||navEditModeV220){", "if(navExpandedV233.has(group.id)){")
     .replace("삭제(숨김)가 구글 계정에 저장되었습니다.", "삭제가 저장되었습니다.")
-    .replace(/const prop=isGroup\?'hiddenGroups':'hiddenItems';[\s\S]*?navTreeV233\[prop\]=old\?existing\.filter\(x=>x!==key\):existing\.concat\(key\);/, `if(!confirm('이 메뉴를 구성에서 삭제할까요? 상위 메뉴는 포함된 하위 메뉴도 함께 제거됩니다. 저장 후 적용됩니다.'))return;
-  if(isGroup){const group=navTreeV233.groups.find(g=>g.id===key);(group?.items||[]).forEach(id=>delete navTreeV233.labels[id]);navTreeV233.groups=navTreeV233.groups.filter(g=>g.id!==key);}
-  else{navTreeV233.groups.forEach(g=>{g.items=g.items.filter(id=>id!==key);});delete navTreeV233.labels[key];}
+    .replace(/const prop=isGroup\?'hiddenGroups':'hiddenItems';[\s\S]*?navTreeV233\[prop\]=old\?existing\.filter\(x=>x!==key\):existing\.concat\(key\);/, `if(isGroup){navExpandedV233.delete(key);navRenderV233();return;}
+  if(!confirm('이 하위 메뉴를 구성에서 삭제할까요? 저장 후 적용됩니다.'))return;
+  navTreeV233.groups.forEach(g=>{g.items=g.items.filter(id=>id!==key);});delete navTreeV233.labels[key];
   navTreeV233.schemaVersion=2;`)
     .replace(/\$\('navRestoreButtonV266'\)\.addEventListener\('click',\(\)=>\{[^\n]+\}\);/, `$('navRestoreButtonV266').addEventListener('click',navOpenCatalogV301);`)
-    .replace("del.textContent=(navTreeV233.hiddenGroups||[]).includes(group.id)?'↩':'×';del.title=(navTreeV233.hiddenGroups||[]).includes(group.id)?'삭제 취소 · 메뉴 복원':'상위 메뉴 삭제 (화면에서만 숨김)'", "del.textContent='×';del.title='상위 메뉴 삭제'")
+    .replace("del.textContent=(navTreeV233.hiddenGroups||[]).includes(group.id)?'↩':'×';del.title=(navTreeV233.hiddenGroups||[]).includes(group.id)?'삭제 취소 · 메뉴 복원':'상위 메뉴 삭제 (화면에서만 숨김)'", "del.textContent='접기';del.title='하위 메뉴 접기'")
     .replace("del.textContent=(navTreeV233.hiddenItems||[]).includes(id)?'↩':'×';del.title=(navTreeV233.hiddenItems||[]).includes(id)?'삭제 취소 · 메뉴 복원':'하위 메뉴 삭제 (화면에서만 숨김)'", "del.textContent='×';del.title='하위 메뉴 삭제'")
     .replace("await wxLoadAll();switchView(page.id);", "await wxLoadAll();await navAttachCreatedV301(page.id);switchView(page.id);");
   const extra = `
