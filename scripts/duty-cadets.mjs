@@ -30,6 +30,7 @@ export function dutyCadetsJs(js,client){
  client=client.replace('const dutyVerifyPanelV371=', 'if(!v284Scoped){const dutyVerifyPanelV371=')+'\n}';
  js=dutyCadetsNavSource(js).replace('const NAV_BUILTIN_V233=[',"const NAV_BUILTIN_V233=['dutyCadets',").replace('const viewNames={',"const viewNames={dutyCadets:['DUTY CADET ROSTER','근무생도 명단','직접 등록한 근무생도 명단을 관리합니다.'],")
  .replace("if(v284Scoped&&!v284IsAllowed(v))return false;","if(v284Scoped)dutyCadetScopeCleanupV456();if(v284Scoped&&!v284IsAllowed(v))return false;")
+ .replace("v284CanViewStaff=!!result.canViewStaff;ready=true;","v284CanViewStaff=!!result.canViewStaff;dutyCadetScopeCleanupV456();ready=true;")
  .replace('function navInitV220(){',`function navInitV220(){const dutyButton=document.createElement('button');dutyButton.type='button';dutyButton.className='nav-btn';dutyButton.dataset.view='dutyCadets';dutyButton.textContent='근무생도 명단';$('sidebarMenu').appendChild(dutyButton);`)
  .replace("'personalInterface','uniformRequests','assetRequests','departures','today'","'dutyCadets','personalInterface','uniformRequests','assetRequests','departures','today'")
  .replace("v==='personalInterface'||v==='uniformRequests'","v==='dutyCadets'||v==='personalInterface'||v==='uniformRequests'")
