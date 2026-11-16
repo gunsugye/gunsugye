@@ -1,1 +1,1 @@
-export const releaseDetails={"version":"4.68","title":"근무생도 명단 수정 복구","notes":["근무생도 명단의 수정·근무 추가 버튼이 정상적으로 열리도록 권한 확인 함수를 바로잡았습니다."]};
+export const releaseDetails={"version":"4.69","title":"메뉴 관리 화면 정리","notes":["설정 화면의 중복된 메뉴 항목 관리 상자를 제거하고 좌측 메뉴 구성 편집으로 통합합니다."]};
