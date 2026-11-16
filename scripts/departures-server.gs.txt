@@ -1,5 +1,7 @@
 /** 총기·군수품·피복 미등재 인원 통합 관리. 조회는 쓰지 않고 처리 전 원본을 다시 대조합니다. */
 function departurePermissionV305_(){
+ const policy=typeof accessPolicyV284_==='function'?accessPolicyV284_():null;
+ if(policy&&policy.reader&&policy.views.includes('departures'))return policy;
  const cfg=config_();
  if(!cfg.canManageUsers&&!fullEditorsV281_().includes(cfg.email))throw Error('일괄 관리는 최고 관리자 또는 전체 편집자만 사용할 수 있습니다.');
  return cfg;

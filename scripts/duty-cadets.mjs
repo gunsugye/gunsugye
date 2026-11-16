@@ -32,7 +32,7 @@ export function dutyCadetsJs(js,client){
  .replace("'personalInterface','uniformRequests','assetRequests','departures','today'","'dutyCadets','personalInterface','uniformRequests','assetRequests','departures','today'")
  .replace("v==='personalInterface'||v==='uniformRequests'","v==='dutyCadets'||v==='personalInterface'||v==='uniformRequests'")
  .replace("if(v==='personalInterface')personalInterfaceLoadV359();","if(v==='personalInterface')personalInterfaceLoadV359();if(v==='dutyCadets')dutyCadetsLoadV365();")
- .replace("if(id==='access'&&!canManageUsersV281)return;","if(id==='dutyCadets'&&(!canEdit||v284Scoped))return;if(id==='access'&&!canManageUsersV281)return;");
+ .replace("if(id==='access'&&!canManageUsersV281)return;","if(id==='dutyCadets'&&(!canEdit&&!v284Scoped))return;if(id==='access'&&!canManageUsersV281)return;");
  js=js.replace("let r=await server('getSaberV276');", "if(canEdit&&!v284Scoped&&!dutyCadetsMetaV365)await dutyCadetsLoadV365();let r=await server('getSaberV276');")
  .replace("escapeH(p.role)+'</td><td><select", "escapeH(p.role)+((p.linkedCadets||[]).length?'<small style=\"display:block\">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select");
  js=js.replace('trainSharedModeV289=[',"if((dutyVerifyBusyV371||dutyMoveBusyV372)&&v!==view)return false;trainSharedModeV289=[");

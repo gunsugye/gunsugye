@@ -17,7 +17,7 @@ export function updateDeparturesHtml(html){
 }
 export function updateDeparturesJs(js){
  js=js.replaceAll('<option>퇴교</option>','<option>퇴교</option><option>퇴학</option>').replaceAll('<option value="퇴교">퇴교</option>','<option value="퇴교">퇴교</option><option value="퇴학">퇴학</option>').replaceAll("['퇴교','퇴교']","['퇴교','퇴교'],['퇴학','퇴학']").replaceAll("['위탁','휴학','퇴교']","['위탁','휴학','퇴교','퇴학']").replaceAll("['퇴교','휴학','위탁']","['퇴교','퇴학','휴학','위탁']");
- js=js.replace('const viewNames={',`const viewNames={departures:['PERSONNEL MANAGEMENT','${departureTitle}','스마트당직 미등재 인원의 총기·군수품·피복을 함께 확인하고 처리합니다.'],`)
+ js=js.replace('const viewNames={',`const viewNames={departures:['MISSING ROSTER','누락자 명단','스마트당직 대조 결과 중 소속 중대의 누락 인원을 확인합니다.'],`)
  .replace('const NAV_GROUP_DEFAULT_V233=[',`const NAV_GROUP_DEFAULT_V233=[{id:'departures',title:'${departureTitle}',items:['departures']},`)
  .replace("const NAV_BUILTIN_V233=[", "const NAV_BUILTIN_V233=['departures',")
  .replace("['today','all','stats','dorm'", "['departures','today','all','stats','dorm'")
@@ -29,6 +29,7 @@ const departureEscapeV305=escapeH;
 function departuresOptionsV305(values,selected=''){return '<option value="">처리 선택</option>'+values.map(x=>'<option'+(x===selected?' selected':'')+'>'+escapeH(x)+'</option>').join('');}
 function departuresRenderV305(){
  const d=departuresDataV305;if(!d)return;const q=$('departuresSearch').value.trim().toLowerCase();
+ const readOnly=!!(v284Scoped||!canEdit);$('departuresView').classList.toggle('departure-readonly',readOnly);
  const rows=d.candidates||[];
  $('departuresStatus').textContent=d.ready?'기준: '+d.source+' · '+d.referenceCount+'명 대조 · 처리 대상 '+rows.length+'명':d.error||'스마트당직 연결을 확인하세요.';
  $('departuresCandidates').innerHTML=rows.map(c=>{
@@ -80,5 +81,6 @@ export const departuresCSS=`
 .departure-person-head{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}.departure-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .departure-person label{display:block}.departure-person select,.departure-person .field{display:block;width:100%;min-height:40px;padding:8px;border:1px solid #ccd9e7;border-radius:8px;margin:5px 0 10px}.departure-pick{width:18px;height:18px;vertical-align:middle}
 .departure-supply>label{padding:10px 0;border-bottom:1px solid #edf1f6}.departure-supply span{font-size:12px;color:#62758a}#departuresResult{white-space:pre-wrap;line-height:1.8;padding:12px 0}
+.departure-readonly #departuresSelect,.departure-readonly #departuresClear,.departure-readonly #departuresApply,.departure-readonly #departuresSetStatus,.departure-readonly #departuresBulkStatus,.departure-readonly .departure-pick,.departure-readonly .departure-fields,.departure-readonly .departure-supply select,.departure-readonly .departure-note,.departure-readonly #departuresLegacy{display:none}.departure-readonly .departure-toolbar:nth-of-type(2){display:none}
 @media(max-width:650px){.departure-fields{grid-template-columns:1fr}}
 `;
