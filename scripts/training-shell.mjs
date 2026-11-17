@@ -1,10 +1,10 @@
 export const trainingGroups=[
- {title:'일지',items:[['trainJournal','일자별 업무일지'],['trainCalendar','캘린더']]},
- {title:'운영',items:[['train','훈련 현황'],['trainPersonnel','인원 · 지도편성']]},
- {title:'보급',items:[['trainSupply','군수품 현황'],['trainSupplyRequests','군수품 수정 요청']]},
- {title:'피복',items:[['trainUniform','피복 현황'],['trainUniformRequests','피복 수정 요청']]},
- {title:'장비',items:[['trainSaber','예도 대여']]},
- {title:'종료',items:[['trainHandoff','일반학기 이관']]}
+ {title:'업무 일지',items:[['trainJournal','일자별 업무일지'],['trainCalendar','캘린더']]},
+ {title:'인원 관리',items:[['train','훈련 현황'],['trainPersonnel','인원 · 지도편성']]},
+ {title:'군수품 관리',items:[['trainSupply','군수품 현황'],['trainSupplyRequests','군수품 수정 요청']]},
+ {title:'피복 관리',items:[['trainUniform','피복 현황'],['trainUniformRequests','피복 수정 요청']]},
+ {title:'예도 관리',items:[['trainSaber','예도 대여']]},
+ {title:'종료 · 이관',items:[['trainHandoff','일반학기 이관']]}
 ];
 const placeholders=trainingGroups.flatMap(g=>g.items).filter(([id])=>!['train','trainJournal','trainCalendar'].includes(id));
 export function trainingShellHtml(html){
