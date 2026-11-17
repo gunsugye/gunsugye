@@ -73,7 +73,7 @@ function trainV473SyncRegularCandidates_(ss){const sh=ss.getSheetByName(TRAIN_V4
 function refreshTrainingRegularCandidatesV478(){trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false);trainV473SetupSheets_(ss);const ret=trainV473SyncRegularCandidates_(ss);trainV473Audit_(ss,'일반학기 기준 명단 갱신','기준 명단',ret);return ret;});}
 
 function setupTrainingSystemV473(){
- if(!trainV473Admin_())throw Error('최초 준비는 군수계 관리자만 실행할 수 있습니다.');return lockAndRun_(()=>{const ss=trainV473Book_(true);trainV473SetupSheets_(ss);const reference=trainV473SyncRegularCandidates_(ss);trainV473Audit_(ss,'v2 최초 준비','훈련 시스템',{legacyPreserved:true,journalPreserved:true,reference});return getTrainingWorkspaceV473();});
+ if(!trainV473Admin_())throw Error('최초 준비는 군수계 관리자만 실행할 수 있습니다.');return lockAndRun_(()=>{const ss=trainV473Book_(true);if(trainV473Ready_(ss))return getTrainingWorkspaceV473();trainV473SetupSheets_(ss);trainV473Audit_(ss,'v2 최초 준비','훈련 시스템',{legacyPreserved:true,journalPreserved:true});return getTrainingWorkspaceV473();});
 }
 function startNewTrainingCycleV473(){
  const actor=trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false),old=trainV473Config_(ss);if(!old||old.status!=='이관완료')throw Error('일반학기 이관이 완료된 뒤 새 훈련을 시작할 수 있습니다.');
@@ -82,7 +82,7 @@ function startNewTrainingCycleV473(){
   trainV473Audit_(ss,'새 훈련 시작',trainingId,{previousTrainingId:old.trainingId,previousCohort:old.cohort,managerCarried:!!actor.person});return {ok:true,trainingId,capacity:next.capacity};});
 }
 function getTrainingWorkspaceV473(){
- const ss=trainV473Book_(false);if(!ss||!trainV473Ready_(ss))return {initialized:false,canSetup:trainV473Admin_(),journalPreserved:true,schemaVersion:TRAIN_V473.VERSION};
+ const ss=trainV473Book_(false);if(!ss)return {initialized:false,canSetup:false,journalPreserved:true,schemaVersion:TRAIN_V473.VERSION};if(!trainV473Ready_(ss)){if(!trainV473Admin_())return {initialized:false,canSetup:false,journalPreserved:true,schemaVersion:TRAIN_V473.VERSION};trainV473SetupSheets_(ss);}
  const actor=trainV473Actor_(),cfg=trainV473Config_(ss),allPeople=trainV473Rows_(ss,TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_KEYS,5000).filter(p=>p.trainingId===cfg.trainingId&&p.active!=='아니요'),people=trainV473PersonScope_(actor,allPeople),ids=new Set(people.map(p=>p.id));
  const allAssets=trainV473Rows_(ss,TRAIN_V473.ASSETS,TRAIN_V473.ASSET_KEYS,30000).filter(x=>x.trainingId===cfg.trainingId),assets=allAssets.filter(x=>ids.has(x.personId));
  const allRequests=trainV473Rows_(ss,TRAIN_V473.REQUESTS,TRAIN_V473.REQUEST_KEYS,30000).filter(x=>x.trainingId===cfg.trainingId),requests=actor.manager?allRequests:allRequests.filter(x=>ids.has(x.personId)&&(!actor.instructor||x.requestedBy===actor.email));
