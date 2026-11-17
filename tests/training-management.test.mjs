@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {trainingCapacitySummaryV473,trainingManagementViewsV473} from '../scripts/training-management.mjs';
-import {trainingGroups} from '../scripts/training-shell.mjs';
+import {trainingGroups,trainingShellJs} from '../scripts/training-shell.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -11,6 +11,11 @@ test('성무훈련 메뉴는 새 관리 흐름과 기존 일지만 남긴다',()
  assert.deepEqual(ids,['trainJournal','trainCalendar','train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff']);
  for(const removed of ['trainMeal','trainEquipment','trainRooms','trainRoomAssets','trainAssetRequests','trainRoster','trainRepairs','trainSurveys'])assert.equal(ids.includes(removed),false);
  assert.deepEqual(trainingManagementViewsV473,ids);
+});
+
+test('성무기초군사훈련 선택은 최초 생성 화면인 훈련 현황을 연다',()=>{
+ const base="querySelectorAll('[data-train-nav]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.trainNav==='train'?'trainJournal':'today')));";
+ assert.match(trainingShellJs(base),/dataset\.trainNav==='train'\?'train':'today'/);
 });
 
 test('지도생도별 기본 정원 8명과 초과 상태를 따로 계산한다',()=>{

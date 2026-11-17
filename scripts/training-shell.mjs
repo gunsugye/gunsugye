@@ -22,6 +22,7 @@ export function trainingShellJs(js){
  const ids=['train','trainJournal','trainCalendar',...placeholders.map(([id])=>id)],literal=JSON.stringify(ids);
  js=js.replaceAll("['train','trainJournal','trainCalendar']",literal)
  .replace("trainSharedModeV289=(v==='train'||v==='trainJournal'||v==='trainCalendar');",'trainSharedModeV289='+literal+'.includes(v);')
+ .replace("querySelectorAll('[data-train-nav]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.trainNav==='train'?'trainJournal':'today')));","querySelectorAll('[data-train-nav]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.trainNav==='train'?'train':'today')));")
  .replace("if(v==='train')trainEnterV227();",'')
  .replace("if(id==='trainJournal'||id==='trainCalendar')id='train';",'if('+literal+'.includes(id))id=\'train\';');
  const names=placeholders.map(([id,title])=>id+':['+JSON.stringify('BASIC MILITARY TRAINING')+','+JSON.stringify(title)+',"성무기초군사훈련 전용 자료"],').join('');

@@ -2349,7 +2349,7 @@ async function trainTransferNowV227(){if(!canEdit)return;const p=await trainPrev
  try{const result=await enqueue(()=>server('trainHandoffNowV227'));alert('생도대 인계 완료! 신규 '+result.added+'명 / 기존 명단 보완 '+result.filled+'명 / 군수품 '+result.gearUpdated+'건 / 피복사이즈 '+result.uniformUpdated+'건');await trainReloadV227();}
  catch(e){alert('인계가 완료되지 않았습니다. 자료를 확인하세요: '+e.message);}}
 function trainInitV227(){
- document.querySelectorAll('[data-train-nav]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.trainNav==='train'?'trainJournal':'today')));
+ document.querySelectorAll('[data-train-nav]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.trainNav==='train'?'train':'today')));
  document.querySelectorAll('[data-train-tab]').forEach(b=>b.addEventListener('click',()=>trainSwitchTabV227(b.dataset.trainTab)));
  $('trSetupBtn').addEventListener('click',trainSetupClickV227);$('trJournalDate').addEventListener('change',trainRenderJournalV227);
  $('trJournalNew').addEventListener('click',()=>trainJournalEditV227(''));$('trJournalCancel').addEventListener('click',()=>trainCloseEditorV227('journal'));
