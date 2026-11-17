@@ -1,1 +1,1 @@
-export const releaseDetails={"version":"4.80","title":"훈련 시트 자동 연결","notes":["성무기초군사훈련 메뉴를 열면 기존 훈련 전용 시트에 바로 연결하며 시트 생성 버튼을 표시하지 않습니다."]};
+export const releaseDetails={"version":"4.81","title":"지도생도 이름 자동 조회","notes":["지도생도 이름을 선택하면 일반학기 3학년 기준 명단에서 기수·중대·교번을 자동으로 채웁니다."]};
