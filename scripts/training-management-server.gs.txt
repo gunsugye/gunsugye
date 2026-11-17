@@ -61,6 +61,22 @@ function trainKnownUserV473_(email){
 }
 function trainV473Audit_(ss,action,target,detail){const cfg=trainV473Config_(ss);trainV473Write_(ss.getSheetByName(TRAIN_V473.AUDIT),TRAIN_V473.AUDIT_KEYS,{id:Utilities.getUuid(),trainingId:cfg?.trainingId||'',action,target,detail:JSON.stringify(detail||{}).slice(0,4500),at:iso_(),by:config_().email});}
 function trainV473AssertManager_(){const actor=trainV473Actor_();if(!actor.manager)throw Error('성무기초군사훈련 대대군수참모생도만 전체 자료를 관리할 수 있습니다.');return actor;}
+function trainV489Instructor_(){
+ const actor=trainV473Actor_();if(!actor.instructor||!actor.person)throw Error('지도생도 명단에 등록된 인증 이메일로 로그인하세요.');
+ return actor;
+}
+function getInstructorWorkspaceV489(){
+ const actor=trainV489Instructor_(),ss=trainV473Book_(false),cfg=trainV473Config_(ss);
+ const people=trainV473Rows_(ss,TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_KEYS,5000).filter(p=>p.trainingId===cfg.trainingId&&p.active!=='아니요'&&p.type==='예비생도'&&p.instructorId===actor.person.id&&p.unit===actor.person.unit);
+ const ids=new Set(people.map(p=>p.id)),assets=trainV473Rows_(ss,TRAIN_V473.ASSETS,TRAIN_V473.ASSET_KEYS,30000).filter(a=>a.trainingId===cfg.trainingId&&ids.has(a.personId));
+ const requests=trainV473Rows_(ss,TRAIN_V473.REQUESTS,TRAIN_V473.REQUEST_KEYS,30000).filter(r=>r.trainingId===cfg.trainingId&&ids.has(r.personId)&&r.requestedBy===actor.email);
+ return {instructor:{name:actor.person.name,unit:actor.person.unit,email:actor.email},cohort:cfg.cohort,status:cfg.status,people:people.map(p=>({id:p.id,name:p.name,cohort:p.cohort,unit:p.unit,cadetNumber:p.cadetNumber})),assets:assets.map(a=>({id:a.id,personId:a.personId,kind:a.kind,itemName:a.itemName,value:a.value,quantity:a.quantity,status:a.status,detail:a.detail})),requests:requests.map(r=>({id:r.id,personId:r.personId,kind:r.kind,itemName:r.itemName,status:r.status,reason:r.reason,resolution:r.resolution,requestedAt:r.requestedAt}))};
+}
+function submitInstructorRequestV489(input){
+ trainV489Instructor_();
+ // 대상 범위·훈련 상태는 잠금 안에서 기존 요청 함수가 다시 검증합니다.
+ return submitTrainingRequestV473({...input,assetId:''});
+}
 function trainV473AssertOpen_(cfg){if(!cfg||!cfg.cohort)throw Error('훈련 기수와 기간을 먼저 설정하세요.');if(cfg.status==='이관완료')throw Error('일반학기 이관이 완료되어 기록이 잠겼습니다.');}
 function trainV473PersonScope_(actor,people){
  if(actor.manager)return people;const self=actor.person;if(actor.instructor){const ids=new Set([self.id,...people.filter(p=>p.type==='예비생도'&&p.instructorId===self.id).map(p=>p.id)]);return people.filter(p=>ids.has(p.id));}
@@ -101,6 +117,7 @@ function saveTrainingConfigV473(input){
   const next={...old,schemaVersion:TRAIN_V473.VERSION,cohort,startDate,endDate,status:old.status==='이관완료'?'이관완료':'진행 중',capacity:String(capacity),updatedAt:iso_(),updatedBy:config_().email};trainV473Write_(ss.getSheetByName(TRAIN_V473.CFG),TRAIN_V473.CFG_KEYS,next,2);trainV473Audit_(ss,'운영 설정 수정','훈련 설정',{cohort,startDate,endDate,capacity});return next;});
 }
 function trainV473CleanPerson_(input,old,cfg){
+ if(input?.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input.email).trim()))throw Error('인증 이메일 형식을 확인하세요.');
  const type=text_(input?.type,30),unit=trainV473NormUnit_(input?.unit),name=text_(input?.name,60),email=String(input?.email||'').trim().toLowerCase(),isRecruit=type==='예비생도',isBattalion=type.startsWith('대대');if(!TRAIN_V473_TYPES.includes(type))throw Error('인원 구분을 확인하세요.');if(!TRAIN_V473_UNITS.includes(unit))throw Error('소속은 대대본부 또는 1~4중대여야 합니다.');if(!name)throw Error('이름을 입력하세요.');
  if(isBattalion&&unit!=='대대본부')throw Error(type+'는 대대본부 소속이어야 합니다.');if(['중대장생도','지도생도','예비생도'].includes(type)&&unit==='대대본부')throw Error(type+'는 1~4중대 소속이어야 합니다.');
  const candidates=type==='지도생도'?trainV473GuideCandidates_():(!isRecruit?trainV473DutyCandidates_():[]),personId=text_(input?.regularPersonId,100),cohort=text_(input?.cohort,20).replace(/기$/,''),company=String(input?.regularCompany||'').replace(/\D/g,''),number=text_(input?.cadetNumber,40),byId=candidates.find(p=>p.id===personId&&p.name===name),byDetail=candidates.filter(p=>p.name===name&&String(p.cohort)===cohort&&String(p.company)===company&&String(p.cadetNumber||'')===number),regularPerson=!isRecruit?(byId||(byDetail.length===1?byDetail[0]:null)):null;if(!isRecruit&&!regularPerson)throw Error(type==='지도생도'?'일반학기 3학년 명단에서 지도생도 이름을 선택하세요.':'일반학기 명단에서 직책 인원을 이름으로 선택하세요.');

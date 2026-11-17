@@ -170,6 +170,10 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
 const {personalJs,personalCss,personalHtml}=buildPersonal();
+const instructorJs=read('scripts/instructor-portal.js'),instructorCss=read('scripts/instructor-portal.css');
+write('docs/assets/instructor.js',instructorJs);
+write('docs/assets/instructor.css',instructorCss);
+write('docs/instructor.html',read('scripts/instructor-portal.html').replace('./assets/instructor.js','./assets/instructor.js?v='+fingerprint(instructorJs)).replace('./assets/instructor.css','./assets/instructor.css?v='+fingerprint(instructorCss)));
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
 write('docs/release.json',JSON.stringify(release,null,2)+'\n');
@@ -229,7 +233,7 @@ legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt'));
 legacy=trainingAccessServerV473(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
-const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
+const frontendStrings = new Set([...(js+'\n'+instructorJs).matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
   && !['doGet', 'doPost', 'setupLogbook', 'setupLiveFrontendV222', 'disableLiveFrontendV222', 'liveFrontendInfoV222', 'trainingScheduledHandoffV227', 'surveysOnSubmitV299'].includes(name));
 methods.push('readCompressedV282', 'pingConnectionV273');
