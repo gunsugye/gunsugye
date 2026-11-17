@@ -1,6 +1,6 @@
 /** v4.73 · 성무기초군사훈련 v2. 공용 업무일지는 건드리지 않고 훈련 전용 파일에만 저장합니다. */
 const TRAIN_V473=Object.freeze({
- VERSION:'2',CFG:'훈련운영설정_v2',PEOPLE:'훈련인원_v2',ASSETS:'훈련물품현황_v2',REQUESTS:'훈련수정요청_v2',SABER:'훈련예도대여_v2',HANDOFF:'훈련일반학기이관_v2',AUDIT:'훈련변경이력_v2',
+ VERSION:'2',CFG:'훈련운영설정_v2',PEOPLE:'훈련인원_v2',ASSETS:'훈련물품현황_v2',REQUESTS:'훈련수정요청_v2',SABER:'훈련예도대여_v2',HANDOFF:'훈련일반학기이관_v2',AUDIT:'훈련변경이력_v2',REFERENCE:'훈련일반학기명단참조_v2',
  CFG_KEYS:['schemaVersion','trainingId','cohort','startDate','endDate','status','capacity','updatedAt','updatedBy'],
  CFG_HEAD:['스키마','훈련ID','기수','시작일','종료일','상태','지도생도 1명당 정원','수정시각','수정계정'],
  PERSON_KEYS:['id','trainingId','cohort','type','unit','name','cadetNumber','email','phone','instructorId','regularCompany','firearmNumber','firearmStatus','memo','active','transferred','transferredAt','updatedAt','updatedBy'],
@@ -14,7 +14,8 @@ const TRAIN_V473=Object.freeze({
  HANDOFF_KEYS:['id','trainingId','cohort','phase','status','people','assets','detail','createdAt','createdBy'],
  HANDOFF_HEAD:['이관ID','훈련ID','기수','단계','결과','인원','물품','세부내용','실행시각','실행계정'],
  AUDIT_KEYS:['id','trainingId','action','target','detail','at','by'],
- AUDIT_HEAD:['기록ID','훈련ID','작업','대상','세부내용','변경시각','변경계정']
+ AUDIT_HEAD:['기록ID','훈련ID','작업','대상','세부내용','변경시각','변경계정'],
+ REFERENCE_KEYS:['id','name','cohort','company','cadetNumber','syncedAt'],REFERENCE_HEAD:['기준ID','이름','기수','중대','교번','동기화시각']
 });
 const TRAIN_V473_TYPES=Object.freeze(['대대장생도','대대작전참모생도','대대인사참모생도','대대군수참모생도','대대체육참모생도','중대장생도','지도생도','예비생도']);
 const TRAIN_V473_UNITS=Object.freeze(['대대본부','1','2','3','4']);
@@ -40,7 +41,7 @@ function trainV473Sheet_(ss,name,headers,create){let sh=ss.getSheetByName(name);
 function trainV473Rows_(ss,name,keys,limit){const sh=ss.getSheetByName(name);if(!sh||sh.getLastRow()<2)return [];const n=sh.getLastRow()-1;if(n>limit)throw Error(name+' 기록이 조회 한도를 초과했습니다.');return sh.getRange(2,1,n,keys.length).getDisplayValues().filter(r=>r[0]).map((r,index)=>Object.assign({row:index+2},Object.fromEntries(keys.map((k,i)=>[k,r[i]||'']))));}
 function trainV473Write_(sh,keys,obj,row){const target=row||sh.getLastRow()+1;ensureRows_(sh,target);sh.getRange(target,1,1,keys.length).setValues([keys.map(k=>safeCell_(obj[k]??''))]);return obj;}
 function trainV473SetupSheets_(ss){
- [[TRAIN_V473.CFG,TRAIN_V473.CFG_HEAD],[TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_HEAD],[TRAIN_V473.ASSETS,TRAIN_V473.ASSET_HEAD],[TRAIN_V473.REQUESTS,TRAIN_V473.REQUEST_HEAD],[TRAIN_V473.SABER,TRAIN_V473.SABER_HEAD],[TRAIN_V473.HANDOFF,TRAIN_V473.HANDOFF_HEAD],[TRAIN_V473.AUDIT,TRAIN_V473.AUDIT_HEAD]].forEach(([n,h])=>trainV473Sheet_(ss,n,h,true));
+ [[TRAIN_V473.CFG,TRAIN_V473.CFG_HEAD],[TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_HEAD],[TRAIN_V473.ASSETS,TRAIN_V473.ASSET_HEAD],[TRAIN_V473.REQUESTS,TRAIN_V473.REQUEST_HEAD],[TRAIN_V473.SABER,TRAIN_V473.SABER_HEAD],[TRAIN_V473.HANDOFF,TRAIN_V473.HANDOFF_HEAD],[TRAIN_V473.AUDIT,TRAIN_V473.AUDIT_HEAD],[TRAIN_V473.REFERENCE,TRAIN_V473.REFERENCE_HEAD]].forEach(([n,h])=>trainV473Sheet_(ss,n,h,true));
  const cfg=ss.getSheetByName(TRAIN_V473.CFG);if(cfg.getLastRow()<2)trainV473Write_(cfg,TRAIN_V473.CFG_KEYS,{schemaVersion:TRAIN_V473.VERSION,trainingId:Utilities.getUuid(),cohort:'',startDate:'',endDate:'',status:'준비',capacity:'8',updatedAt:iso_(),updatedBy:config_().email},2);
 }
 function trainV473Ready_(ss){return !!ss&&[TRAIN_V473.CFG,TRAIN_V473.PEOPLE,TRAIN_V473.ASSETS,TRAIN_V473.REQUESTS,TRAIN_V473.SABER,TRAIN_V473.HANDOFF,TRAIN_V473.AUDIT].every(n=>ss.getSheetByName(n));}
@@ -67,10 +68,12 @@ function trainV473PersonScope_(actor,people){
  return [];
 }
 function trainV473SaberOptions_(){try{const sh=spreadsheet_().getSheetByName(SABER_V276.TAB);return !sh||sh.getLastRow()<2?[]:sh.getRange(2,1,sh.getLastRow()-1,10).getDisplayValues().filter(r=>r[0]&&r[5]).map(r=>({roleId:r[0],group:r[1],unit:r[2],role:r[3],holder:r[4],number:r[5],status:r[6],detail:r[7]}));}catch(e){return [];}}
-function trainV473RegularCandidates_(){try{return rosterRows_(spreadsheet_()).filter(p=>p.name&&p.cohort&&p.company).map(p=>({id:p.id,name:p.name,cohort:String(p.cohort),company:String(p.company).replace(/\D/g,''),cadetNumber:p.cadetNumber||''}));}catch(e){return [];}}
+function trainV473RegularCandidates_(ss){return trainV473Rows_(ss,TRAIN_V473.REFERENCE,TRAIN_V473.REFERENCE_KEYS,5000).map(p=>({id:p.id,name:p.name,cohort:p.cohort,company:p.company,cadetNumber:p.cadetNumber||''}));}
+function trainV473SyncRegularCandidates_(ss){const sh=ss.getSheetByName(TRAIN_V473.REFERENCE),now=iso_(),rows=rosterRows_(spreadsheet_()).filter(p=>p.name&&p.cohort&&p.company).map(p=>[p.id,p.name,String(p.cohort),String(p.company).replace(/\D/g,''),p.cadetNumber||'',now]);sh.clear({contentsOnly:true});sh.getRange(1,1,1,TRAIN_V473.REFERENCE_HEAD.length).setValues([TRAIN_V473.REFERENCE_HEAD]);if(rows.length)sh.getRange(2,1,rows.length,rows[0].length).setValues(rows.map(r=>r.map(safeCell_)));return {count:rows.length,syncedAt:now};}
+function refreshTrainingRegularCandidatesV478(){trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false);trainV473SetupSheets_(ss);const ret=trainV473SyncRegularCandidates_(ss);trainV473Audit_(ss,'일반학기 기준 명단 갱신','기준 명단',ret);return ret;});}
 
 function setupTrainingSystemV473(){
- if(!trainV473Admin_())throw Error('최초 준비는 군수계 관리자만 실행할 수 있습니다.');return lockAndRun_(()=>{const ss=trainV473Book_(true);trainV473SetupSheets_(ss);trainV473Audit_(ss,'v2 최초 준비','훈련 시스템',{legacyPreserved:true,journalPreserved:true});return getTrainingWorkspaceV473();});
+ if(!trainV473Admin_())throw Error('최초 준비는 군수계 관리자만 실행할 수 있습니다.');return lockAndRun_(()=>{const ss=trainV473Book_(true);trainV473SetupSheets_(ss);const reference=trainV473SyncRegularCandidates_(ss);trainV473Audit_(ss,'v2 최초 준비','훈련 시스템',{legacyPreserved:true,journalPreserved:true,reference});return getTrainingWorkspaceV473();});
 }
 function startNewTrainingCycleV473(){
  const actor=trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false),old=trainV473Config_(ss);if(!old||old.status!=='이관완료')throw Error('일반학기 이관이 완료된 뒤 새 훈련을 시작할 수 있습니다.');
@@ -85,7 +88,7 @@ function getTrainingWorkspaceV473(){
  const allRequests=trainV473Rows_(ss,TRAIN_V473.REQUESTS,TRAIN_V473.REQUEST_KEYS,30000).filter(x=>x.trainingId===cfg.trainingId),requests=actor.manager?allRequests:allRequests.filter(x=>ids.has(x.personId)&&(!actor.instructor||x.requestedBy===actor.email));
  const allLoans=trainV473Rows_(ss,TRAIN_V473.SABER,TRAIN_V473.SABER_KEYS,5000).filter(x=>x.trainingId===cfg.trainingId),loans=actor.manager?allLoans:allLoans.filter(x=>x.personId===actor.person?.id);
  const counts={people:allPeople.length,recruits:allPeople.filter(p=>p.type==='예비생도').length,instructors:allPeople.filter(p=>p.type==='지도생도').length,pending:allRequests.filter(r=>r.status==='대기').length,activeLoans:allLoans.filter(r=>r.status==='대여 중').length,unassigned:allPeople.filter(p=>p.type==='예비생도'&&!p.instructorId).length};
- return {initialized:true,schemaVersion:TRAIN_V473.VERSION,config:cfg,role:actor.role,actorId:actor.person?.id||'',canManage:actor.manager,canRequest:actor.manager||actor.instructor,people,assets,requests,loans,counts,saberOptions:actor.manager||actor.commander?trainV473SaberOptions_():[],saberRoles:TRAIN_V473_SABER_ROLES,fixedPosts:TRAIN_V473_FIXED_POSTS,regularCandidates:actor.manager?trainV473RegularCandidates_():[],journalPreserved:true,bookUrl:actor.admin?ss.getUrl():''};
+ return {initialized:true,schemaVersion:TRAIN_V473.VERSION,config:cfg,role:actor.role,actorId:actor.person?.id||'',canManage:actor.manager,canRequest:actor.manager||actor.instructor,people,assets,requests,loans,counts,saberOptions:actor.manager||actor.commander?trainV473SaberOptions_():[],saberRoles:TRAIN_V473_SABER_ROLES,fixedPosts:TRAIN_V473_FIXED_POSTS,regularCandidates:actor.manager?trainV473RegularCandidates_(ss):[],journalPreserved:true,bookUrl:actor.admin?ss.getUrl():''};
 }
 function saveTrainingConfigV473(input){
  trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false);trainV473SetupSheets_(ss);const old=trainV473Config_(ss),cohort=text_(input?.cohort,20).replace(/기$/,'');if(!cohort)throw Error('예비생도 기수를 입력하세요.');

@@ -102,6 +102,7 @@
   "processDepartureV305",
   "readCompressedV282",
   "recognizeSchedulePhotoV230",
+  "refreshTrainingRegularCandidatesV478",
   "removeEntry",
   "removeEquipment",
   "removeRosterMember",

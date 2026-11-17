@@ -1,1 +1,1 @@
-export const releaseDetails={"version":"4.77","title":"성무기초군사훈련 지휘 편성","notes":["대대본부 5개 고정 직책과 1~4중대장 직책을 미리 표시하고, 일반학기 기준 명단에서 이름·기수·중대를 채울 수 있게 합니다."]};
+export const releaseDetails={"version":"4.78","title":"훈련 전용 기준 명단 분리","notes":["훈련 전용 파일에 일반학기 기준 명단 참조 탭을 저장해 이후 훈련 화면은 전용 파일만 읽습니다."]};
