@@ -46,6 +46,6 @@ test('생성 화면은 담당자 요청과 대대군수참모 처리 API를 모�
  assert.doesNotThrow(()=>new Function(client));
  for(const id of ['trainDashboardV473','trainOrgV473','trainSupplyRowsV473','trainUniformRowsV473','trainSaberRowsV473','trainHandoffResultV473'])assert.match(html,new RegExp(`id="${id}"`));
  for(const method of ['startNewTrainingCycleV473','getTrainingWorkspaceV473','submitTrainingRequestV473','resolveTrainingRequestV473','saveTrainingSaberLoanV473','previewTrainingHandoffV473','applyTrainingHandoffV473'])assert.ok(methods.includes(method),method);
- assert.match(read('apps-script/Legacy.gs'),/trainingScopeV473=true/);
+ assert.match(read('scripts/training-management.mjs'),/trainingScopeV473=true/);
 });
 
