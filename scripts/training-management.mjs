@@ -9,7 +9,7 @@ const section=(id,title,body)=>`<section id="${id}View" class="hidden"><div clas
 
 export function trainingManagementHtmlV473(html){
  const panels={
-  trainPersonnel:section('trainPersonnel','인원 · 지도편성',`<div id="trainConfigV473"></div><div class="train-v473-actions"><button id="trainPersonAddV473" class="btn btn-primary" type="button">인원 추가</button></div><p id="trainPersonnelStatusV473" class="panel-sub" role="status"></p><div id="trainOrgV473"></div>`),
+  trainPersonnel:section('trainPersonnel','지도생도 편성',`<div id="trainConfigV473"></div><div class="train-v473-note"><b>대대본부 · 중대장생도 · 지도생도 편성</b><br>대대본부와 1~4중대를 펼쳐 고정 직책과 지도생도를 한 화면에서 기록합니다.</div><div class="train-v473-actions"><button id="trainPersonAddV473" class="btn btn-primary" type="button">+ 지도생도 추가</button></div><p id="trainPersonnelStatusV473" class="panel-sub" role="status"></p><div id="trainOrgV473"></div>`),
   trainSupply:section('trainSupply','군수품 현황',`<div id="trainSupplyRowsV473"></div>`),
   trainSupplyRequests:section('trainSupplyRequests','군수품 수정 요청',`<div id="trainSupplyRequestRowsV473"></div>`),
   trainUniform:section('trainUniform','피복 현황',`<div id="trainUniformRowsV473"></div>`),
@@ -41,7 +41,7 @@ export function trainingManagementJsV473(js,client){
 }
 
 export function trainingAccessServerV473(source){
- const trainMethods=['setupTrainingSystemV473','startNewTrainingCycleV473','getTrainingWorkspaceV473','refreshTrainingRegularCandidatesV478','saveTrainingConfigV473','saveTrainingPersonV473','archiveTrainingPersonV473','saveTrainingAssetV473','submitTrainingRequestV473','resolveTrainingRequestV473','saveTrainingSaberLoanV473','returnTrainingSaberLoanV473','previewTrainingHandoffV473','applyTrainingHandoffV473'];
+ const trainMethods=['setupTrainingSystemV473','startNewTrainingCycleV473','getTrainingWorkspaceV473','getTrainingGuideCandidatesV483','refreshTrainingRegularCandidatesV478','saveTrainingConfigV473','saveTrainingPersonV473','archiveTrainingPersonV473','saveTrainingAssetV473','submitTrainingRequestV473','resolveTrainingRequestV473','saveTrainingSaberLoanV473','returnTrainingSaberLoanV473','previewTrainingHandoffV473','applyTrainingHandoffV473'];
  const literal=JSON.stringify(trainMethods);
  source=source.replace('function accessGuardV284_(name,args){',`function accessGuardV284_(name,args){const trainActorV473=trainV473Actor_(false);if(trainActorV473&&!trainActorV473.admin){if(name==='getBootstrap'||name==='getChanges'||name==='dismissChangeV283'||name==='dismissChangePageV286'||name==='pingConnectionV273'||${literal}.includes(name))return {registered:true,legacy:false,training:true,trainingActor:trainActorV473,views:[],company:'',reader:!trainActorV473.manager,role:trainActorV473.role};throw Error('성무기초군사훈련 계정은 훈련 전용 메뉴만 사용할 수 있습니다.');}`);
  source=source.replace('function accessFilterV284_(name,ret,policy){',`function accessFilterV284_(name,ret,policy){if(policy&&policy.training){if(name==='getBootstrap'){const allowed=${JSON.stringify(trainingManagementViewsV473)};ret.entries=(ret.entries||[]).filter(e=>/기훈|성무.*훈련/.test(String(e.category||'')));ret.notes={};ret.navTree={schemaVersion:2,groups:[]};ret.allowedViews=allowed;ret.company='';ret.accessScopedV284=true;ret.trainingScopeV473=true;ret.role=policy.role;ret.canManageUsers=false;ret.canEdit=false;ret.canEditJournal=false;ret.canEditCalendar=false;ret.canViewStaff=false;ret.sheetUrl='';return ret;}if(name==='getChanges')return {items:[],unread:[],total:0};return ret;}`);
