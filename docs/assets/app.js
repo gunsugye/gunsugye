@@ -4223,7 +4223,7 @@ function armoryInitV493(){
  if($('armoryPanelV493'))return;
  const panel=document.createElement('div');panel.id='armoryPanelV493';panel.className='panel';
  panel.innerHTML='<div class="panel-head"><h2>무기고별 보유 수량</h2><button class="btn" id="armoryRefreshV493" type="button">새로고침</button></div><p>배정 총기는 현재 명단과 자동 연동됩니다. 총기 수량은 번호 중복을 제외하며, 권총은 별도로 집계합니다.</p><p id="armoryScopeV493"></p><p id="armoryStatusV493" role="status"></p><div class="roster-wrap"><table class="roster-table armory-table-v493"><thead><tr><th>무기고</th><th>중대</th><th>배정 총기</th><th>여유 총기</th><th>총기 합계</th><th>권총</th><th>대검</th></tr></thead><tbody id="armorySummaryV493"></tbody></table></div><div id="armoryIssuesV493"></div><div id="armoryDetailsV493"></div>';
- $('firearmsView').prepend(panel);$('armoryRefreshV493').onclick=firearmsLoadV410;
+ $('firearmsView').append(panel);$('armoryRefreshV493').onclick=firearmsLoadV410;
  panel.addEventListener('click',event=>{const button=event.target.closest('[data-armory-edit]');if(button)armoryEditV493(button.dataset.armoryEdit);});
 }
 async function armoryLoadV493(){
