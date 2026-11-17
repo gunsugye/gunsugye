@@ -1,4 +1,4 @@
-export const trainingManagementViewsV473=['train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff','trainJournal','trainCalendar'];
+export const trainingManagementViewsV473=['trainJournal','trainCalendar','train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff'];
 
 export function trainingCapacitySummaryV473(people,capacity=8){
  const instructors=(people||[]).filter(p=>p.type==='지도생도'&&p.active!=='아니요');

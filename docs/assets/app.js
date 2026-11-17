@@ -5330,7 +5330,7 @@ window.logbookReloadState=()=>({busy:!!(firearmRequestsBusyV413||assetInspection
 
 window.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:switchView('updates');
 
-const TRAIN_V473_VIEWS=['train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff','trainJournal','trainCalendar'];
+const TRAIN_V473_VIEWS=['trainJournal','trainCalendar','train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff'];
 const TRAIN_V473_DATA_VIEWS=['train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff'];
 let trainStateV473={loaded:false,loading:false,initialized:false,people:[],assets:[],requests:[],loans:[],saberOptions:[],saberRoles:[],counts:{},config:{},canManage:false,canRequest:false};
 let trainPreviewV473=null;

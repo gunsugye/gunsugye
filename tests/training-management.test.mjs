@@ -8,7 +8,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('성무훈련 메뉴는 새 관리 흐름과 기존 일지만 남긴다',()=>{
  const ids=trainingGroups.flatMap(group=>group.items.map(item=>item[0]));
- assert.deepEqual(ids,['train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff','trainJournal','trainCalendar']);
+ assert.deepEqual(ids,['trainJournal','trainCalendar','train','trainPersonnel','trainSupply','trainSupplyRequests','trainUniform','trainUniformRequests','trainSaber','trainHandoff']);
  for(const removed of ['trainMeal','trainEquipment','trainRooms','trainRoomAssets','trainAssetRequests','trainRoster','trainRepairs','trainSurveys'])assert.equal(ids.includes(removed),false);
  assert.deepEqual(trainingManagementViewsV473,ids);
 });
