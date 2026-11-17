@@ -33,6 +33,22 @@ test('앱 요청은 기존 승인 절차로 전달하고 외부 물품 ID를 그
  const result=context.submitInstructorRequestV489({personId:'mine',assetId:'other-asset',kind:'피복'});
  assert.equal(got.assetId,'');assert.equal(result.status,'대기');
 });
+test('임시 접속은 지도생도를 선택하고 담당 인원만 반환하며 일반 권한을 남기지 않는다',()=>{
+ const {context,me}=fixture();
+ const list=context.trainV490Temporary_('list');assert.equal(list.length,1);assert.equal(list[0].email,undefined);assert.equal(list[0].phone,undefined);
+ assert.deepEqual(Array.from(context.trainV490Temporary_('get','guide').people,p=>p.id),['mine']);
+ assert.throws(()=>context.trainV490Temporary_('get','other'));
+ assert.throws(()=>context.trainV490Temporary_('resolve','guide'));
+ me.active='아니요';assert.throws(()=>context.trainV490Temporary_('get','guide'));
+ assert.throws(()=>context.getInstructorWorkspaceV489());
+});
+test('임시 접속 수정 요청도 담당 인원 검증과 관리자 승인 경로를 유지한다',()=>{
+ const {context}=fixture();let actor;
+ context.submitTrainingRequestV473=input=>{actor=context.trainV473Actor_();assert.equal(input.assetId,'');return {status:'대기'};};
+ assert.equal(context.trainV490Temporary_('submit','guide',{assetId:'fake'}).status,'대기');
+ assert.equal(actor.manager,false);assert.equal(actor.email,'temporary:guide');
+ assert.equal(context.trainV473Actor_().email,'guide@example.com');
+});
 test('별도 앱의 생성 파일과 조회·요청 API가 연결된다',()=>{
  assert.doesNotThrow(()=>new Function(read('scripts/instructor-portal.js')));
  const methods=JSON.parse(read('apps-script/methods.json'));

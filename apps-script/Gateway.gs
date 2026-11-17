@@ -7,6 +7,11 @@ function doGet() {
 function doPost(e) {
   try {
     const actor = pagesVerifyRequest_(e);
+    if(actor.method==='pagesInstructorTemporary'){
+      if(actor.email!=='temporary@instructor.invalid'||actor.sub!=='instructor-temporary'||actor.sessionId)pagesForbidden_();
+      return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).instructorTemporary.apply(null,actor.args)});
+    }
+    if(actor.sub==='instructor-temporary')pagesForbidden_();
     if(actor.method==='pagesPersonalLogin'){
       if(actor.email!=='personal@portal.invalid'||actor.sub!=='personal-login'||actor.sessionId)pagesForbidden_();
       return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal('login',actor.args[0])});

@@ -2,6 +2,24 @@
  'use strict';
  const $=id=>document.getElementById(id),config=window.LOGBOOK_CONFIG||{},key='logbook.instructor.session.v1';
  let token='',expiresAt=0,data=null,busy=false,loading=false;
+ const temporaryAccess=true,guideKey='logbook.instructor.selected.v1';let selectedGuide='';
+ async function temporaryRequest(method,args=[]){
+  const response=await fetch(config.apiUrl.replace(/\/$/,'')+'/instructor/temporary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args}),credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(90000)});
+  const body=await response.json();if(!response.ok||!body.ok)throw Error(body.error||'연결을 확인하고 다시 시도하세요.');return body.result;
+ }
+ async function openTemporary(){
+  selectedGuide='';data=null;$('workspace').hidden=true;$('logout').hidden=true;$('login').hidden=false;$('retry').hidden=true;
+  $('login').innerHTML='<h2>지도생도 선택</h2><p>훈련 준비 기간 · 인증 없이 이용</p><label>지도생도<select id="guideSelect"><option value="">불러오는 중…</option></select></label><button id="enterGuide" class="primary" disabled>열기</button>';
+  try{
+   const guides=await temporaryRequest('list');
+   $('guideSelect').innerHTML='<option value="">'+(guides.length?'지도생도를 선택하세요':'등록된 지도생도가 없습니다')+'</option>'+guides.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.unit+'중대 · '+p.cohort+'기 · '+p.name)+'</option>').join('');
+   try{const saved=localStorage.getItem(guideKey);if(guides.some(p=>p.id===saved))$('guideSelect').value=saved;}catch{}
+   $('enterGuide').disabled=!$('guideSelect').value;
+   $('guideSelect').onchange=()=>{$('enterGuide').disabled=!$('guideSelect').value;};
+   $('enterGuide').onclick=()=>{selectedGuide=$('guideSelect').value;try{localStorage.setItem(guideKey,selectedGuide);}catch{}load();};
+   $('message').textContent=guides.length?'':'업무일지의 지도생도 편성에서 인원을 먼저 등록하세요.';
+  }catch(e){$('message').textContent=e.message;$('retry').hidden=false;}
+ }
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function clearSession(){token='';expiresAt=0;data=null;try{localStorage.removeItem(key);}catch{}$('workspace').hidden=true;$('logout').hidden=true;$('login').hidden=false;$('people').replaceChildren();$('requests').replaceChildren();}
  async function request(path,method,args=[]){
@@ -9,7 +27,7 @@
   const body=await response.json();if(response.status===401||response.status===403){clearSession();initGoogle();}
   if(!response.ok||!body.ok)throw Error(body.error||'연결을 확인하고 다시 시도하세요.');return body.result;
  }
- async function rpc(method,args=[]){if(!token||expiresAt<=Date.now()){clearSession();initGoogle();throw Error('로그인 유지 기간이 만료됐습니다. 다시 인증하세요.');}return request('/rpc',method,args);}
+ async function rpc(method,args=[]){if(temporaryAccess){if(!selectedGuide)throw Error('지도생도를 선택하세요.');return temporaryRequest(method==='getInstructorWorkspaceV489'?'get':'submit',[selectedGuide,...args]);}if(!token||expiresAt<=Date.now()){clearSession();initGoogle();throw Error('로그인 유지 기간이 만료됐습니다. 다시 인증하세요.');}return request('/rpc',method,args);}
  function render(){
   $('identity').textContent=data.instructor.unit+'중대 · '+data.instructor.name+' · 담당 '+data.people.length+'명';
   $('people').innerHTML=data.people.length?data.people.map(p=>{
@@ -40,16 +58,18 @@
   finally{busy=false;$('send').disabled=false;$('cancel').disabled=false;}
  };
  $('cancel').onclick=()=>$('requestDialog').close();$('requestDialog').addEventListener('cancel',e=>{if(busy)e.preventDefault();});
- $('refresh').onclick=load;$('retry').onclick=()=>token?load():location.reload();
+ $('refresh').onclick=load;$('retry').onclick=()=>temporaryAccess?(selectedGuide?load():openTemporary()):token?load():location.reload();
  for(const name of ['people','requests'])$(name+'Tab').onclick=()=>{for(const tab of ['people','requests']){$(tab).hidden=tab!==name;$(tab+'Tab').setAttribute('aria-pressed',String(tab===name));}};
- $('logout').onclick=async()=>{if(busy)return;try{await request('/logout','logout');clearSession();initGoogle();$('message').textContent='로그아웃했습니다.';}catch(e){$('message').textContent=e.message;}};
+ $('logout').onclick=async()=>{if(busy)return;if(temporaryAccess){await openTemporary();return;}try{await request('/logout','logout');clearSession();initGoogle();$('message').textContent='로그아웃했습니다.';}catch(e){$('message').textContent=e.message;}};
  async function credential(response){
   if(busy)return;busy=true;$('message').textContent='이메일 인증 중…';
   try{token=response.credential;const session=await request('/session','login');token=session.token;expiresAt=session.expiresAt;if(!token?.startsWith('session.')||!Number.isFinite(expiresAt))throw Error('인증 응답을 확인할 수 없습니다.');try{localStorage.setItem(key,JSON.stringify({token,expiresAt}));}catch{}await load();}
   catch(e){clearSession();$('message').textContent=e.message;}finally{busy=false;}
  }
  function initGoogle(attempt=0){if(!window.google?.accounts?.id){if(attempt<150)setTimeout(()=>initGoogle(attempt+1),100);else $('message').textContent='로그인 버튼을 불러오지 못했습니다. 새로고침하세요.';return;}google.accounts.id.initialize({client_id:config.googleClientId,callback:credential,auto_select:false});$('googleButton').replaceChildren();google.accounts.id.renderButton($('googleButton'),{theme:'filled_blue',size:'large',text:'continue_with',locale:'ko'});}
- if(!config.apiUrl||!config.googleClientId){$('message').textContent='앱 연결 설정을 확인하세요.';return;}
+ if(!config.apiUrl||(!temporaryAccess&&!config.googleClientId)){$('message').textContent='앱 연결 설정을 확인하세요.';return;}
+ if(temporaryAccess){$('logout').textContent='지도생도 변경';openTemporary();return;}
+ const googleScript=document.createElement('script');googleScript.src='https://accounts.google.com/gsi/client';googleScript.async=true;document.head.append(googleScript);
  try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.token?.startsWith('session.')&&saved.expiresAt>Date.now()){token=saved.token;expiresAt=saved.expiresAt;}}catch{}
  if(token){$('login').hidden=true;load();}else initGoogle();
 })();

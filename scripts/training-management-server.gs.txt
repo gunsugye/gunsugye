@@ -48,7 +48,20 @@ function trainV473Ready_(ss){return !!ss&&[TRAIN_V473.CFG,TRAIN_V473.PEOPLE,TRAI
 function trainV473Config_(ss){if(!trainV473Ready_(ss))return null;const rows=trainV473Rows_(ss,TRAIN_V473.CFG,TRAIN_V473.CFG_KEYS,20);return rows[0]||null;}
 function trainV473NormUnit_(value){const s=String(value||'').normalize('NFKC').replace(/\s/g,'').replace(/중대$/,'');return s==='대대본부'?'대대본부':/^[1-4]$/.test(s)?s:'';}
 function trainV473Admin_(){const c=config_(),owner=String(c.owner||'').trim().toLowerCase();return c.email===owner||fullEditorsV281_().includes(c.email);}
+const TRAIN_INSTRUCTOR_TEMPORARY_V490=true;
+let trainTemporaryActorV490_=null;
+function trainV490Temporary_(action,id,input){
+ if(!TRAIN_INSTRUCTOR_TEMPORARY_V490)throw Error('이메일 인증 후 이용하세요.');
+ if(!['list','get','submit'].includes(action))throw Error('지원하지 않는 요청입니다.');
+ const ss=trainV473Book_(false),cfg=ss&&trainV473Config_(ss);
+ const guides=cfg?trainV473Rows_(ss,TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_KEYS,5000).filter(p=>p.trainingId===cfg.trainingId&&p.active!=='아니요'&&p.type==='지도생도'):[];
+ if(action==='list')return guides.map(p=>({id:p.id,name:p.name,unit:p.unit,cohort:p.cohort}));
+ const person=guides.find(p=>p.id===id);if(!person)throw Error('지도생도를 다시 선택하세요.');
+ trainTemporaryActorV490_={email:'temporary:'+person.id,admin:false,manager:false,instructor:true,commander:false,role:person.type,person};
+ try{return action==='get'?getInstructorWorkspaceV489():submitInstructorRequestV489(input||{});}finally{trainTemporaryActorV490_=null;}
+}
 function trainV473Actor_(required){
+ if(trainTemporaryActorV490_)return trainTemporaryActorV490_;
  const email=String(config_().email||'').trim().toLowerCase(),admin=trainV473Admin_();if(admin)return {email,admin:true,manager:true,role:'관리자',person:null};
  const ss=trainV473Book_(false),cfg=ss&&trainV473Config_(ss);if(!cfg){if(required!==false)throw Error('성무기초군사훈련 관리가 아직 준비되지 않았습니다.');return null;}
  const person=trainV473Rows_(ss,TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_KEYS,5000).find(p=>p.trainingId===cfg.trainingId&&p.active!=='아니요'&&String(p.email||'').toLowerCase()===email);

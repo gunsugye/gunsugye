@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>지도생도 군수 관리</title>
-<link rel="stylesheet" href="./assets/instructor.css?v=eea58f134276f6be"><script src="./config.js"></script><script src="https://accounts.google.com/gsi/client" async defer></script></head>
+<link rel="stylesheet" href="./assets/instructor.css?v=eea58f134276f6be"><script src="./config.js"></script></head>
 <body><main>
 <header><div><small>성무기초군사훈련</small><h1>지도생도 군수 관리</h1></div><button id="logout" hidden>로그아웃</button></header>
-<section id="login" class="card"><h2>이메일 인증</h2><p>지도생도 명단에 등록된 Google 계정으로 로그인하세요.</p><p>같은 브라우저에서 30일간 유지됩니다.</p><div id="googleButton"></div></section>
+<section id="login" class="card"><h2>지도생도 선택</h2><p>훈련 준비 기간 · 인증 없이 이용</p><div id="googleButton"></div></section>
 <p id="message" role="status" aria-live="polite"></p><button id="retry" hidden>다시 불러오기</button>
 <section id="workspace" hidden><div class="toolbar"><p id="identity"></p><button id="refresh">새로고침</button></div>
 <div class="tabs"><button id="peopleTab" aria-pressed="true">담당 예비생도</button><button id="requestsTab" aria-pressed="false">수정 요청</button></div>
@@ -16,4 +16,4 @@
 <label>세부사항<textarea id="detail" maxlength="1500" rows="2"></textarea></label>
 <label>요청 사유<textarea id="reason" required maxlength="1000" rows="2"></textarea></label>
 <p id="requestMessage" role="status"></p><div class="actions"><button id="cancel" type="button">취소</button><button id="send" type="submit" class="primary">요청 등록</button></div>
-</form></dialog></main><script src="./assets/instructor.js?v=3f11b739df7c3d97"></script></body></html>
+</form></dialog></main><script src="./assets/instructor.js?v=aa22d272d5a3d658"></script></body></html>

@@ -103,7 +103,7 @@ export async function handleRequest(request, env, fetcher = fetch) {
   headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
   headers['Access-Control-Max-Age'] = '600';
   const path = new URL(request.url).pathname;
-  if (!['/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout','/personal/assets','/personal/details','/personal/supplies','/personal/uniform','/personal/uniform-request','/personal/duty-request','/personal/firearm-request'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
+  if (!['/instructor/temporary','/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout','/personal/assets','/personal/details','/personal/supplies','/personal/uniform','/personal/uniform-request','/personal/duty-request','/personal/firearm-request'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'POST 요청만 가능합니다.' });
   try {
@@ -111,19 +111,20 @@ export async function handleRequest(request, env, fetcher = fetch) {
         || !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(env.APPS_SCRIPT_URL || '')) throw new ApiError(503, 'API 서버 설정을 완료하세요.');
     if(path.startsWith('/personal/'))return await handlePersonalRequest(request,env,fetcher,reply,path);
     const token = /^Bearer (\S+)$/.exec(request.headers.get('authorization') || '')?.[1];
-    const actor = path !== '/session' && token?.startsWith('session.')
+    const actor = path === '/instructor/temporary' ? {email:'temporary@instructor.invalid',sub:'instructor-temporary'} : path !== '/session' && token?.startsWith('session.')
       ? await verifySession(token, env.API_SHARED_SECRET)
       : await verifyGoogleToken(token, env.GOOGLE_CLIENT_ID, fetcher);
     const body = await readBody(request);
     if (!body || typeof body.method !== 'string' || !/^[A-Za-z][A-Za-z0-9]*$/.test(body.method)
         || !Array.isArray(body.args) || body.args.length > 30) throw new ApiError(400, '지원하지 않는 API 요청입니다.');
-    const method = path === '/session' ? 'pagesSessionCreate' : path === '/logout' ? 'pagesSessionLogout' : body.method;
+    const method = path === '/instructor/temporary' ? 'pagesInstructorTemporary' : path === '/session' ? 'pagesSessionCreate' : path === '/logout' ? 'pagesSessionLogout' : body.method;
+    if(path === '/instructor/temporary' && !['list','get','submit'].includes(body.method))throw new ApiError(400,'지원하지 않는 요청입니다.');
     if (path === '/session' && body.loginEmail !== undefined
         && (typeof body.loginEmail !== 'string' || body.loginEmail.trim().toLowerCase() !== actor.email)) {
       throw new ApiError(403, '입력한 이메일과 선택한 Google 계정이 다릅니다. 같은 계정을 선택하세요.');
     }
     if (path === '/rpc' && ['pagesSessionCreate', 'pagesSessionLogout'].includes(method)) throw new ApiError(400, '지원하지 않는 API 요청입니다.');
-    const payload = JSON.stringify({ version: 1, timestamp: Date.now(), nonce: crypto.randomUUID(), ...actor, method, args: path === '/rpc' ? body.args : [] });
+    const payload = JSON.stringify({ version: 1, timestamp: Date.now(), nonce: crypto.randomUUID(), ...actor, method, args: path === '/instructor/temporary' ? [body.method,...body.args] : path === '/rpc' ? body.args : [] });
     const signature = await signPayload(payload, env.API_SHARED_SECRET);
     let response;
     try {

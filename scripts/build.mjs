@@ -262,6 +262,7 @@ const suffix = `
 ${requestPerformanceCode}
 const pagesMethods_ = {${uniqueMethods.join(',')}};
 return {
+ instructorTemporary: function(action,id,input){return trainV490Temporary_(action,id,input);},
  personal: function(action,input){
   if(['login','get','details','supplies','uniform'].includes(action)){pagesReadRequestV307_={};}
   if(action==='login')return personalLoginV330_(input);

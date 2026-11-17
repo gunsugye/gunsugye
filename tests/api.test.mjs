@@ -24,6 +24,14 @@ test('30일 세션은 서명·만료·위조를 검사하고 Google 인증 없�
   await assert.rejects(verifySession(value.replace('session.', 'session.A'), 'secret', now));
 });
 const env = { ALLOWED_ORIGINS: 'https://example.github.io', GOOGLE_CLIENT_ID: clientId, API_SHARED_SECRET: 'a-long-random-test-secret-at-least-32-characters', APPS_SCRIPT_URL: 'https://script.google.com/macros/s/test/exec' };
+test('지도생도 임시 경로는 인증 없이 제한된 동작만 전달하며 일반 RPC는 인증을 요구한다',async()=>{
+ const sent=[];const fetcher=async(_url,options)=>{sent.push(JSON.parse(JSON.parse(options.body).payload));return Response.json({ok:true,result:[]});};
+ const temporary=method=>new Request('https://api.example/instructor/temporary',{method:'POST',headers:{Origin:env.ALLOWED_ORIGINS,'Content-Type':'application/json'},body:JSON.stringify({method,args:['guide']})});
+ assert.equal((await handleRequest(temporary('list'),env,fetcher)).status,200);
+ assert.equal(sent[0].method,'pagesInstructorTemporary');assert.equal(sent[0].sub,'instructor-temporary');assert.deepEqual(sent[0].args,['list','guide']);
+ assert.equal((await handleRequest(temporary('getBootstrap'),env,fetcher)).status,400);
+ assert.notEqual((await handleRequest(request(),env,fetcher)).status,200);assert.equal(sent.length,1);
+});
 test('로그인 발급과 세션 요청은 검증된 계정 및 서버 세션ID만 전달한다', async () => {
   const sessionId = crypto.randomUUID(), expiresAt = Date.now() + 30 * 86400000 - 1000;
   const forwarded = [];
