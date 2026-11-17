@@ -73,6 +73,7 @@
   "getSupplySpecialDashboardV256",
   "getSurveyPeriodsV416",
   "getTrainFoundationV289",
+  "getTrainingDutyCandidatesV487",
   "getTrainingGuideCandidatesV483",
   "getTrainingWorkspaceV473",
   "getUniformRequestsV350",
