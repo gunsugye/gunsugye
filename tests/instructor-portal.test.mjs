@@ -16,6 +16,12 @@ function fixture(){
  context.trainV473Rows_=(_ss,name)=>name==='훈련인원_v2'?people:name==='훈련물품현황_v2'?assets:name==='훈련수정요청_v2'?requests:[];
  return {context,people,me,cfg};
 }
+test('훈련 대대본부 5개 직책과 4개 중대장 모두 예도 대상이며 기존 대여 키를 유지한다',()=>{
+ const {context}=fixture();const roles=vm.runInContext('TRAIN_V473_SABER_ROLES',context);
+ assert.deepEqual(Array.from(roles.filter(r=>r.unit==='대대본부'),r=>r.role),['대대장생도','대대작전참모생도','대대인사참모생도','대대군수참모생도','대대체육참모생도']);
+ assert.equal(roles[0].key,'battalion');assert.equal(new Set(roles.map(r=>r.key)).size,9);
+ assert.deepEqual(Array.from(roles.filter(r=>r.unit!=='대대본부'),r=>r.key),['company-1','company-2','company-3','company-4']);
+});
 test('지도생도 앱은 같은 훈련·같은 중대·본인 담당 인원과 요청만 반환한다',()=>{
  const {context}=fixture(),result=context.getInstructorWorkspaceV489();
  assert.deepEqual(Array.from(result.people,p=>p.id),['mine']);

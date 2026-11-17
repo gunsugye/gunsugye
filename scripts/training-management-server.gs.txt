@@ -27,6 +27,10 @@ const TRAIN_V473_ASSET_KINDS=Object.freeze(['군수품','피복']);
 const TRAIN_V473_REQUEST_STATES=Object.freeze(['대기','승인','반려']);
 const TRAIN_V473_SABER_ROLES=Object.freeze([
  {key:'battalion',unit:'대대본부',role:'대대장생도'},
+ {key:'battalion-operations',unit:'대대본부',role:'대대작전참모생도'},
+ {key:'battalion-personnel',unit:'대대본부',role:'대대인사참모생도'},
+ {key:'battalion-logistics',unit:'대대본부',role:'대대군수참모생도'},
+ {key:'battalion-athletics',unit:'대대본부',role:'대대체육참모생도'},
  {key:'company-1',unit:'1',role:'중대장생도'},{key:'company-2',unit:'2',role:'중대장생도'},
  {key:'company-3',unit:'3',role:'중대장생도'},{key:'company-4',unit:'4',role:'중대장생도'}
 ]);
