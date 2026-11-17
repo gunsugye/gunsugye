@@ -42,6 +42,7 @@ import {assetPlanJs,assetPlanHtml,assetPlanServer,assetPlanCSS,assetRoomHealth} 
 import {assetRequestsJs,assetRequestsHtml,assetRequestsServer,assetRequestsCSS} from './asset-requests.mjs';
 import {uniformRequestNavSource,uniformRequestNavJs,uniformRequestNavHtml} from './uniform-request-navigation.mjs';
 import {trainingShellJs,trainingShellHtml} from './training-shell.mjs';
+import {trainingManagementHtmlV473,trainingManagementJsV473,trainingManagementCSSV473,trainingAccessServerV473} from './training-management.mjs';
 import {personalInterfaceJs,personalInterfaceHtml,personalInterfaceNavSource,personalInterfaceCSS,personalInterfaceProfileCSSV401} from './personal-interface.mjs';
 import {personalInterfacePreview} from './personal-interface-preview.mjs';
 import {staffAccessHtml,staffAccessJs} from './staff-access.mjs';
@@ -124,7 +125,8 @@ js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
 js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'));
 js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
 js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
-const css = read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
+js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt'));
+const css = read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
@@ -182,6 +184,7 @@ write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" a
 write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearmRequests" type="button">총기 수정 요청·전수조사</button>').replace('<section id="rosterView"',firearmRequestsHtmlV413+'<section id="rosterView"'));
 write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
+write('docs/index.html',trainingManagementHtmlV473(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
 write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
@@ -212,6 +215,7 @@ legacy+='\n'+dutySortV367.toString()+'\n'+dutyOrgKeyV372.toString()+'\n'+dutyOrd
 legacy+='\n'+dutyMatchV371.toString()+'\n'+read('scripts/duty-verification-server.gs.txt');
 legacy+='\n'+read('scripts/duty-items-server.gs.txt');
 legacy+='\n'+read('scripts/uniform-requests-server.gs.txt');
+legacy+='\n'+read('scripts/training-management-server.gs.txt');
 legacy+='\n'+dormMemberCohortsV343.toString();
 legacy+='\n'+dormPlaceRoomV344.toString();
 legacy=supplySchemaServerV408(legacy,read('scripts/supply-schema-server.gs.txt'));
@@ -223,6 +227,7 @@ legacy+='\n'+Object.values(rosterLinkageV412).filter(v=>typeof v==='function').m
 legacy=firearmRequestSourceV413(legacy,true).replace("if(action==='duty-request')return personalDutyRequestV400_(input);","if(action==='duty-request')return personalDutyRequestV400_(input);if(action==='firearm-request')return personalFirearmRequestV413_(input);").replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getFirearmRequestsV413','resolveFirearmRequestsV413','setFirearmSurveyV413'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");legacy+='\n'+read('scripts/firearm-requests-server.gs.txt');
 legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt'));
+legacy=trainingAccessServerV473(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...js.matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)
@@ -273,7 +278,7 @@ return {
   catch (_) { throw Error('조회 계정 설정이 올바르지 않습니다.'); }
   const known = cfg.email === String(cfg.owner).trim().toLowerCase() || fullEditorsV281_().includes(cfg.email)
     || limitedEditorEmailsV226_().includes(cfg.email) || !!accessProfileV284_(cfg.email)
-    || (Array.isArray(viewers) && viewers.some(email => String(email).trim().toLowerCase() === cfg.email));
+    || trainKnownUserV473_(cfg.email) || (Array.isArray(viewers) && viewers.some(email => String(email).trim().toLowerCase() === cfg.email));
   if (!known) pagesForbidden_();
   if (!Object.prototype.hasOwnProperty.call(pagesMethods_, name)) throw Error('지원하지 않는 API입니다: ' + name);
   const policy = accessGuardV284_(name, args);

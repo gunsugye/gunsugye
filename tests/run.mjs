@@ -43,6 +43,7 @@ await import('./asset-inspection.test.mjs');
 await import('./asset-inspection-client.test.mjs');
 await import('./asset-inspection-layout.test.mjs');
 await import('./uniform-requests.test.mjs');
+await import('./training-management.test.mjs');
 await import('./dorm-corrections.test.mjs');
 if (existsSync(new URL('../apps-script/Legacy.gs', import.meta.url))) {
   await import('./apps-script.test.mjs');
