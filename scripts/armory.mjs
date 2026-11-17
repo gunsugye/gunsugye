@@ -1,0 +1,39 @@
+import {insertAppClient} from './app-client.mjs';
+export function armorySpecsV493(){return [
+ {id:'b1-a1',name:'1대대 1무기고',companies:['1','2']},
+ {id:'b1-a2',name:'1대대 2무기고',companies:['3','4']},
+ {id:'b2-a1',name:'2대대 1무기고',companies:['5','6']},
+ {id:'b2-a2',name:'2대대 2무기고',companies:['7','8']}
+];}
+export function armoryCompanyV493(value){return String(value??'').normalize('NFKC').replace(/\s|중대/g,'');}
+export function armoryNumberV493(value){return String(value??'').normalize('NFKC').replace(/\s/g,'').toUpperCase();}
+export function armoryModelV493(rows,records,company=''){
+ const specs=armorySpecsV493().filter(g=>!company||g.companies.includes(company));
+ const visible=rows.filter(r=>!company||armoryCompanyV493(r.company)===company);
+ const groups=specs.map(g=>{
+  const assigned=visible.filter(r=>g.companies.includes(armoryCompanyV493(r.company))),record=records.find(r=>r.id===g.id)||{};
+  const numbers=new Set(assigned.map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));
+  return {...g,assigned,assignedCount:numbers.size,missing:assigned.filter(r=>!armoryNumberV493(r.firearmNumber)).length,pistols:record.pistols??null,bayonets:record.bayonets??null,spares:record.spares||[],version:record.version||'',updatedAt:record.updatedAt||''};
+ });
+ const gunLocations=new Map();
+ for(const g of groups){for(const r of g.assigned){const n=armoryNumberV493(r.firearmNumber);if(n){if(!gunLocations.has(n))gunLocations.set(n,[]);gunLocations.get(n).push(g.name+' · '+r.name);}}for(const n of g.spares){const key=armoryNumberV493(n);if(!gunLocations.has(key))gunLocations.set(key,[]);gunLocations.get(key).push(g.name+' · 여유 총기');}}
+ return {groups,unclassified:company?[]:visible.filter(r=>!armorySpecsV493().some(g=>g.companies.includes(armoryCompanyV493(r.company)))),duplicates:[...gunLocations].filter(([,places])=>places.length>1).map(([number,places])=>({number,places})),totalUnique:gunLocations.size,company};
+}
+export function armoryNavV493(source,server=false){
+ const group=server?'const NAV_GROUPS_V233=[':'const NAV_GROUP_DEFAULT_V233=[';
+ return source.replace(group,group+"{id:'weapons',title:'총기/무기고',items:['firearms','firearmRequests']},")
+ .replace(/\{id:'devices',title:'총기\/군수품\/장비',items:\[([^\]]*)\]\}/,(_,items)=>"{id:'devices',title:'군수품/장비',items:["+items.split(',').filter(x=>!['\'firearms\'','\'firearmRequests\''].includes(x)).join(',')+"]}");
+}
+export function armoryClientV493(source,client){
+ source=armoryNavV493(source).replaceAll('총기 관리 현황','총기·무기고 관리 현황')
+ .replace('총기 수량·수리·교체 현황을 확인하고 상태를 관리합니다.','무기고별 보유 수량과 인원별 총기 상태를 함께 관리합니다.')
+ .replace('async function firearmsLoadV410(){firearmsInitV410();','async function firearmsLoadV410(){firearmsInitV410();armoryInitV493();')
+ .replace("const data=await server('getRosterData');s.rows=data.items||[];","const rows=await armoryLoadV493();s.rows=rows;")
+ .replace("v==='trainPersonnel'||v==='trainSupply'","v==='firearms'||v==='firearmRequests'||v==='trainPersonnel'||v==='trainSupply'")
+ .replace('window.logbookReloadState=()=>({busy:!!(', 'window.logbookReloadState=()=>({busy:!!(armorySavingV493||');
+ return insertAppClient(source,client);
+}
+export function armoryServerV493(source,server){
+ source=armoryNavV493(source,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getArmoryV493')return accessGuardV284_('getRosterData',[]);if(name==='saveArmoryV493'){referenceAdminV409_();return accessPolicyV284_();}");
+ return source+'\n'+[armorySpecsV493,armoryCompanyV493,armoryNumberV493,armoryModelV493].map(f=>f.toString()).join('\n')+'\n'+server;
+}

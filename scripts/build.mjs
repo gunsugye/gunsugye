@@ -6,6 +6,7 @@ import {firearmRequestSourceV413,firearmRequestClientV413,firearmRequestsHtmlV41
 import * as rosterLinkageV412 from './roster-linkage.mjs';
 import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
 import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
+import {armoryClientV493,armoryServerV493} from './armory.mjs';
 import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
 import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -126,7 +127,8 @@ js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'
 js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
 js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
 js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt'));
-const css = read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
+js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
+const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
@@ -184,7 +186,7 @@ for (const [path, contents] of assets) {
 write('docs/index.html', assetRequestsHtml(assetPlanHtml(dormPlanHtml(roomAssetHtml(repairHtml(updateDeparturesHtml(updateNavigationHtml(updateJournalHtml(html)))))))));
 html=html.replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,'');
 write('docs/index.html',read('docs/index.html').replace(/<div class="setting-box"><h3>업무 분류 관리<\/h3>[\s\S]*?(?=<div class="setting-box"><h3>접근권한)/,''));
-write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearms" type="button">총기 관리 현황</button>'));
+write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearms" type="button">총기·무기고 관리 현황</button>'));
 write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="firearmRequests" type="button">총기 수정 요청·전수조사</button>').replace('<section id="rosterView"',firearmRequestsHtmlV413+'<section id="rosterView"'));
 write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
@@ -231,6 +233,7 @@ legacy+='\n'+Object.values(rosterLinkageV412).filter(v=>typeof v==='function').m
 legacy=firearmRequestSourceV413(legacy,true).replace("if(action==='duty-request')return personalDutyRequestV400_(input);","if(action==='duty-request')return personalDutyRequestV400_(input);if(action==='firearm-request')return personalFirearmRequestV413_(input);").replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getFirearmRequestsV413','resolveFirearmRequestsV413','setFirearmSurveyV413'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");legacy+='\n'+read('scripts/firearm-requests-server.gs.txt');
 legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt'));
+legacy=armoryServerV493(legacy,read('scripts/armory-server.gs.txt'));
 legacy=trainingAccessServerV473(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...(js+'\n'+instructorJs).matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));

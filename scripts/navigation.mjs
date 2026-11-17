@@ -57,7 +57,15 @@ export function normalizeNavigation(value, defaults, available) {
     let input=groups.find(g=>g.id==='inputManagement');if(!input&&defaults.some(g=>g.id==='inputManagement')){input={id:'inputManagement',title:'입력 및 관리',items:[]};groups.unshift(input);}if(input&&allowed.has('departures')){for(const group of groups)group.items=group.items.filter(id=>id!=='departures');input.items.push('departures');labels.departures='누락자 및 퇴교자 관리';}
   }
   if(!value?.firearmRequestsAddedV413&&allowed.has('firearmRequests')){const group=groups.find(g=>g.items.includes('firearms'));if(group&&!groups.some(g=>g.items.includes('firearmRequests')))group.items.splice(group.items.indexOf('firearms')+1,0,'firearmRequests');}
-  return { schemaVersion: 2, groups, labels, firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.armorySplitV493&&defaults.some(g=>g.id==='weapons')){
+    const old=groups.find(g=>g.items.includes('firearms'))||groups.find(g=>/총기.*군수품.*장비/.test(g.title))||groups.find(g=>g.id==='devices');
+    const oldIndex=old?groups.indexOf(old):groups.length;
+    for(const group of groups){group.items=group.items.filter(id=>!['firearms','firearmRequests'].includes(id));if(/총기.*군수품.*장비/.test(group.title)||group.id==='devices'&&group.title==='장비')group.title='군수품/장비';}
+    let weapons=groups.find(g=>g.id==='weapons');if(!weapons){weapons={id:'weapons',title:'총기/무기고',items:[]};groups.splice(oldIndex,0,weapons);}
+    weapons.items=['firearms','firearmRequests'].filter(id=>allowed.has(id));
+    if(allowed.has('firearms'))labels.firearms='총기·무기고 관리 현황';
+  }
+  return { schemaVersion: 2, groups, labels, armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {

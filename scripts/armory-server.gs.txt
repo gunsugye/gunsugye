@@ -1,0 +1,40 @@
+const ARMORY_TAB_V493='무기고관리';
+function armoryRecordsV493_(ss){
+ const sh=ss.getSheetByName(ARMORY_TAB_V493);if(!sh||sh.getLastRow()<2)return [];
+ if(sh.getLastRow()>100)throw Error('무기고 관리 시트의 기록을 확인하세요.');
+ return sh.getRange(2,1,sh.getLastRow()-1,7).getDisplayValues().map((r,i)=>{
+  if(!r[0])return null;
+  let spares;try{spares=JSON.parse(r[3]||'[]');}catch(e){throw Error('여유 총기번호 기록을 확인하세요: '+r[0]);}
+  if(!Array.isArray(spares)||spares.some(n=>typeof n!=='string'))throw Error('여유 총기번호 형식을 확인하세요.');
+  const quantity=v=>{if(v==='')return null;const n=Number(v);if(!Number.isSafeInteger(n)||n<0)throw Error('무기고 수량 기록을 확인하세요.');return n;};
+  return {id:r[0],pistols:quantity(r[1]),bayonets:quantity(r[2]),spares,version:r[4],updatedAt:r[5],row:i+2};
+ }).filter(Boolean);
+}
+function getArmoryV493(){
+ const policy=accessGuardV284_('getRosterData',[]),cfg=config_(),ss=spreadsheet_(),sh=rosterTab_(ss);
+ const company=policy.reader?armoryCompanyV493(policy.company):'';
+ if(policy.reader&&!/^[1-8]$/.test(company))throw Error('소속 중대를 확인하세요.');
+ return {...armoryModelV493(sh?rosterRows_(sh):[],armoryRecordsV493_(ss),company),canEdit:!policy.reader&&(cfg.canManageUsers||fullEditorsV281_().includes(cfg.email)),readAt:iso_()};
+}
+function saveArmoryV493(input){
+ referenceAdminV409_();
+ return lockAndRun_(()=>{
+  const ss=spreadsheet_(),spec=armorySpecsV493().find(g=>g.id===input?.id);if(!spec)throw Error('무기고를 확인하세요.');
+  const records=armoryRecordsV493_(ss),old=records.find(r=>r.id===spec.id);
+  if(String(input.expectedVersion||'')!==(old?.version||''))throw Error('다른 사용자가 수정했습니다. 다시 불러온 후 저장하세요.');
+  const quantity=value=>{if(value===''||value===null)return null;const n=Number(value);if(!Number.isSafeInteger(n)||n<0||n>100000)throw Error('수량은 0 이상의 정수로 입력하세요.');return n;};
+  const pistols=quantity(input.pistols),bayonets=quantity(input.bayonets);
+  if(!Array.isArray(input.spares)||input.spares.length>1000)throw Error('여유 총기번호는 1,000개까지 입력할 수 있습니다.');
+  const spares=input.spares.map(value=>{if(typeof value!=='string')throw Error('총기번호를 확인하세요.');const n=value.normalize('NFKC').trim();if(!n||n.length>60||/[\r\n]/.test(n))throw Error('총기번호는 한 줄에 하나씩 60자 이내로 입력하세요.');return n;});
+  const keys=spares.map(armoryNumberV493);if(new Set(keys).size!==keys.length)throw Error('중복된 여유 총기번호가 있습니다.');
+  const roster=rosterTab_(ss),assigned=new Set((roster?rosterRows_(roster):[]).map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));
+  const elsewhere=new Set(records.filter(r=>r.id!==spec.id).flatMap(r=>r.spares.map(armoryNumberV493)));
+  if(keys.some(n=>assigned.has(n)))throw Error('배정 명단에 있는 총기번호는 여유 총기로 중복 등록할 수 없습니다.');
+  if(keys.some(n=>elsewhere.has(n)))throw Error('다른 무기고에 등록된 여유 총기번호가 있습니다.');
+  const serialized=JSON.stringify(spares);if(serialized.length>45000)throw Error('여유 총기번호 기록 길이를 줄여주세요.');
+  let sh=ss.getSheetByName(ARMORY_TAB_V493);if(!sh){sh=ss.insertSheet(ARMORY_TAB_V493);sh.getRange(1,1,1,7).setValues([['무기고ID','권총 수량','대검 수량','여유 총기번호','기록 버전','수정 시각','수정 계정']]);sh.setFrozenRows(1);}
+  const row=old?.row||sh.getLastRow()+1;ensureRows_(sh,row);
+  sh.getRange(row,1,1,7).setValues([[spec.id,pistols??'',bayonets??'',serialized,Utilities.getUuid(),iso_(),safeCell_(config_().email)]]);
+  return {ok:true};
+ });
+}
