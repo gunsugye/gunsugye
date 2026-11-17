@@ -16,8 +16,12 @@ const TRAIN_V473=Object.freeze({
  AUDIT_KEYS:['id','trainingId','action','target','detail','at','by'],
  AUDIT_HEAD:['기록ID','훈련ID','작업','대상','세부내용','변경시각','변경계정']
 });
-const TRAIN_V473_TYPES=Object.freeze(['대대장생도','대대군수참모생도','중대장생도','지도생도','예비생도']);
+const TRAIN_V473_TYPES=Object.freeze(['대대장생도','대대작전참모생도','대대인사참모생도','대대군수참모생도','대대체육참모생도','중대장생도','지도생도','예비생도']);
 const TRAIN_V473_UNITS=Object.freeze(['대대본부','1','2','3','4']);
+const TRAIN_V473_FIXED_POSTS=Object.freeze([
+ {unit:'대대본부',type:'대대장생도'},{unit:'대대본부',type:'대대작전참모생도'},{unit:'대대본부',type:'대대인사참모생도'},{unit:'대대본부',type:'대대군수참모생도'},{unit:'대대본부',type:'대대체육참모생도'},
+ ...['1','2','3','4'].map(unit=>({unit,type:'중대장생도'}))
+]);
 const TRAIN_V473_ASSET_KINDS=Object.freeze(['군수품','피복']);
 const TRAIN_V473_REQUEST_STATES=Object.freeze(['대기','승인','반려']);
 const TRAIN_V473_SABER_ROLES=Object.freeze([
@@ -63,6 +67,7 @@ function trainV473PersonScope_(actor,people){
  return [];
 }
 function trainV473SaberOptions_(){try{const sh=spreadsheet_().getSheetByName(SABER_V276.TAB);return !sh||sh.getLastRow()<2?[]:sh.getRange(2,1,sh.getLastRow()-1,10).getDisplayValues().filter(r=>r[0]&&r[5]).map(r=>({roleId:r[0],group:r[1],unit:r[2],role:r[3],holder:r[4],number:r[5],status:r[6],detail:r[7]}));}catch(e){return [];}}
+function trainV473RegularCandidates_(){try{return rosterRows_(spreadsheet_()).filter(p=>p.name&&p.cohort&&p.company).map(p=>({id:p.id,name:p.name,cohort:String(p.cohort),company:String(p.company).replace(/\D/g,''),cadetNumber:p.cadetNumber||''}));}catch(e){return [];}}
 
 function setupTrainingSystemV473(){
  if(!trainV473Admin_())throw Error('최초 준비는 군수계 관리자만 실행할 수 있습니다.');return lockAndRun_(()=>{const ss=trainV473Book_(true);trainV473SetupSheets_(ss);trainV473Audit_(ss,'v2 최초 준비','훈련 시스템',{legacyPreserved:true,journalPreserved:true});return getTrainingWorkspaceV473();});
@@ -80,7 +85,7 @@ function getTrainingWorkspaceV473(){
  const allRequests=trainV473Rows_(ss,TRAIN_V473.REQUESTS,TRAIN_V473.REQUEST_KEYS,30000).filter(x=>x.trainingId===cfg.trainingId),requests=actor.manager?allRequests:allRequests.filter(x=>ids.has(x.personId)&&(!actor.instructor||x.requestedBy===actor.email));
  const allLoans=trainV473Rows_(ss,TRAIN_V473.SABER,TRAIN_V473.SABER_KEYS,5000).filter(x=>x.trainingId===cfg.trainingId),loans=actor.manager?allLoans:allLoans.filter(x=>x.personId===actor.person?.id);
  const counts={people:allPeople.length,recruits:allPeople.filter(p=>p.type==='예비생도').length,instructors:allPeople.filter(p=>p.type==='지도생도').length,pending:allRequests.filter(r=>r.status==='대기').length,activeLoans:allLoans.filter(r=>r.status==='대여 중').length,unassigned:allPeople.filter(p=>p.type==='예비생도'&&!p.instructorId).length};
- return {initialized:true,schemaVersion:TRAIN_V473.VERSION,config:cfg,role:actor.role,actorId:actor.person?.id||'',canManage:actor.manager,canRequest:actor.manager||actor.instructor,people,assets,requests,loans,counts,saberOptions:actor.manager||actor.commander?trainV473SaberOptions_():[],saberRoles:TRAIN_V473_SABER_ROLES,journalPreserved:true,bookUrl:actor.admin?ss.getUrl():''};
+ return {initialized:true,schemaVersion:TRAIN_V473.VERSION,config:cfg,role:actor.role,actorId:actor.person?.id||'',canManage:actor.manager,canRequest:actor.manager||actor.instructor,people,assets,requests,loans,counts,saberOptions:actor.manager||actor.commander?trainV473SaberOptions_():[],saberRoles:TRAIN_V473_SABER_ROLES,fixedPosts:TRAIN_V473_FIXED_POSTS,regularCandidates:actor.manager?trainV473RegularCandidates_():[],journalPreserved:true,bookUrl:actor.admin?ss.getUrl():''};
 }
 function saveTrainingConfigV473(input){
  trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false);trainV473SetupSheets_(ss);const old=trainV473Config_(ss),cohort=text_(input?.cohort,20).replace(/기$/,'');if(!cohort)throw Error('예비생도 기수를 입력하세요.');
@@ -89,13 +94,13 @@ function saveTrainingConfigV473(input){
   const next={...old,schemaVersion:TRAIN_V473.VERSION,cohort,startDate,endDate,status:old.status==='이관완료'?'이관완료':'진행 중',capacity:String(capacity),updatedAt:iso_(),updatedBy:config_().email};trainV473Write_(ss.getSheetByName(TRAIN_V473.CFG),TRAIN_V473.CFG_KEYS,next,2);trainV473Audit_(ss,'운영 설정 수정','훈련 설정',{cohort,startDate,endDate,capacity});return next;});
 }
 function trainV473CleanPerson_(input,old,cfg){
- const type=text_(input?.type,30),unit=trainV473NormUnit_(input?.unit),name=text_(input?.name,60),email=String(input?.email||'').trim().toLowerCase();if(!TRAIN_V473_TYPES.includes(type))throw Error('인원 구분을 확인하세요.');if(!TRAIN_V473_UNITS.includes(unit))throw Error('소속은 대대본부 또는 1~4중대여야 합니다.');if(!name)throw Error('이름을 입력하세요.');
- if(['대대장생도','대대군수참모생도'].includes(type)&&unit!=='대대본부')throw Error(type+'는 대대본부 소속이어야 합니다.');if(['중대장생도','지도생도','예비생도'].includes(type)&&unit==='대대본부')throw Error(type+'는 1~4중대 소속이어야 합니다.');if(type!=='예비생도'&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw Error('담당자 로그인에 사용할 이메일을 입력하세요.');
- return {id:old?.id||Utilities.getUuid(),trainingId:cfg.trainingId,cohort:cfg.cohort,type,unit,name,cadetNumber:text_(input?.cadetNumber,40),email:type==='예비생도'?email:email,phone:text_(input?.phone,40),instructorId:type==='예비생도'?text_(input?.instructorId,100):'',regularCompany:type==='예비생도'?String(input?.regularCompany||'').replace(/\D/g,''):'',firearmNumber:type==='예비생도'?text_(input?.firearmNumber,60):'',firearmStatus:type==='예비생도'?(canonicalRepairStateV216_(text_(input?.firearmStatus,40))||'정상'):'',memo:text_(input?.memo,1000),active:'예',transferred:old?.transferred||'',transferredAt:old?.transferredAt||'',updatedAt:iso_(),updatedBy:config_().email};
+ const type=text_(input?.type,30),unit=trainV473NormUnit_(input?.unit),name=text_(input?.name,60),email=String(input?.email||'').trim().toLowerCase(),isRecruit=type==='예비생도',isBattalion=type.startsWith('대대');if(!TRAIN_V473_TYPES.includes(type))throw Error('인원 구분을 확인하세요.');if(!TRAIN_V473_UNITS.includes(unit))throw Error('소속은 대대본부 또는 1~4중대여야 합니다.');if(!name)throw Error('이름을 입력하세요.');
+ if(isBattalion&&unit!=='대대본부')throw Error(type+'는 대대본부 소속이어야 합니다.');if(['중대장생도','지도생도','예비생도'].includes(type)&&unit==='대대본부')throw Error(type+'는 1~4중대 소속이어야 합니다.');
+ return {id:old?.id||Utilities.getUuid(),trainingId:cfg.trainingId,cohort:text_(input?.cohort,20).replace(/기$/,'')||(isRecruit?cfg.cohort:''),type,unit,name,cadetNumber:text_(input?.cadetNumber,40),email,phone:text_(input?.phone,40),instructorId:isRecruit?text_(input?.instructorId,100):'',regularCompany:String(input?.regularCompany||'').replace(/\D/g,''),firearmNumber:isRecruit?text_(input?.firearmNumber,60):'',firearmStatus:isRecruit?(canonicalRepairStateV216_(text_(input?.firearmStatus,40))||'정상'):'',memo:text_(input?.memo,1000),active:'예',transferred:old?.transferred||'',transferredAt:old?.transferredAt||'',updatedAt:iso_(),updatedBy:config_().email};
 }
 function saveTrainingPersonV473(input){
  trainV473AssertManager_();return lockAndRun_(()=>{const ss=trainV473Book_(false),cfg=trainV473Config_(ss);trainV473AssertOpen_(cfg);const rows=trainV473Rows_(ss,TRAIN_V473.PEOPLE,TRAIN_V473.PERSON_KEYS,5000),old=rows.find(p=>p.id===String(input?.id||''));if(input?.id&&!old)throw Error('수정할 인원을 찾지 못했습니다.');const v=trainV473CleanPerson_(input,old,cfg),current=rows.filter(p=>p.trainingId===cfg.trainingId&&p.active!=='아니요'&&p.id!==v.id);
-  if(v.cadetNumber&&current.some(p=>p.cadetNumber===v.cadetNumber))throw Error('같은 교번이 이미 등록되어 있습니다.');if(v.email&&current.some(p=>String(p.email).toLowerCase()===v.email))throw Error('같은 이메일이 이미 등록되어 있습니다.');if(v.type==='대대군수참모생도'&&current.some(p=>p.type===v.type))throw Error('대대군수참모생도는 한 명만 등록할 수 있습니다.');if(v.type==='대대장생도'&&current.some(p=>p.type===v.type))throw Error('대대장생도는 한 명만 등록할 수 있습니다.');if(v.type==='중대장생도'&&current.some(p=>p.type===v.type&&p.unit===v.unit))throw Error(v.unit+'중대장생도는 한 명만 등록할 수 있습니다.');
+  if(v.cadetNumber&&current.some(p=>p.cadetNumber===v.cadetNumber))throw Error('같은 교번이 이미 등록되어 있습니다.');if(v.email&&current.some(p=>String(p.email).toLowerCase()===v.email))throw Error('같은 이메일이 이미 등록되어 있습니다.');if(TRAIN_V473_FIXED_POSTS.some(x=>x.type===v.type&&x.unit===v.unit)&&current.some(p=>p.type===v.type&&p.unit===v.unit))throw Error(v.unit+' '+v.type+'는 한 명만 등록할 수 있습니다.');
   if(old?.type==='지도생도'&&(v.type!=='지도생도'||v.unit!==old.unit)&&current.some(p=>p.type==='예비생도'&&p.instructorId===old.id))throw Error('담당 예비생도를 다른 지도생도에게 먼저 이동하세요.');
   if(v.type==='예비생도'&&v.instructorId){const leader=current.concat(old?[old]:[]).find(p=>p.id===v.instructorId&&p.type==='지도생도'&&p.active!=='아니요');if(!leader||leader.unit!==v.unit)throw Error('같은 중대의 지도생도를 선택하세요.');const assigned=current.filter(p=>p.type==='예비생도'&&p.instructorId===leader.id).length;if(assigned>=Number(cfg.capacity||8))throw Error(leader.name+' 지도생도의 담당 인원이 정원 '+(cfg.capacity||8)+'명에 도달했습니다.');}
   trainV473Write_(ss.getSheetByName(TRAIN_V473.PEOPLE),TRAIN_V473.PERSON_KEYS,v,old?.row);trainV473Audit_(ss,old?'인원 수정':'인원 등록',v.id,{type:v.type,unit:v.unit,name:v.name});return v;});

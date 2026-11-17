@@ -44,6 +44,11 @@ test('새 훈련 서버는 기존 일지를 지우지 않고 요청·예도·이
  assert.match(source,/function startNewTrainingCycleV473\(\)/);
  assert.match(source,/old\.status!==['"]이관완료['"]/);
  assert.match(source,/previousTrainingId/);
+ assert.match(source,/대대작전참모생도/);
+ assert.match(source,/대대인사참모생도/);
+ assert.match(source,/대대체육참모생도/);
+ assert.match(source,/TRAIN_V473_FIXED_POSTS/);
+ assert.match(source,/trainV473RegularCandidates_/);
 });
 
 test('생성 화면은 담당자 요청과 대대군수참모 처리 API를 모두 연결한다',()=>{
@@ -52,5 +57,7 @@ test('생성 화면은 담당자 요청과 대대군수참모 처리 API를 모�
  for(const id of ['trainDashboardV473','trainOrgV473','trainSupplyRowsV473','trainUniformRowsV473','trainSaberRowsV473','trainHandoffResultV473'])assert.match(html,new RegExp(`id="${id}"`));
  for(const method of ['startNewTrainingCycleV473','getTrainingWorkspaceV473','submitTrainingRequestV473','resolveTrainingRequestV473','saveTrainingSaberLoanV473','previewTrainingHandoffV473','applyTrainingHandoffV473'])assert.ok(methods.includes(method),method);
  assert.match(read('scripts/training-management.mjs'),/trainingScopeV473=true/);
+ assert.match(client,/trainPersonRegularPickV473/);
+ assert.match(client,/trainFixedPostsV477/);
 });
 
