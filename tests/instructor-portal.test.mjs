@@ -49,6 +49,17 @@ test('임시 접속 수정 요청도 담당 인원 검증과 관리자 승인 �
  assert.equal(actor.manager,false);assert.equal(actor.email,'temporary:guide');
  assert.equal(context.trainV473Actor_().email,'guide@example.com');
 });
+test('등록과 인증 없이 예시 화면을 열고 체험 요청은 서버에 전송하지 않는다',async()=>{
+ const nodes=new Map();const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',hidden:false,innerHTML:'',textContent:'',setAttribute(){},addEventListener(){},querySelectorAll(){return [];},querySelector(){return {setAttribute(){}};},close(){},reset(){},showModal(){}});return nodes.get(id);};
+ let calls=0;
+ const context=vm.createContext({window:{LOGBOOK_CONFIG:{}},document:{getElementById:node},fetch:()=>{calls++;throw Error('미리보기는 서버 호출 금지');}});
+ vm.runInContext(read('scripts/instructor-portal.js'),context);
+ assert.equal(node('workspace').hidden,false);assert.equal(node('login').hidden,true);
+ assert.match(node('identity').textContent,/담당 8명/);assert.match(node('people').innerHTML,/전투복 상의/);assert.match(node('message').textContent,/미리보기/);
+ node('personId').value='preview-0';node('itemName').value='전투화';node('reason').value='미리보기 사이즈 변경';
+ await node('requestForm').onsubmit({preventDefault(){}});
+ assert.match(node('requests').innerHTML,/미리보기 사이즈 변경/);assert.match(node('message').textContent,/실제 시트에는 저장되지/);assert.equal(calls,0);
+});
 test('별도 앱의 생성 파일과 조회·요청 API가 연결된다',()=>{
  assert.doesNotThrow(()=>new Function(read('scripts/instructor-portal.js')));
  const methods=JSON.parse(read('apps-script/methods.json'));
