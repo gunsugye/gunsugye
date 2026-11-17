@@ -1,1 +1,1 @@
-export const releaseDetails={"version":"4.74","title":"성무기초군사훈련 일지 우선 배치","notes":["성무기초군사훈련 메뉴에서 일자별 업무일지와 캘린더를 최상단에 배치합니다."]};
+export const releaseDetails={"version":"4.75","title":"좌측 메뉴 공간 확보","notes":["좌측 하단 저장 안내를 제거해 모든 메뉴를 한 화면에서 확인할 수 있게 합니다."]};
