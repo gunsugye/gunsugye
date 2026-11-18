@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+await import('./saber-groups.test.mjs');
 await import('./condition-states.test.mjs');
 await import('./armory.test.mjs');
 await import('./instructor-portal.test.mjs');

@@ -20,8 +20,8 @@ test('군수품 선택지는 상태 값과 표시가 일치하며 수리 필요�
 test('서버에서 읽은 상태만 정규화하고 세부사항·이름과 검증 토큰은 보존한다',()=>{
  let output;const context=vm.createContext({ContentService:{createTextOutput:s=>{output=s;return {setMimeType(){}};},MimeType:{JSON:'json'}}});
  vm.runInContext(read('apps-script/Gateway.gs'),context);
- context.pagesJson_({ok:true,result:{status:'교체필요',firearmStatus:'사용불가',detail:'교체필요 부품 설명',snapshot:'old-token',slots:[{status:'수리 필요(보고)'}]}});
- const data=JSON.parse(output).result;assert.equal(data.status,'사용 불가');assert.equal(data.firearmStatus,'사용 불가');assert.equal(data.slots[0].status,'수리 필요');assert.equal(data.detail,'교체필요 부품 설명');assert.equal(data.snapshot,'old-token');
+ context.pagesJson_({ok:true,result:{status:'교체필요',firearmStatus:'사용불가',detail:'교체필요 부품 설명',snapshot:'old-token',slots:[{status:'수리 필요(보고)'},{status:'정상',unavailable:true}]}});
+ const data=JSON.parse(output).result;assert.equal(data.status,'사용 불가');assert.equal(data.firearmStatus,'사용 불가');assert.equal(data.slots[0].status,'수리 필요');assert.equal(data.slots[1].status,'사용 불가');assert.equal(data.detail,'교체필요 부품 설명');assert.equal(data.snapshot,'old-token');
 });
 test('서버의 저장 검증은 과거 명칭도 받아 사용 불가로 통일한다',()=>{
  const source=conditionServerV497("const REPAIR_STATES_V216 = Object.freeze(['정상','수리 필요','교체 필요']);\nfunction canonicalRepairStateV216_(value){\n return value;\n}"),fn=source.match(/function canonicalRepairStateV216_\(value\)\{[\s\S]*?\n\}/)?.[0];assert.ok(fn);
@@ -36,4 +36,11 @@ test('개인·지도생도 앱과 정적 선택지에도 과거 상태명이나 
  const tuple="[['정상','정상'],['수리 필요','수리 필요'],['수리 필요','수리 필요']]";
  assert.equal(conditionTextV497(tuple),"[['정상','정상'],['수리 필요','수리 필요'],['사용 불가','사용 불가']]");
  assert.match(read('docs/me/portal.js'),/text.includes\('사용불가'\)/);
+});
+test('사용 불가 체크박스를 없애고 상태 변경에서 해당 값을 함께 갱신한다',()=>{
+ const personal=read('docs/me/portal.js'),app=read('docs/assets/app.js');
+ assert.doesNotMatch(personal,/input.type='checkbox'|personal-check-header/);
+ assert.match(personal,/slot.unavailable=select.value==='사용 불가'/);
+ assert.doesNotMatch(app,/data-seat-unavailable|data-request-unavailable/);
+ assert.match(personal,/function render\(data\)\{personalFirearmRenderV413\(data\);/);
 });

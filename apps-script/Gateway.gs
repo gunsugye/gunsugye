@@ -64,6 +64,7 @@ function pagesCheckSession_(actor) {
 function pagesJson_(value) {
   return ContentService.createTextOutput(JSON.stringify(value,function(key,item){
     if(['status','firearmStatus'].includes(key)&&typeof item==='string'){
+      if(key==='status'&&this.unavailable===true)return '사용 불가';
       const compact=item.replace(/\s/g,'');
       if(compact==='교체필요'||compact==='사용불가')return '사용 불가';
       if(compact.includes('수리필요'))return '수리 필요';

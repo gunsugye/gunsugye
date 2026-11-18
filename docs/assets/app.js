@@ -2873,7 +2873,7 @@ function assetCloseRoomV245(){
  qsa('[data-asset-room]',$('assetRoomRowsV244')).forEach(b=>{b.textContent='점검 / 수정';b.setAttribute('aria-expanded','false');});
 }
 function assetEditorSnapshotV244(row){
- return JSON.stringify(qsa('[data-asset-position]',row).map(card=>({position:card.dataset.assetPosition,status:card.querySelector('[data-seat-status]').value,details:card.querySelector('[data-seat-details]').value,unavailable:card.querySelector('[data-seat-unavailable]').checked})));
+ return JSON.stringify(qsa('[data-asset-position]',row).map(card=>({position:card.dataset.assetPosition,status:card.querySelector('[data-seat-status]').value,details:card.querySelector('[data-seat-details]').value,unavailable:card.querySelector('[data-seat-status]').value==='사용 불가'})));
 }
 function assetRoomTitleV244(room){return [room.building,room.floor,room.corridor,room.room+'호'].join(' · ');}
 function assetOpenRoomV244(id){
@@ -2888,12 +2888,12 @@ function assetOpenRoomV244(id){
   const cards=positions.map(position=>{
    const s=r?.slots?.find(x=>x.position===position)||{status:'',details:'',unavailable:false};
    const label=escapeH(item.name+' '+(position==='common'?'공용':position+'번'));
-   return '<div class="asset-seat-card" data-asset-position="'+position+'"><strong>'+ (position==='common'?'공용':position+'번')+'</strong><select class="field" aria-label="'+label+' 상태" data-seat-status '+readonly+'><option value="">미점검</option>'+ASSET_STATUSES_V246.map(status=>'<option value="'+escapeH(status)+'" '+(s.status===status?'selected':'')+'>'+escapeH(status)+'</option>').join('')+'</select><textarea class="field" aria-label="'+label+' 세부사항" data-seat-details maxlength="500" rows="1" placeholder="세부사항" '+readonly+'>'+escapeH(s.details)+'</textarea><label class="asset-unavailable"><input type="checkbox" aria-label="'+label+' 사용 불가" data-seat-unavailable '+(s.unavailable?'checked':'')+' '+readonly+'>사용 불가</label></div>';
+   return '<div class="asset-seat-card" data-asset-position="'+position+'"><strong>'+ (position==='common'?'공용':position+'번')+'</strong><select class="field" aria-label="'+label+' 상태" data-seat-status '+readonly+'><option value="">미점검</option>'+ASSET_STATUSES_V246.map(status=>'<option value="'+escapeH(status)+'" '+(s.status===status?'selected':'')+'>'+escapeH(status)+'</option>').join('')+'</select><textarea class="field" aria-label="'+label+' 세부사항" data-seat-details maxlength="500" rows="1" placeholder="세부사항" '+readonly+'>'+escapeH(s.details)+'</textarea></div>';
   }).join('');
   return '<tr data-asset-item="'+escapeH(item.id)+'"><td><strong>'+escapeH(item.name)+'</strong></td><td>'+legacy+'<div class="asset-seat-grid">'+cards+'</div></td><td><button type="button" class="btn btn-soft asset-owner" data-asset-save="'+escapeH(item.id)+'" '+readonly+'>저장</button></td></tr>';
  }).join('');
  qsa('[data-asset-item]',$('assetEditRowsV244')).forEach(row=>row.dataset.assetInitial=assetEditorSnapshotV244(row));
- $('assetEditHelpV244').textContent='각 자리 또는 공용품목의 상태·세부사항·사용 불가를 입력한 뒤 저장하세요. 미선택 자리는 미점검으로 남습니다.';
+ $('assetEditHelpV244').textContent='각 자리 또는 공용품목의 상태·세부사항을 입력한 뒤 저장하세요. 미선택 자리는 미점검으로 남습니다.';
  assetMountEditorV245(id);
 }
 function assetRowFromFormV244(row){
@@ -2958,7 +2958,7 @@ async function assetApplyBulkV313(){
  if(assetSavingV244||!mustEdit()||!assetDataV244?.initialized)return;
  if(assetDirtyV244.size)return alert('수정 중인 호실을 먼저 저장하거나 닫아 주세요.');
  const rooms=assetRoomsFilteredV244(),itemId=$('assetBulkKindV246').value||'ALL';
- const options={itemId,status:$('assetBulkStatusV246').value,position:$('assetBulkPositionV313').value,unavailable:$('assetBulkUnavailableV313').value,details:$('assetBulkDetailV246').value.trim(),includeMissing:$('assetBulkFillMissingV246').checked};
+ const options={itemId,status:$('assetBulkStatusV246').value,position:$('assetBulkPositionV313').value,unavailable:$('assetBulkStatusV246').value==='사용 불가'?'yes':'no',details:$('assetBulkDetailV246').value.trim(),includeMissing:$('assetBulkFillMissingV246').checked};
  if(!rooms.length)return alert('조회 범위에 호실이 없습니다.');
  if(!ASSET_STATUSES_V246.includes(options.status)||options.details.length>500)return alert('상태와 세부사항을 확인하세요.');
  const targets=itemId==='ALL'?assetDataV244.items:assetDataV244.items.filter(x=>x.id===itemId);
@@ -2967,7 +2967,7 @@ async function assetApplyBulkV313(){
   const key=room.id+'|'+item.id,rec=recs.get(key);if(rec)snapshot.push([key,rec.updatedAt||'']);if(rec||options.includeMissing)slots+=options.position==='all'?positions.length:1;
  }));
  if(!slots)return alert('선택 범위와 자리에 해당하는 비품이 없습니다.');
- const place=$('assetBulkPositionV313').selectedOptions[0].textContent,unavailable=$('assetBulkUnavailableV313').selectedOptions[0].textContent;
+ const place=$('assetBulkPositionV313').selectedOptions[0].textContent,unavailable=$('assetBulkStatusV246').value==='사용 불가'?'사용 불가':'사용 가능';
  if(!confirm('현재 조회 범위 '+rooms.length+'호 · '+slots+'개 자리/공용 비품에 적용합니다.\n품목: '+(itemId==='ALL'?'전체 품목':targets[0].name)+'\n자리: '+place+'\n상태: '+options.status+'\n사용불가: '+unavailable+'\n세부사항: '+(options.details?'입력한 내용으로 변경':'기존 내용 유지')+'\n\n선택하지 않은 자리와 조회 범위 밖의 호실은 유지됩니다. 적용할까요?'))return;
  assetSavingV244=true;['assetBulkApplyV246','assetBulkNormalV246'].forEach(id=>$(id).disabled=true);
  try{const result=await enqueue(()=>server('bulkSetDormInventoryScopeV246',rooms.map(x=>x.id),options,snapshot));await assetLoadV244();toast('일괄 입력 완료 · 수정 '+result.updated+'건 / 신규 '+result.created+'건');}
@@ -2981,7 +2981,7 @@ async function assetResetRecordsV313(){
  try{
   const preview=await server('getDormInventoryResetV313');
   if(!preview.records)return toast('초기화할 점검 기록이 없습니다.');
-  if(!confirm('생활실 비품 점검 기록 '+preview.records+'건을 모두 초기화할까요?\n상태·세부사항·사용 불가 체크가 삭제됩니다.\n품목 목록과 생활실 목록은 유지하고 원본 점검 기록은 백업 시트로 보관합니다.'))return;
+  if(!confirm('생활실 비품 점검 기록 '+preview.records+'건을 모두 초기화할까요?\n상태·세부사항 기록이 삭제됩니다.\n품목 목록과 생활실 목록은 유지하고 원본 점검 기록은 백업 시트로 보관합니다.'))return;
   assetSavingV244=true;
   const result=await enqueue(()=>server('clearDormInventoryRecordsV313',preview.token));
   assetCurrentRoomV244='';assetDirtyV244.clear();await assetLoadV244();
@@ -3485,20 +3485,34 @@ function saberStatsV277(){
  ];
  $('saberStatsV276').innerHTML=summary.map(([label,count,kind])=>'<div class="saber-stat-v277 '+kind+'"><small>'+label+'</small><strong>'+count+'</strong></div>').join('');
 }
+function saberDutyGroupV498(item){
+ const unit=String(item.unit||'').normalize('NFKC').replace(/\s/g,'');
+ if(unit==='전대')return '전대 근무';
+ if(/^[12]대대$/.test(unit))return '대대 근무';
+ if(/^[1-8]중대$/.test(unit))return '중대 근무';
+ if(/동기회/.test(unit))return '동기회';
+ if(/명예/.test(unit))return '명예위원회';
+ if(/생발|생도생활발전/.test(unit))return '생도생활발전위원회';
+ return item.group||unit||'기타 근무';
+}
 function saberRenderV276(){
  const data=saberDataV276;if(!data)return;
  const current=$('saberUnitV276').value;
- const units=[...new Set(data.items.map(x=>x.unit))];
- $('saberUnitV276').innerHTML='<option value="">전체 조직</option>'+units.map(x=>'<option value="'+escapeH(x)+'">'+escapeH(x)+'</option>').join('');
+ const units=[...new Set(data.items.map(saberDutyGroupV498))];
+ $('saberUnitV276').innerHTML='<option value="">전체 근무</option>'+units.map(x=>'<option value="'+escapeH(x)+'">'+escapeH(x)+'</option>').join('');
  if(units.includes(current))$('saberUnitV276').value=current;
  const all=data.items,unit=$('saberUnitV276').value,statusFilter=$('saberStatusV277').value,term=$('saberSearchV276').value.trim().toLowerCase();
- const list=all.filter(x=>(!unit||x.unit===unit)&&(!statusFilter||(statusFilter==='미확인'?!x.status:x.status===statusFilter))&&(!term||[x.unit,x.role,x.detail].join(' ').toLowerCase().includes(term)));
+ const list=all.filter(x=>(!unit||saberDutyGroupV498(x)===unit)&&(!statusFilter||(statusFilter==='미확인'?!x.status:x.status===statusFilter))&&(!term||[x.unit,x.role,x.detail].join(' ').toLowerCase().includes(term)));
  saberStatsV277();
  const writable=canEdit&&data.canEdit;
- $('saberRowsV276').innerHTML=list.map(p=>{
+ const root=$('saberRowsV276'),open=new Set([...root.querySelectorAll('[data-saber-group][open]')].map(node=>node.dataset.saberGroup));
+ const renderRowsV498=items=>items.map(p=>{
   const state=p.status==='수리 필요'?'saber-repair-v276':p.status==='사용 불가'?'saber-replace-v277':'';
   return '<tr data-saber-key="'+escapeH(p.id)+'" class="'+state+'"><td>'+escapeH(p.unit)+'</td><td class="saber-role-v277">'+escapeH(p.role)+(p.trainingLoan?'<small style="display:block;color:#b85f16">'+escapeH('성무훈련 대여 중 · '+[p.trainingLoan.unit==='대대본부'?'대대본부':p.trainingLoan.unit+'중대',p.trainingLoan.name].filter(Boolean).join(' · '))+'</small>':'')+((p.linkedCadets||[]).length?'<small style="display:block">'+escapeH((p.linkedCadets.length>1?'중복 확인 · ':'')+p.linkedCadets.map(x=>[x.cohort?x.cohort+'기':'',x.company?x.company+'중대':'',x.name].filter(Boolean).join(' ')).join(', '))+'</small>':'')+'</td><td><select class="saber-entry-v276 saber-status-v277" data-saber-field="status" '+(writable?'':'disabled')+'><option value="" '+(!p.status?'selected':'')+'>상태 선택</option><option value="정상" '+(p.status==='정상'?'selected':'')+'>정상</option><option value="수리 필요" '+(p.status==='수리 필요'?'selected':'')+'>수리 필요</option><option value="사용 불가" '+(p.status==='사용 불가'?'selected':'')+'>사용 불가</option></select></td><td class="saber-detail-cell-v277"><textarea class="saber-entry-v276 saber-detail-v276" data-saber-field="detail" maxlength="1500" placeholder="점검 내용·조치사항" '+(writable?'':'disabled')+'>'+escapeH(p.detail)+'</textarea><small class="saber-save-state-v277" role="status" aria-live="polite">'+(writable?'변경 시 자동 저장':'조회 전용')+'</small></td></tr>';
  }).join('')||'<tr><td colspan="4">검색 결과가 없습니다.</td></tr>';
+ const groupNames=['전대 근무','대대 근무','중대 근무','동기회','명예위원회','생도생활발전위원회'];
+ const groups=[...new Set(list.map(saberDutyGroupV498))].sort((a,b)=>(groupNames.indexOf(a)<0?99:groupNames.indexOf(a))-(groupNames.indexOf(b)<0?99:groupNames.indexOf(b)));
+ root.innerHTML=groups.map(group=>{const items=list.filter(item=>saberDutyGroupV498(item)===group);return '<details data-saber-group="'+escapeH(group)+'" '+(open.has(group)||unit?'open':'')+' class="saber-duty-group-v498"><summary>'+escapeH(group)+' · '+items.length+'개 직책</summary><div class="eq-scroll"><table class="eq-table saber-table-v277"><thead><tr><th>조직</th><th>직책</th><th>상태</th><th>세부사항</th></tr></thead><tbody>'+renderRowsV498(items)+'</tbody></table></div></details>';}).join('')||'<p>검색 결과가 없습니다.</p>';
  $('saberInfoV276').textContent=list.length+'개 직책 표시 · 상태 변경과 세부사항 입력은 자동 저장됩니다.';
  $('saberSyncTitlesV277').classList.toggle('hidden',!data.titleSyncNeeded||!writable);
 }
@@ -4947,19 +4961,19 @@ document.addEventListener('click',async e=>{
  try{await server('deleteDormInventoryRequestV349',r.id,r.status,r.resolvedAt||'');card.removeAttribute('data-request-edited');assetRequestBusyV336=false;await assetRequestsLoadV336();toast('요청 삭제 완료');}
  catch(error){$('assetRequestsStatusV336').textContent=error.message;}finally{assetRequestBusyV336=false;card.inert=false;}
 });
-function assetRequestsTextV336(slot){return slot?[slot.status||'미점검',slot.unavailable?'사용 불가':'',slot.details||''].filter(Boolean).join(' · '):'미점검';}
+function assetRequestsTextV336(slot){return slot?[slot.unavailable?'사용 불가':slot.status||'미점검',slot.details||''].filter(Boolean).join(' · '):'미점검';}
 async function assetRequestsLoadV336(){if(assetRequestBusyV336)return;$('assetRequestsStatusV336').textContent='불러오는 중…';try{const data=await server('getDormInventoryRequestsV336');assetRequestsV336=data.requests||[];assetRequestsRenderV336();$('assetRequestsStatusV336').textContent='대기 '+assetRequestsV336.filter(r=>r.status==='대기').length+'건';}catch(e){$('assetRequestsStatusV336').textContent=e.message;}}
 function assetRequestsRenderV336(){
  const rows=assetRequestsV336.filter(r=>$('assetRequestsFilterV336').value==='전체'||r.status==='대기');
  $('assetRequestsListV336').innerHTML=rows.map(r=>'<article class="asset-request-card" data-request-id="'+escapeH(r.id)+'"><h3>'+escapeH([r.room.building,r.room.floor,r.room.room+'호',r.position?r.position+'번':'공용'].join(' · '))+'</h3><p class="panel-sub">'+escapeH([String(r.requester.cohort||'').normalize('NFKC').trim().replace(/(?:기)+$/,'')+'기',String(r.requester.company||'').normalize('NFKC').trim().replace(/(?:중대)+$/,'')+'중대',r.requester.name,r.createdAt,r.status].join(' · '))+'</p><div class="asset-request-scroll"><table class="asset-request-table"><thead><tr><th>품목 · 자리</th><th>현재 기록</th><th>요청 원문</th><th>반영할 내용</th></tr></thead><tbody>'+r.changes.map(c=>c.slots.map(s=>{
  const current=c.currentSlots.find(x=>x.position===s.position);const applied=r.appliedEdits?.find(x=>x.itemId===c.itemId)?.slots.find(x=>x.position===s.position),value=applied||s,disabled=r.status==='대기'?'':'disabled';
- return '<tr data-request-item="'+escapeH(c.itemId)+'" data-request-position="'+escapeH(s.position)+'"><th>'+escapeH(c.name)+'<small>'+(s.position==='common'?'공용':escapeH(s.position)+'번')+'</small></th><td>'+escapeH(assetRequestsTextV336(current))+'</td><td class="asset-request-original">'+escapeH(assetRequestsTextV336(s))+'</td><td><div class="asset-request-edit"><select class="field" data-request-status '+disabled+'><option value="">미점검</option>'+['정상','수리 필요','사용 불가'].map(v=>'<option '+(v===value.status?'selected':'')+'>'+escapeH(v)+'</option>').join('')+'</select><textarea class="field" data-request-details maxlength="500" aria-label="'+escapeH(c.name)+' 세부사항" '+disabled+'>'+escapeH(value.details||'')+'</textarea><label><input type="checkbox" data-request-unavailable '+(value.unavailable?'checked':'')+' '+disabled+'>사용 불가</label></div></td></tr>';
+ return '<tr data-request-item="'+escapeH(c.itemId)+'" data-request-position="'+escapeH(s.position)+'"><th>'+escapeH(c.name)+'<small>'+(s.position==='common'?'공용':escapeH(s.position)+'번')+'</small></th><td>'+escapeH(assetRequestsTextV336(current))+'</td><td class="asset-request-original">'+escapeH(assetRequestsTextV336(s))+'</td><td><div class="asset-request-edit"><select class="field" data-request-status '+disabled+'><option value="">미점검</option>'+['정상','수리 필요','사용 불가'].map(v=>'<option '+(v===value.status?'selected':'')+'>'+escapeH(v)+'</option>').join('')+'</select><textarea class="field" data-request-details maxlength="500" aria-label="'+escapeH(c.name)+' 세부사항" '+disabled+'>'+escapeH(value.details||'')+'</textarea></div></td></tr>';
  }).join('')).join('')+'</tbody></table></div><textarea class="field asset-request-note" data-request-note maxlength="500" placeholder="처리 메모" '+(r.status==='대기'?'':'disabled')+'>'+escapeH(r.note||'')+'</textarea>'+(r.status==='대기'?'<div class="asset-request-actions"><button class="btn" type="button" data-request-action="confirm">확인 완료</button><button class="btn btn-primary" type="button" data-request-action="apply">수정 반영</button></div>':'<p class="panel-sub">'+escapeH([r.resolvedAt,r.resolvedBy].filter(Boolean).join(' · '))+'</p>')+'<div class="asset-request-actions"><button type="button" class="btn btn-danger" data-request-delete>요청 삭제</button></div></article>').join('')||'<p class="panel-sub">요청 없음</p>';
 }
 $('assetRequestsRefreshV336').addEventListener('click',()=>{if(document.querySelector('[data-request-edited]')&&!confirm('검토 중인 변경을 지우고 새로고침할까요?'))return;assetRequestsLoadV336();});
 $('assetRequestsFilterV336').addEventListener('change',()=>{if(document.querySelector('[data-request-edited]')&&!confirm('검토 중인 변경을 지울까요?'))return;assetRequestsRenderV336();});
 $('assetRequestsListV336').addEventListener('input',e=>{const card=e.target.closest('[data-request-id]');if(card)card.dataset.requestEdited='1';});
-$('assetRequestsListV336').addEventListener('click',async e=>{const button=e.target.closest('[data-request-action]');if(!button||assetRequestBusyV336)return;const card=button.closest('[data-request-id]'),r=assetRequestsV336.find(x=>x.id===card.dataset.requestId),action=button.dataset.requestAction;if(!confirm(action==='apply'?'검토한 내용을 비품 현황에 반영할까요?':'비품 기록을 유지하고 확인 완료로 처리할까요?'))return;const edits=r.changes.map(c=>({itemId:c.itemId,slots:[...card.querySelectorAll('[data-request-item]')].filter(row=>row.dataset.requestItem===c.itemId).map(row=>({position:row.dataset.requestPosition,status:row.querySelector('[data-request-status]').value,details:row.querySelector('[data-request-details]').value,unavailable:row.querySelector('[data-request-unavailable]').checked}))}));assetRequestBusyV336=true;card.inert=true;try{await server('resolveDormInventoryRequestV336',r.id,action,edits,card.querySelector('[data-request-note]').value);card.removeAttribute('data-request-edited');assetRequestBusyV336=false;await assetRequestsLoadV336();toast(action==='apply'?'수정 반영 완료':'확인 완료');}catch(error){$('assetRequestsStatusV336').textContent=error.message;}finally{assetRequestBusyV336=false;card.inert=false;}});
+$('assetRequestsListV336').addEventListener('click',async e=>{const button=e.target.closest('[data-request-action]');if(!button||assetRequestBusyV336)return;const card=button.closest('[data-request-id]'),r=assetRequestsV336.find(x=>x.id===card.dataset.requestId),action=button.dataset.requestAction;if(!confirm(action==='apply'?'검토한 내용을 비품 현황에 반영할까요?':'비품 기록을 유지하고 확인 완료로 처리할까요?'))return;const edits=r.changes.map(c=>({itemId:c.itemId,slots:[...card.querySelectorAll('[data-request-item]')].filter(row=>row.dataset.requestItem===c.itemId).map(row=>({position:row.dataset.requestPosition,status:row.querySelector('[data-request-status]').value,details:row.querySelector('[data-request-details]').value,unavailable:row.querySelector('[data-request-status]').value==='사용 불가'}))}));assetRequestBusyV336=true;card.inert=true;try{await server('resolveDormInventoryRequestV336',r.id,action,edits,card.querySelector('[data-request-note]').value);card.removeAttribute('data-request-edited');assetRequestBusyV336=false;await assetRequestsLoadV336();toast(action==='apply'?'수정 반영 완료':'확인 완료');}catch(error){$('assetRequestsStatusV336').textContent=error.message;}finally{assetRequestBusyV336=false;card.inert=false;}});
 
 window.addEventListener('beforeunload',e=>{if(document.querySelector('[data-request-edited]')){e.preventDefault();e.returnValue='';}});
 
