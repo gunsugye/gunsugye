@@ -65,7 +65,8 @@ export function normalizeNavigation(value, defaults, available) {
     weapons.items=['firearms','firearmRequests'].filter(id=>allowed.has(id));
     if(allowed.has('firearms'))labels.firearms='총기·무기고 관리 현황';
   }
-  return { schemaVersion: 2, groups, labels, armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.supplyRequestsAddedV506&&allowed.has('supplyRequests')&&!groups.some(g=>g.items.includes('supplyRequests'))){let group=groups.find(g=>g.items.includes('supply'))||groups.find(g=>g.id==='devices');if(!group){const def=defaults.find(g=>g.id==='devices');group={id:'devices',title:def?.title||'군수품/장비',items:[]};groups.push(group);}const pos=group.items.indexOf('supply');group.items.splice(pos<0?group.items.length:pos+1,0,'supplyRequests');}
+  return { schemaVersion: 2, groups, labels, supplyRequestsAddedV506:true,armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {

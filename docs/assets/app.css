@@ -1369,3 +1369,6 @@ tr[data-condition-color="repair"]>td{background-color:var(--condition-repair-bg)
 tr[data-condition-color="unusable"]>td{background-color:var(--condition-unusable-bg)!important}
 tr[data-condition-color="repair"]>td:first-child{box-shadow:inset 3px 0 var(--condition-repair-line)!important}
 tr[data-condition-color="unusable"]>td:first-child{box-shadow:inset 3px 0 var(--condition-unusable-line)!important}
+.supply-review-fields-v506{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.supply-review-fields-v506 label{display:grid;gap:5px}.supply-review-wide-v506{grid-column:1/-1}.supply-review-fields-v506 textarea{min-height:65px}.personal-supply-fields-v506{display:grid;gap:8px;margin:8px 0}.personal-supply-fields-v506 label{display:grid;gap:4px}.personal-supply-fields-v506 input,.personal-supply-fields-v506 select{width:100%;min-width:0;text-align:center}.personal-supply-fields-v506 textarea{width:100%;min-width:0}.personal-supply-fields-v506 [hidden]{display:none!important}@media(max-width:650px){.supply-review-fields-v506{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#supplyView .supply-special-tabs,#supplySpecialPaneV256{display:none!important}
+#supplies .personal-table th,#supplies .personal-table td{vertical-align:top}

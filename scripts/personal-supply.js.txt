@@ -1,0 +1,26 @@
+let personalSupplyDirtyV506=false;
+function renderSuppliesV335(items,loading){
+ const root=$('supplies');root.replaceChildren();personalSupplyDirtyV506=false;if(!items?.length){root.append(element('p',loading?'불러오는 중…':'기록 없음','empty'));return;}
+ const direct=items.some(item=>item.policy?.mode==='direct');root.append(element('p',direct?'전수조사 기간 · 품목별 저장 시 즉시 반영됩니다.':'품목별로 수정 요청하면 관리자 확인 후 반영됩니다.','hint'));
+ const table=personalTableV335('군수품'),body=document.createElement('tbody'),editors=[];
+ for(const item of items){const row=element('tr'),name=element('th',item.name),state=element('td'),detail=element('td'),select=element('select'),fold=element('details'),summary=element('summary',Object.entries(item.fields||{}).map(([key,value])=>key+' '+(value||'미입력')).join(' · ')||'입력·수정'),form=element('form'),fields={},message=element('p','','hint'),button=element('button',item.policy?.mode==='direct'?'전수조사 저장·확인':'수정 요청');button.type='submit';message.setAttribute('role','status');
+  for(const status of ['','정상','수리 필요','사용 불가']){const option=element('option',status||'미입력');option.value=status;select.append(option);}select.value=item.status||'';select.setAttribute('aria-label',item.name+' 상태');state.append(select);fold.append(summary);form.className='personal-supply-fields-v506';let baseline={status:item.status||'',detail:item.detail||'',extra:{...item.fields}};
+  for(const key of ['수량',...(item.schema?.fields||Object.keys(item.fields||{}).filter(f=>f!=='수량'))]){const label=element('label',key),value=String(item.fields?.[key]??''),input=element('input'),options=key==='수량'?Array.from({length:(item.quantityRange?.max??1)+1},(_,i)=>String(i)):(item.schema?.options?.[key]||[]);input.value=value;input.setAttribute('aria-label',item.name+' '+key);input.maxLength=500;
+   if(key==='수량'){input.type='number';input.min='0';input.max='100000';input.step='1';}
+   if(options.length){const choice=element('select');choice.setAttribute('aria-label',item.name+' '+key+' 선택');for(const v of ['',...options,'__direct']){const option=element('option',v==='__direct'?'직접 입력':v===''?'미입력':v);option.value=v;choice.append(option);}choice.value=value===''?'':options.includes(value)?value:'__direct';input.hidden=choice.value!=='__direct';choice.onchange=()=>{input.hidden=choice.value!=='__direct';if(choice.value!=='__direct')input.value=choice.value;else input.focus();changed();};label.append(choice,input);fields[key]=()=>choice.value==='__direct'?input.value:choice.value;
+   }else{label.append(input);fields[key]=()=>input.value;}form.append(label);
+  }
+  const noteLabel=element('label','세부사항'),note=element('textarea');note.value=item.detail||'';note.rows=2;note.maxLength=3000;note.setAttribute('aria-label',item.name+' 세부사항');noteLabel.append(note);form.append(noteLabel,message,button);fold.append(form);detail.append(fold);row.append(name,state,detail);body.append(row);
+  const read=()=>({status:select.value,detail:note.value.trim(),extra:Object.fromEntries(Object.entries(fields).map(([key,read])=>[key,read().trim()]))}),editor={dirty:false};editors.push(editor);
+  function changed(){editor.dirty=JSON.stringify(read())!==JSON.stringify(baseline);personalSupplyDirtyV506=editors.some(e=>e.dirty);button.disabled=loading||!item.snapshot;button.textContent=item.policy?.mode==='direct'?'전수조사 저장·확인':'수정 요청';message.textContent='';}
+  form.oninput=changed;select.onchange=changed;button.disabled=loading||!item.snapshot;
+  form.onsubmit=async event=>{event.preventDefault();if(busy||!token||!item.snapshot)return;const value=read(),generation=ticket,direct=item.policy?.mode==='direct';if(value.extra['수량']!==''&&value.extra['수량']!==baseline.extra['수량']&&(!/^\d+$/.test(value.extra['수량'])||Number(value.extra['수량'])>100000)){message.textContent='수량은 0~100,000 사이 정수로 입력하세요.';return;}busy=true;form.inert=true;select.disabled=true;$('refresh').disabled=true;message.textContent=direct?'저장 중…':'요청 중…';
+   try{const result=await request('supply-request',{itemId:item.id,snapshot:item.snapshot,value,campaignId:direct?item.policy.id:''});if(generation!==ticket||!token)return;baseline=value;editor.dirty=false;personalSupplyDirtyV506=editors.some(e=>e.dirty);if(result.item){item.snapshot=result.item.snapshot;item.policy=result.item.policy;}message.textContent=result.direct?'전수조사 응답 저장 완료':result.cancelled?'대기 요청 취소 완료':result.unchanged?'변경한 항목 없음':'수정 요청 접수 · 관리자 확인 대기';button.textContent=direct?'확인 완료':'요청 완료';
+    try{sessionStorage.removeItem(personalDataKeyV431);}catch(_){}
+   }catch(error){if(generation===ticket)message.textContent=error.message;}finally{busy=false;form.inert=false;select.disabled=false;if(generation===ticket)$('refresh').disabled=false;}
+  };
+  if(item.requests?.length){const history=element('p',item.requests.map(r=>r.createdAt.slice(0,10)+' '+r.status).join(' · '),'hint');fold.append(history);}
+ }
+ table.append(body);root.append(table);
+}
+window.addEventListener('beforeunload',event=>{if(personalSupplyDirtyV506){event.preventDefault();event.returnValue='';}});

@@ -8,6 +8,7 @@ import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.
 import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
 import {conditionTextV497,conditionServerV497} from './condition-states.mjs';
 import {quantityColorsClientV502} from './quantity-colors.mjs';
+import {supplyRequestsClientV506,supplyRequestsServerV506,supplyRequestsHtmlV506} from './supply-requests.mjs';
 import {saberGroupsClientV498,saberGroupsHtmlV498} from './saber-groups.mjs';
 import {supplyQuantityOrderClientV500,supplyQuantityOrderServerV500} from './supply-quantity-order.mjs';
 import {armoryClientV493,armoryServerV493} from './armory.mjs';
@@ -133,6 +134,7 @@ js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
 js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt'));
 js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
 js=supplyQuantityOrderClientV500(js,read('scripts/supply-quantity-order-client.js.txt'));
+js=supplyRequestsClientV506(js,read('scripts/supply-requests-client.js.txt'));
 js=quantityColorsClientV502(js);
 js=js.replace(/^init\(\);$/m,()=>read('scripts/condition-colors.js.txt')+'\ninit();');
 js=conditionTextV497(js);
@@ -202,7 +204,8 @@ write('docs/index.html',trainingShellHtml(read('docs/index.html')));
 write('docs/index.html',trainingManagementHtmlV473(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
 write('docs/index.html',saberGroupsHtmlV498(conditionTextV497(read('docs/index.html'))));
-write('docs/assets/app.css', css);
+write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="supplyRequests" type="button">군수품 수정 요청·전수조사</button>').replace('<section id="rosterView"',supplyRequestsHtmlV506+'<section id="rosterView"'));
+write('docs/assets/app.css', css+read('scripts/supply-requests.css'));
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
 
@@ -245,6 +248,7 @@ legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt'));
 legacy=armoryServerV493(legacy,read('scripts/armory-server.gs.txt'));
 legacy=supplyQuantityOrderServerV500(legacy,read('scripts/supply-quantity-order-server.gs.txt'));
+legacy=supplyRequestsServerV506(legacy,read('scripts/supply-requests-server.gs.txt'));
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
@@ -287,6 +291,8 @@ return {
   if(action==='assets')return personalSaveAssetsV331_(input);
   if(action==='uniform-request')return personalUniformRequestV350_(input);
   if(action==='duty-request')return personalDutyRequestV400_(input);
+  if(action==='firearm-request')return personalFirearmRequestV413_(input);
+  if(action==='supply-request')return personalSupplyRequestV506_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();
  },
