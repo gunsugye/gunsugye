@@ -1,13 +1,26 @@
 let supplyOrderSavingV500=false;
 function supplyQuantityInputV500(person,value,disabled){
- const range=supplyItem.quantityRange||{min:0,max:10},current=String(value.extra?.['수량']??''),values=Array.from({length:range.max-range.min+1},(_,i)=>String(range.min+i));
+ const range=supplyItem.quantityRange||{min:0,max:1},current=String(value.extra?.['수량']??''),values=Array.from({length:range.max+1},(_,i)=>String(i));
  if(current&&!values.includes(current))values.push(current);
- return '<select class="supply-select supply-quantity-v500" data-supply-field="extra:수량" data-id="'+escapeH(person.id)+'" aria-label="'+escapeH(person.name)+' 수량" '+disabled+'><option value="">미입력</option>'+values.map(quantity=>'<option value="'+escapeH(quantity)+'" '+(quantity===current?'selected':'')+'>'+escapeH(quantity)+(Number(quantity)<range.min||Number(quantity)>range.max?' (기존값)':'')+'</option>').join('')+'</select>';
+ return '<select class="supply-select supply-quantity-v500" data-supply-field="extra:수량" data-id="'+escapeH(person.id)+'" data-quantity-value="'+escapeH(current)+'" aria-label="'+escapeH(person.name)+' 수량" '+disabled+'><option value="">미입력</option>'+values.map(quantity=>'<option value="'+escapeH(quantity)+'" '+(quantity===current?'selected':'')+'>'+escapeH(quantity)+(Number(quantity)>range.max?' (직접 입력)':'')+'</option>').join('')+'<option value="__direct">직접 입력</option></select>';
 }
+function supplyQuantityDirectV505(select){
+ if(!canEdit||select.disabled)return;const dialog=document.createElement('dialog');dialog.className='supply-schema-dialog';
+ dialog.innerHTML='<form><h2>수량 직접 입력</h2><label>수량<input name="quantity" type="number" min="0" max="100000" step="1" required></label><p data-message role="status"></p><div class="supply-order-actions-v500"><button type="button" class="btn" data-cancel>취소</button><button type="submit" class="btn btn-primary">저장</button></div></form>';
+ document.body.append(dialog);const form=dialog.querySelector('form'),input=form.elements.quantity;input.value=select.value;
+ dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();
+ form.onsubmit=event=>{event.preventDefault();const value=input.value,n=Number(value);if(value===''||!Number.isSafeInteger(n)||n<0||n>100000){dialog.querySelector('[data-message]').textContent='0~100,000 사이 정수를 입력하세요.';return;}
+  const text=String(n);if(!Array.from(select.options).some(option=>option.value===text)){const option=document.createElement('option');option.value=text;option.textContent=text+' (직접 입력)';select.insertBefore(option,select.querySelector('[value="__direct"]'));}select.value=text;dialog.close();select.dispatchEvent(new Event('change',{bubbles:true}));
+ };dialog.showModal();input.focus();
+}
+document.addEventListener('change',event=>{
+ const select=event.target.closest?.('.supply-quantity-v500');if(!select)return;
+ if(select.value==='__direct'){event.stopImmediatePropagation();select.value=select.dataset.quantityValue??'';supplyQuantityDirectV505(select);}else select.dataset.quantityValue=select.value;
+},true);
 function supplyQuantityValidV500(id){
  const row=[...$('supplyRows').querySelectorAll('[data-supply-id]')].find(node=>node.dataset.supplyId===id),input=row?.querySelector('[data-supply-field="extra:수량"]');
  if(!input)return true;const valid=!input.validity.badInput&&supplyValidQty(input.value);
- input.setCustomValidity(valid?'':'수량은 0 이상의 숫자로 입력하세요. 소수는 둘째 자리까지 가능합니다.');
+ input.setCustomValidity(valid?'':'0~100,000 사이 수량을 선택하거나 직접 입력하세요.');
  if(!valid){input.reportValidity();return false;}return true;
 }
 function supplyOrderButtonV500(){
@@ -16,11 +29,11 @@ function supplyOrderButtonV500(){
  let range=$('supplyQuantityRangeV500');if(!range){range=document.createElement('button');range.id='supplyQuantityRangeV500';range.type='button';range.className='btn';range.textContent='수량 범위';range.onclick=supplyQuantityRangeOpenV500;button.after(range);}range.hidden=!canEdit||v284Scoped;range.disabled=!supplyItem;
 }
 function supplyQuantityRangeOpenV500(){
- if(!canEdit||v284Scoped||!supplyItem)return;const item=supplyItem,previous={...(item.quantityRange||{min:0,max:10})},dialog=document.createElement('dialog');dialog.className='supply-schema-dialog';
- dialog.innerHTML='<form><h2>'+escapeH(item.name)+' · 수량 범위</h2><label>최솟값<input name="min" type="number" min="0" max="100000" step="1" required></label><label>최댓값<input name="max" type="number" min="0" max="100000" step="1" required></label><p>정한 범위의 정수가 수량 선택지로 표시됩니다.</p><p data-message role="status"></p><div class="supply-order-actions-v500"><button class="btn" type="button" data-cancel>취소</button><button class="btn btn-primary" type="submit">저장</button></div></form>';
- document.body.append(dialog);const form=dialog.querySelector('form');form.elements.min.value=previous.min;form.elements.max.value=previous.max;let saving=false;
+ if(!canEdit||v284Scoped||!supplyItem)return;const item=supplyItem,previous={...(item.quantityRange||{min:0,max:1})},dialog=document.createElement('dialog');dialog.className='supply-schema-dialog';
+ dialog.innerHTML='<form><h2>'+escapeH(item.name)+' · 수량 범위</h2><p>최솟값: 0개</p><label>최댓값<input name="max" type="number" min="0" max="1000" step="1" required></label><p>0개부터 최댓값까지 선택합니다.</p><p data-message role="status"></p><div class="supply-order-actions-v500"><button class="btn" type="button" data-cancel>취소</button><button class="btn btn-primary" type="submit">저장</button></div></form>';
+ document.body.append(dialog);const form=dialog.querySelector('form');form.elements.max.value=previous.max;let saving=false;
  dialog.querySelector('[data-cancel]').onclick=()=>{if(!saving)dialog.close();};dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});dialog.onclose=()=>dialog.remove();
- form.onsubmit=async event=>{event.preventDefault();if(saving)return;const range={min:Number(form.elements.min.value),max:Number(form.elements.max.value)};saving=true;form.inert=true;supplyOrderSavingV500=true;
+ form.onsubmit=async event=>{event.preventDefault();if(saving)return;const range={min:0,max:Number(form.elements.max.value)};saving=true;form.inert=true;supplyOrderSavingV500=true;
   try{const result=await enqueue(()=>server('saveSupplyQuantityRangeV500',item.id,range,previous));if(supplyItem?.id===item.id){supplyItem.quantityRange=result.range;supplyRender();}dialog.close();toast('수량 범위 저장 완료');}catch(error){dialog.querySelector('[data-message]').textContent=error.message;}finally{saving=false;supplyOrderSavingV500=false;form.inert=false;}
  };dialog.showModal();
 }

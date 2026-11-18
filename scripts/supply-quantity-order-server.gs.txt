@@ -1,12 +1,12 @@
 const SUPPLY_ORDER_KEY_V500='SUPPLY_ITEM_ORDER_V500';
 let supplyOrderCacheV500_=null;
 function supplyValidateQuantityRangeV500_(range){
- const min=Number(range?.min),max=Number(range?.max);
- if(range?.min===''||range?.max===''||!Number.isSafeInteger(min)||!Number.isSafeInteger(max)||min<0||max<min||max>100000||max-min>1000)throw Error('수량 범위는 0 이상의 정수로 입력하세요. 최댓값은 100,000, 선택지는 최대 1,001개입니다.');
- return {min,max};
+ const max=Number(range?.max);
+ if(range?.max==null||range.max===''||!Number.isSafeInteger(max)||max<0||max>1000)throw Error('최댓값은 0~1,000 사이 정수로 입력하세요.');
+ return {min:0,max};
 }
 function supplyQuantityRangeV500_(id){
- const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_QUANTITY_RANGE_V500_'+id);if(!raw)return {min:0,max:10};
+ const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_QUANTITY_RANGE_V500_'+id);if(!raw)return {min:0,max:1};
  try{return supplyValidateQuantityRangeV500_(JSON.parse(raw));}catch(e){throw Error('수량 범위 설정을 확인하세요.');}
 }
 function saveSupplyQuantityRangeV500(id,range,expected){
@@ -23,8 +23,8 @@ function supplyEnsureQuantityV500_(ss,id){
 }
 function supplyCheckQuantityV500_(id,value,previous){
  const text=String(value??'');if(text===''||text===String(previous??''))return;
- const range=supplyQuantityRangeV500_(id),n=Number(text);
- if(!/^\d+$/.test(text)||!Number.isSafeInteger(n)||n<range.min||n>range.max)throw Error('수량은 설정된 범위('+range.min+'~'+range.max+')에서 선택하세요.');
+ const n=Number(text);
+ if(!/^\d+$/.test(text)||!Number.isSafeInteger(n)||n<0||n>100000)throw Error('수량은 0~100,000 사이 정수로 입력하세요.');
 }
 function supplyOrderedItemsV500_(items){
  if(!supplyOrderCacheV500_){let ids;try{ids=JSON.parse(PropertiesService.getScriptProperties().getProperty(SUPPLY_ORDER_KEY_V500)||'[]');}catch(e){ids=[];}supplyOrderCacheV500_=new Map((Array.isArray(ids)?ids:[]).filter(id=>typeof id==='string').map((id,i)=>[id,i]));}
