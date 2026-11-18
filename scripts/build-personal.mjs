@@ -1,5 +1,6 @@
 import {personalFirearmPortalV413} from './firearm-requests.mjs';
 import {conditionTextV497} from './condition-states.mjs';
+import {quantityColorV502} from './quantity-colors.mjs';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';import {resolve,dirname} from 'node:path';import {fileURLToPath} from 'node:url';import {createHash} from 'node:crypto';
 import {personalSessionStore} from './personal-session.mjs';import {assetPlanCSS,assetRoomHealth} from './asset-plan.mjs';import {personalDutyPortalV400,personalDutyCSSV400} from './personal-duty.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),read=path=>readFileSync(resolve(root,path),'utf8').replace(/\r\n/g,'\n'),write=(path,text)=>writeFileSync(resolve(root,path),text),hash=text=>createHash('sha256').update(text).digest('hex').slice(0,16);
@@ -9,7 +10,8 @@ export function buildPersonal(){
  source=personalDutyPortalV400(source,read('scripts/personal-duty-portal.js.txt')).replaceAll('dirty||uniformDirtyV350','dirty||uniformDirtyV350||personalDutyDirtyV400');
  source=personalFirearmPortalV413(source,read('scripts/personal-firearm.js.txt'));
  source=source.replace(/\}\)\(\);\s*$/,()=>read('scripts/personal-condition.js.txt')+'\n})();');
- source=source.replace('const restored=sessionStore.read();',read('scripts/condition-colors.js.txt')+'\n'+read('scripts/personal-loading.js.txt')+'\nconst restored=sessionStore.read();');
+ source=source.replace('const restored=sessionStore.read();',quantityColorV502.toString()+'\n'+read('scripts/condition-colors.js.txt')+'\n'+read('scripts/personal-loading.js.txt')+'\nconst restored=sessionStore.read();');
+ source=source.replace("row.dataset.dutyItem=item.item;", "row.dataset.dutyItem=item.item;name.style.cssText=quantityColorV502(item.required,item.quantity);");
  const personalJs=conditionTextV497('const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+source);
  const personalCss='#personalFirearmV413 form{display:grid;gap:10px;margin-top:12px}#personalFirearmV413 label{display:grid;gap:5px}' + read('scripts/personal-portal.css')+personalDutyCSSV400+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}';
  const finalPersonalCss=personalCss+'\n'+read('scripts/personal-typography.css')+'\n'+read('scripts/personal-loading.css')+'\n'+read('scripts/condition-colors.css');
