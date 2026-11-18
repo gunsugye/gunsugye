@@ -8,6 +8,7 @@ import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.
 import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
 import {conditionTextV497,conditionServerV497} from './condition-states.mjs';
 import {saberGroupsClientV498,saberGroupsHtmlV498} from './saber-groups.mjs';
+import {supplyQuantityOrderClientV500,supplyQuantityOrderServerV500} from './supply-quantity-order.mjs';
 import {armoryClientV493,armoryServerV493} from './armory.mjs';
 import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
 import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
@@ -130,6 +131,7 @@ js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
 js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
 js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt'));
 js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
+js=supplyQuantityOrderClientV500(js,read('scripts/supply-quantity-order-client.js.txt'));
 js=conditionTextV497(js);
 js=saberGroupsClientV498(js);
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
@@ -239,6 +241,7 @@ legacy=firearmRequestSourceV413(legacy,true).replace("if(action==='duty-request'
 legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt'));
 legacy=armoryServerV493(legacy,read('scripts/armory-server.gs.txt'));
+legacy=supplyQuantityOrderServerV500(legacy,read('scripts/supply-quantity-order-server.gs.txt'));
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];

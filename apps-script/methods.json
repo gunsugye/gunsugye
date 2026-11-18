@@ -144,6 +144,8 @@
   "saveSaberV276",
   "saveSmartDutySourcesV255",
   "saveSmartDutyStatusV253",
+  "saveSupplyOrderV500",
+  "saveSupplyQuantityRangeV500",
   "saveSupplyRow",
   "saveSupplySchemaV408",
   "saveTrainingAssetV473",

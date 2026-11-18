@@ -9,7 +9,7 @@ function supplySchemaValidateV408_(value,name){
  return {fields,options};
 }
 function supplySchemaEnsureV408_(ss,item,schema){
- const r=supplyOne_(ss,item.id),missing=schema.fields.filter(f=>!r.headers.includes(f));if(missing.length){const begin=r.headers.length+1;if(r.sh.getMaxColumns()<begin+missing.length-1)r.sh.insertColumnsAfter(r.sh.getMaxColumns(),begin+missing.length-1-r.sh.getMaxColumns());r.sh.getRange(1,begin,1,missing.length).setValues([missing]);}
+ const r=supplyOne_(ss,item.id),missing=[...schema.fields,'수량'].filter(f=>!r.headers.includes(f));if(missing.length){const begin=r.headers.length+1;if(r.sh.getMaxColumns()<begin+missing.length-1)r.sh.insertColumnsAfter(r.sh.getMaxColumns(),begin+missing.length-1-r.sh.getMaxColumns());r.sh.getRange(1,begin,1,missing.length).setValues([missing]);}
  PropertiesService.getScriptProperties().setProperty('SUPPLY_SCHEMA_V408_'+item.id,JSON.stringify(schema));
 }
 function saveSupplySchemaV408(itemId,value){requireOwner_();return lockAndRun_(()=>{const ss=spreadsheet_(),item=supplyOne_(ss,itemId).item,schema=supplySchemaValidateV408_(value,item.name);supplySchemaEnsureV408_(ss,item,schema);return {ok:true,schema};});}

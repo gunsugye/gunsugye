@@ -65,3 +65,4 @@ await import('./firearms.test.mjs');
 await import('./roster-linkage.test.mjs');
 
 await import('./firearm-requests.test.mjs');
+await import('./supply-quantity-order.test.mjs');

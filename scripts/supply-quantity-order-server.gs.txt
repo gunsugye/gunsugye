@@ -1,0 +1,41 @@
+const SUPPLY_ORDER_KEY_V500='SUPPLY_ITEM_ORDER_V500';
+let supplyOrderCacheV500_=null;
+function supplyValidateQuantityRangeV500_(range){
+ const min=Number(range?.min),max=Number(range?.max);
+ if(range?.min===''||range?.max===''||!Number.isSafeInteger(min)||!Number.isSafeInteger(max)||min<0||max<min||max>100000||max-min>1000)throw Error('수량 범위는 0 이상의 정수로 입력하세요. 최댓값은 100,000, 선택지는 최대 1,001개입니다.');
+ return {min,max};
+}
+function supplyQuantityRangeV500_(id){
+ const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_QUANTITY_RANGE_V500_'+id);if(!raw)return {min:0,max:10};
+ try{return supplyValidateQuantityRangeV500_(JSON.parse(raw));}catch(e){throw Error('수량 범위 설정을 확인하세요.');}
+}
+function saveSupplyQuantityRangeV500(id,range,expected){
+ referenceAdminV409_();return lockAndRun_(()=>{
+  supplyOne_(spreadsheet_(),id);const current=supplyQuantityRangeV500_(id),next=supplyValidateQuantityRangeV500_(range);
+  if(JSON.stringify(current)!==JSON.stringify(expected))throw Error('다른 화면에서 수량 범위를 변경했습니다. 다시 불러온 뒤 저장하세요.');
+  PropertiesService.getScriptProperties().setProperty('SUPPLY_QUANTITY_RANGE_V500_'+id,JSON.stringify(next));return {range:next};
+ });
+}
+function supplyEnsureQuantityV500_(ss,id){
+ let item=supplyOne_(ss,id);if(item.headers.includes('수량'))return item;
+ const col=item.headers.length+1;if(item.sh.getMaxColumns()<col)item.sh.insertColumnsAfter(item.sh.getMaxColumns(),col-item.sh.getMaxColumns());
+ item.sh.getRange(1,col).setValue('수량');return supplyOne_(ss,id);
+}
+function supplyCheckQuantityV500_(id,value,previous){
+ const text=String(value??'');if(text===''||text===String(previous??''))return;
+ const range=supplyQuantityRangeV500_(id),n=Number(text);
+ if(!/^\d+$/.test(text)||!Number.isSafeInteger(n)||n<range.min||n>range.max)throw Error('수량은 설정된 범위('+range.min+'~'+range.max+')에서 선택하세요.');
+}
+function supplyOrderedItemsV500_(items){
+ if(!supplyOrderCacheV500_){let ids;try{ids=JSON.parse(PropertiesService.getScriptProperties().getProperty(SUPPLY_ORDER_KEY_V500)||'[]');}catch(e){ids=[];}supplyOrderCacheV500_=new Map((Array.isArray(ids)?ids:[]).filter(id=>typeof id==='string').map((id,i)=>[id,i]));}
+ return items.map((item,index)=>({item,index})).sort((a,b)=>(supplyOrderCacheV500_.get(a.item.id)??100000+a.index)-(supplyOrderCacheV500_.get(b.item.id)??100000+b.index)).map(x=>x.item);
+}
+function saveSupplyOrderV500(ids,expectedIds){
+ referenceAdminV409_();return lockAndRun_(()=>{
+  const ss=spreadsheet_(),items=supplyRegistryItems_(ss),current=items.map(item=>item.id);
+  if(!Array.isArray(ids)||ids.length!==current.length||ids.some(id=>typeof id!=='string'||!current.includes(id))||new Set(ids).size!==ids.length)throw Error('품목 목록이 변경되었습니다. 다시 불러온 뒤 순서를 저장하세요.');
+  if(!Array.isArray(expectedIds)||JSON.stringify(current)!==JSON.stringify(expectedIds))throw Error('다른 화면에서 품목 순서를 변경했습니다. 다시 불러온 뒤 저장하세요.');
+  PropertiesService.getScriptProperties().setProperty(SUPPLY_ORDER_KEY_V500,JSON.stringify(ids));supplyOrderCacheV500_=null;
+  supplyWriteAudit_(ss,'군수품 품목 순서 변경','',ids.join(','));return {items:supplyRegistryItems_(ss)};
+ });
+}
