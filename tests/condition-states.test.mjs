@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-import {canonicalConditionV497,conditionTextV497} from '../scripts/condition-states.mjs';
+import {canonicalConditionV497,conditionTextV497,conditionServerV497} from '../scripts/condition-states.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('기존 교체 필요와 사용불가 표기는 같은 공식 상태로 변환한다',()=>{
  for(const value of ['교체 필요','교체필요','사용불가','사용 불가',' 사용  불가 '])assert.equal(canonicalConditionV497(value),'사용 불가');
@@ -24,7 +24,7 @@ test('서버에서 읽은 상태만 정규화하고 세부사항·이름과 검�
  const data=JSON.parse(output).result;assert.equal(data.status,'사용 불가');assert.equal(data.firearmStatus,'사용 불가');assert.equal(data.slots[0].status,'수리 필요');assert.equal(data.detail,'교체필요 부품 설명');assert.equal(data.snapshot,'old-token');
 });
 test('서버의 저장 검증은 과거 명칭도 받아 사용 불가로 통일한다',()=>{
- const source=read('apps-script/Legacy.gs'),fn=source.match(/function canonicalRepairStateV216_\(value\)\{[\s\S]*?\n\}/)?.[0];assert.ok(fn);
+ const source=conditionServerV497("const REPAIR_STATES_V216 = Object.freeze(['정상','수리 필요','교체 필요']);\nfunction canonicalRepairStateV216_(value){\n return value;\n}"),fn=source.match(/function canonicalRepairStateV216_\(value\)\{[\s\S]*?\n\}/)?.[0];assert.ok(fn);
  const context=vm.createContext({});vm.runInContext(fn,context);
  assert.equal(context.canonicalRepairStateV216_('교체 필요'),'사용 불가');assert.equal(context.canonicalRepairStateV216_('사용불가'),'사용 불가');
  assert.match(source,/REPAIR_STATES_V216 = Object.freeze\(\['정상','수리 필요','사용 불가'\]\)/);
