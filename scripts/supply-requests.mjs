@@ -25,7 +25,7 @@ export function personalSupplyPortalV506(source,client){
  source=source.slice(0,start)+client+'\n'+source.slice(end);
  source=source.replaceAll("'duty-request','firearm-request'","'duty-request','firearm-request','supply-request'")
  .replaceAll('dirty||uniformDirtyV350','personalSupplyDirtyV506||dirty||uniformDirtyV350')
- .replace("function clear(message=''){","function clear(message=''){personalSupplyDirtyV506=false;")
+ .replace("function clear(message=''){","function clear(message=''){personalSupplyResetV507();")
  .replace("path==='uniform-request'?'uniform'", "path==='supply-request'?'supplies':path==='uniform-request'?'uniform'")
  .replace('function personalSaveDoneV425(path){','function personalSaveDoneV425(path){if(path===\'supply-request\')return;');
  return source;

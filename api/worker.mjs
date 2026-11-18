@@ -162,7 +162,7 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
   if(path==='/personal/uniform-request')args=[{changes:body.changes,expectedUpdatedAt:body.expectedUpdatedAt,campaignId:body.campaignId}];
   if(path==='/personal/duty-request')args=[{changes:body.changes,snapshot:body.snapshot,campaignId:body.campaignId}];
   if(path==='/personal/firearm-request')args=[{snapshot:body.snapshot,status:body.status,detail:body.detail,campaignId:body.campaignId}];
-  if(path==='/personal/supply-request')args=[{itemId:body.itemId,snapshot:body.snapshot,value:body.value,campaignId:body.campaignId}];
+  if(path==='/personal/supply-request')args=[{itemId:body.itemId,snapshot:body.snapshot,value:body.value,changes:body.changes,campaignId:body.campaignId}];
  }
  const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args}),signature=await signPayload(payload,env.API_SHARED_SECRET);
  let response;try{response=await fetcher(env.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,signature}),redirect:'follow',signal:AbortSignal.timeout(85000)});}catch(_){throw new ApiError(504,'조회 서버 연결을 확인하세요.');}
