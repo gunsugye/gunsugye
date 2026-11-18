@@ -1,5 +1,10 @@
 import {insertAppClient} from './app-client.mjs';
 export function supplyQuantityOrderClientV500(source,client){
+ source=source.replace('고정 항목: 수량 · 상태 · 세부사항','고정 항목: 상태 · 세부사항</p><fieldset><legend>수량 선택 범위</legend><label>최솟값<input name="quantityMin" type="number" min="0" max="100000" step="1" required></label><label>최댓값<input name="quantityMax" type="number" min="0" max="100000" step="1" required></label></fieldset><p>정한 범위의 수량을 선택합니다.')
+ .replace("field('itemName').value=initial?.name||'';", "field('quantityMin').value=initial?.quantityRange?.min??0;field('quantityMax').value=initial?.quantityRange?.max??10;field('itemName').value=initial?.name||'';")
+ .replace("value={fields,options:{종류:split('kinds'),사이즈:split('sizes')}}", "value={fields,options:{종류:split('kinds'),사이즈:split('sizes')},quantityRange:{min:Number(field('quantityMin').value),max:Number(field('quantityMax').value)}}")
+ .replace('종류·사이즈 항목 설정','품목 항목·수량 설정')
+ .replace('수량 · 상태 · 세부사항 (고정) · ', '상태 · 세부사항 (고정) · 수량 (범위 설정) · ');
  source=source.replace("${cell('extra:수량',v.extra?.['수량']??'',30)}","${supplyQuantityInputV500(p,v,disabled)}")
  .replace('function supplyCatalogUI(){','function supplyCatalogUI(){supplyOrderButtonV500();')
  .replace('async function supplySave(id){','async function supplySave(id){if(!supplyQuantityValidV500(id))return;')
@@ -9,6 +14,8 @@ export function supplyQuantityOrderClientV500(source,client){
  return insertAppClient(source,client);
 }
 export function supplyQuantityOrderServerV500(source,server){
+ source=source.replace('return {fields,options};',"return {fields,options,...(value?.quantityRange?{quantityRange:supplyValidateQuantityRangeV500_(value.quantityRange)}:{})};")
+ .replace("PropertiesService.getScriptProperties().setProperty('SUPPLY_SCHEMA_V408_'+item.id,JSON.stringify(schema));", "if(schema.quantityRange)PropertiesService.getScriptProperties().setProperty('SUPPLY_QUANTITY_RANGE_V500_'+item.id,JSON.stringify(schema.quantityRange));PropertiesService.getScriptProperties().setProperty('SUPPLY_SCHEMA_V408_'+item.id,JSON.stringify(schema));");
  const original="return sh.getRange(2,1,n,4).getDisplayValues().filter(r=>r[0]).map(r=>({id:r[0],name:r[1],sheetId:Number(r[2]),createdAt:r[3]}));";
  if(!source.includes(original))throw Error('군수품 목록 조회 위치 확인');
  source=source.replace(original,"return supplyOrderedItemsV500_(sh.getRange(2,1,n,4).getDisplayValues().filter(r=>r[0]).map(r=>({id:r[0],name:r[1],sheetId:Number(r[2]),createdAt:r[3]})));")

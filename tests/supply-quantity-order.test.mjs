@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
+import {supplyQuantityOrderServerV500} from '../scripts/supply-quantity-order.mjs';
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 function fixture(){
  const props=new Map(),items=[{id:'a'},{id:'b'}];let allowed=true;
@@ -33,4 +34,13 @@ test('quantity dropdown preserves zero and out-of-range records',()=>{
  assert.match(html(0),/<select/);assert.match(html(0),/value="0" selected/);
  assert.match(html(8),/value="8" selected/);assert.match(html(8),/기존값/);
  assert.doesNotMatch(html(''),/value="0" selected/);
+});
+test('item configuration exposes quantity bounds and validates them before schema save',()=>{
+ const compiled=read('../docs/assets/app.js');
+ assert.match(compiled,/name="quantityMin"/);assert.match(compiled,/name="quantityMax"/);assert.doesNotMatch(compiled,/고정 항목: 수량/);
+ const schema=read('../scripts/supply-schema-server.gs.txt');
+ const seed="function registry(){return sh.getRange(2,1,n,4).getDisplayValues().filter(r=>r[0]).map(r=>({id:r[0],name:r[1],sheetId:Number(r[2]),createdAt:r[3]}));}\nfunction saveSupplyRow(itemId,source){}\nfunction normalizeSupplyCohort(){}\n"+schema;
+ const {c}=fixture();vm.runInContext(supplyQuantityOrderServerV500(seed,''),c);
+ assert.equal(c.supplySchemaValidateV408_({fields:[],quantityRange:{min:2,max:8}},'item').quantityRange.max,8);
+ assert.throws(()=>c.supplySchemaValidateV408_({fields:[],quantityRange:{min:8,max:2}},'item'));
 });
