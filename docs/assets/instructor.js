@@ -9,7 +9,7 @@
   data={instructor:{unit:'1',name:'예시 지도생도'},status:'준비',people:Array.from({length:8},(_,i)=>({id:'preview-'+i,name:'예비생도 '+(i+1),cohort:'00',cadetNumber:'예시 '+String(i+1).padStart(2,'0')})),assets:[],requests:[]};
   for(const [i,p] of data.people.entries())data.assets.push(
    {id:p.id+'-uniform',personId:p.id,kind:'피복',itemName:'전투복 상의',value:'100',quantity:'2',status:'정상',detail:''},
-   {id:p.id+'-boots',personId:p.id,kind:'피복',itemName:'전투화',value:'270',quantity:'1',status:i===0?'교체 필요':'정상',detail:i===0?'사이즈 변경 필요':''},
+   {id:p.id+'-boots',personId:p.id,kind:'피복',itemName:'전투화',value:'270',quantity:'1',status:i===0?'사용 불가':'정상',detail:i===0?'사이즈 변경 필요':''},
    {id:p.id+'-bag',personId:p.id,kind:'군수품',itemName:'배낭',quantity:'1',status:i===1?'수리 필요':'정상',detail:i===1?'지퍼 불량':''});
   data.requests=[{id:'preview-request',personId:'preview-1',itemName:'배낭',status:'대기',reason:'지퍼 수리 요청 (예시)'}];
   $('login').hidden=true;$('workspace').hidden=false;$('logout').hidden=false;$('logout').textContent='실제 명단 선택';$('retry').hidden=true;

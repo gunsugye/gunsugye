@@ -6,6 +6,7 @@ import {firearmRequestSourceV413,firearmRequestClientV413,firearmRequestsHtmlV41
 import * as rosterLinkageV412 from './roster-linkage.mjs';
 import {linkageSourceV412,linkageClientV412} from './roster-linkage-integration.mjs';
 import { firearmSourceV410, firearmClientV410 } from './firearms.mjs';
+import {conditionTextV497,conditionServerV497} from './condition-states.mjs';
 import {armoryClientV493,armoryServerV493} from './armory.mjs';
 import { referenceMenuV409, referenceBatchClientV409 } from './reference-batch.mjs';
 import { supplySchemaClientV408, supplySchemaServerV408 } from './supply-schema.mjs';
@@ -128,6 +129,7 @@ js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
 js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
 js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt'));
 js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
+js=conditionTextV497(js);
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css');
 html=personalInterfaceHtml(html);
 html=dutyRequestsHtmlV400(html);
@@ -172,10 +174,10 @@ html = html.replace('</body>', `<button type="button" id="pagesUpdateLauncher" h
 // 로그인 후 동적으로 읽는 app.js도 동일한 빌드의 파일을 사용합니다.
 const fingerprint = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
 const {personalJs,personalCss,personalHtml}=buildPersonal();
-const instructorJs=read('scripts/instructor-portal.js'),instructorCss=read('scripts/instructor-portal.css');
+const instructorJs=conditionTextV497(read('scripts/instructor-portal.js')),instructorCss=read('scripts/instructor-portal.css');
 write('docs/assets/instructor.js',instructorJs);
 write('docs/assets/instructor.css',instructorCss);
-write('docs/instructor.html',read('scripts/instructor-portal.html').replace('./assets/instructor.js','./assets/instructor.js?v='+fingerprint(instructorJs)).replace('./assets/instructor.css','./assets/instructor.css?v='+fingerprint(instructorCss)));
+write('docs/instructor.html',conditionTextV497(read('scripts/instructor-portal.html')).replace('./assets/instructor.js','./assets/instructor.js?v='+fingerprint(instructorJs)).replace('./assets/instructor.css','./assets/instructor.css?v='+fingerprint(instructorCss)));
 const assets=[['assets/app.css', css], ...['assets/pages.css','assets/pages.js','assets/updates.js','assets/navigation-start.js','config.js'].map(path => [path,readFileSync(resolve(root,'docs',path),'utf8')])];
 const release={...releaseDetails,id:fingerprint(JSON.stringify([releaseDetails,js,assets,personalHtml,personalJs,personalCss]))};
 write('docs/release.json',JSON.stringify(release,null,2)+'\n');
@@ -192,6 +194,7 @@ write('docs/index.html',uniformRequestNavHtml(read('docs/index.html')));
 write('docs/index.html',trainingShellHtml(read('docs/index.html')));
 write('docs/index.html',trainingManagementHtmlV473(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
+write('docs/index.html',conditionTextV497(read('docs/index.html')));
 write('docs/assets/app.css', css);
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
@@ -235,6 +238,7 @@ legacy=surveyServerV416(legacy,read('scripts/survey-periods-server.gs.txt'));
 legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt'));
 legacy=armoryServerV493(legacy,read('scripts/armory-server.gs.txt'));
 legacy=trainingAccessServerV473(legacy);
+legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
 const frontendStrings = new Set([...(js+'\n'+instructorJs).matchAll(/['"]([A-Za-z][A-Za-z0-9]*)['"]/g)].map(m => m[1]));
 const methods = names.filter(name => !name.endsWith('_') && frontendStrings.has(name)

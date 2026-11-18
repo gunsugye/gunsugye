@@ -1,4 +1,5 @@
 import {personalFirearmPortalV413} from './firearm-requests.mjs';
+import {conditionTextV497} from './condition-states.mjs';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';import {resolve,dirname} from 'node:path';import {fileURLToPath} from 'node:url';import {createHash} from 'node:crypto';
 import {personalSessionStore} from './personal-session.mjs';import {assetPlanCSS,assetRoomHealth} from './asset-plan.mjs';import {personalDutyPortalV400,personalDutyCSSV400} from './personal-duty.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),read=path=>readFileSync(resolve(root,path),'utf8').replace(/\r\n/g,'\n'),write=(path,text)=>writeFileSync(resolve(root,path),text),hash=text=>createHash('sha256').update(text).digest('hex').slice(0,16);
@@ -9,9 +10,9 @@ export function buildPersonal(){
  source=personalFirearmPortalV413(source,read('scripts/personal-firearm.js.txt'));
  source=source.replace(/\}\)\(\);\s*$/,()=>read('scripts/personal-condition.js.txt')+'\n})();');
  source=source.replace('const restored=sessionStore.read();',read('scripts/personal-loading.js.txt')+'\nconst restored=sessionStore.read();');
- const personalJs='const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+source;
+ const personalJs=conditionTextV497('const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+source);
  const personalCss='#personalFirearmV413 form{display:grid;gap:10px;margin-top:12px}#personalFirearmV413 label{display:grid;gap:5px}' + read('scripts/personal-portal.css')+personalDutyCSSV400+assetPlanCSS+'\n.personal-uniform-table{width:100%;border-collapse:collapse;font-size:13px}.personal-uniform-table th,.personal-uniform-table td{padding:6px;border-bottom:1px solid #e2e8f0;text-align:left}.personal-uniform-table input{width:100%;box-sizing:border-box;padding:7px;min-width:0}.personal-uniform-table td{width:45%}';
  const finalPersonalCss=personalCss+'\n'+read('scripts/personal-typography.css')+'\n'+read('scripts/personal-loading.css');
- const personalHtml=read('scripts/personal-portal.html').replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','변경사항은 각 항목의 안내에 따라 저장하세요.').replace('./portal.js','./portal.js?v='+hash(personalJs)).replace('./portal.css','./portal.css?v='+hash(finalPersonalCss));
+ const personalHtml=conditionTextV497(read('scripts/personal-portal.html')).replace('<dl id="uniform"></dl>','<div id="uniform"></div>').replace('비품 외 정보 수정은 군수 담당자에게','변경사항은 각 항목의 안내에 따라 저장하세요.').replace('./portal.js','./portal.js?v='+hash(personalJs)).replace('./portal.css','./portal.css?v='+hash(finalPersonalCss));
  mkdirSync(resolve(root,'docs/me'),{recursive:true});write('docs/me/index.html',personalHtml);write('docs/me/portal.js',personalJs);write('docs/me/portal.css',finalPersonalCss);return {personalJs,personalCss:finalPersonalCss,personalHtml};
 }
