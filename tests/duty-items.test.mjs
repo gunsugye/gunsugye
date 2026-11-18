@@ -25,7 +25,7 @@ test('기준 0개 칸은 비우고 기준이 있는 등록 0개와 미등록 입
 
 test('장·참모·보좌관·동생명의 흉장/블럭 기준과 모든 인원의 명패·아크릴판 기준을 적용한다',()=>{
  const req=new vm.Script('('+dutyItemRequirementsV368.toString()+')(row)'),context=vm.createContext({dutyRoleInfoV367,row:null});
- for(const [duty,badge,block] of [['전대장',2,2],['2대대장',2,2],['3중대장',2,2],['1편대장',2,2],['전대군수참모',2,2],['전대군수참모보좌관',0,2],['문화체육보좌관',0,2],['군수(보급)보좌관',0,2],['동기회장',2,0],['명예위원장',2,0],['생발위4학년1대대',2,0],['동기회보좌관',2,0],['4학년중대임원',0,0],['직책 미표기',0,0]]){context.row={duty};const result=req.runInContext(context);assert.equal(result.badge,badge,duty);assert.equal(result.block,block,duty);assert.equal(result.door,1);assert.equal(result.triangle,1);assert.equal(result.acrylic,2);}
+ for(const [duty,badge,block] of [['전대장',2,2],['2대대장',2,2],['3중대장',2,2],['1편대장',2,2],['전대군수참모',2,2],['전대군수참모보좌관',0,2],['문화체육보좌관',0,2],['군수(보급)보좌관',0,2],['동기회장',2,0],['명예위원장',2,0],['생발위4학년1대대',2,0],['동기회보좌관',2,0],['4학년중대임원',0,0],['직책 미표기',0,0]]){context.row={duty};const result=req.runInContext(context);assert.equal(result.badge,badge,duty);assert.equal(result.block,block,duty);assert.equal(result.door,1);assert.equal(result.triangle,1);assert.equal(result.acrylic,badge>0?2:0);}
  context.row={duty:'4학년중대임원'};assert.equal(req.runInContext(context).review,true);
 });
 test('물품 메뉴를 예도 바로 아래 한 번 추가하고 사용자 삭제·제한 목록을 보존한다',()=>{
