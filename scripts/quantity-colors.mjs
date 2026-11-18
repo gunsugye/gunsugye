@@ -6,7 +6,6 @@ export function quantityColorV502(required,quantity){
 }
 export function quantityColorsClientV502(source){
  return source.replace("(needsAction?' style=\"background:#fff7ed\"':'')","(' style=\"'+quantityColorV502(n,qty)+'\"')")
- .replace("개</td><td>'+x.short+'개</td><td>'+x.unknown+'명", "개</td><td style=\"'+quantityColorV502(x.short,0)+'\">'+x.short+'개</td><td style=\"'+(x.unknown?quantityColorV502(1,null):'')+'\">'+x.unknown+'명")
- .replace("</td><td>'+escapeH((x.quantity??'미등록')","</td><td style=\"'+quantityColorV502(dutyItemRequirementsV368(x.person)[x.kind.id],x.quantity)+'\">'+escapeH((x.quantity??'미등록')")
+ .replace("(x.short||x.unknown?' style=\"background:#fff7ed\"':'')","''")
  .replace(/^init\(\);$/m,()=>quantityColorV502.toString()+'\ninit();');
 }

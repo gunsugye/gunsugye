@@ -7,7 +7,7 @@ test('shortages darken by absolute count, unknown differs from surveyed zero',()
  assert.equal(quantityColorV502(10,0),colors[3]);assert.equal(quantityColorV502(2,2),'');assert.equal(quantityColorV502(2,4),'');
  assert.notEqual(quantityColorV502(2,null),quantityColorV502(2,0));assert.equal(quantityColorV502(2,''),quantityColorV502(2,null));
 });
-test('quantity colors reach item cells, summary and issue tables',()=>{
+test('quantity colors apply only to individual input cells, not overview tables',()=>{
  const source=readFileSync(new URL('../scripts/duty-items-client.js.txt',import.meta.url),'utf8');const result=quantityColorsClientV502(source);
- assert.match(result,/quantityColorV502\(n,qty\)/);assert.match(result,/quantityColorV502\(x.short,0\)/);assert.match(result,/quantityColorV502\(dutyItemRequirementsV368\(x.person\)/);
+ assert.match(result,/quantityColorV502\(n,qty\)/);assert.doesNotMatch(result,/quantityColorV502\(x.short,0\)/);assert.doesNotMatch(result,/quantityColorV502\(dutyItemRequirementsV368\(x.person\)/);assert.doesNotMatch(result,/x.short\|\|x.unknown\?/);
 });
