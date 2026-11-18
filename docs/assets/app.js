@@ -4315,6 +4315,23 @@ function supplyOrderOpenV500(){
  };render();dialog.showModal();
 }
 
+function conditionColorV501(value){const text=String(value||'').replace(/\s/g,'');return /^(사용불가|교체필요)$/.test(text)?'unusable':/^수리필요(?:\(.*\))?$/.test(text)?'repair':'';}
+function conditionColorsStartV501(){
+ let pending=false;
+ const render=()=>{pending=false;for(const node of document.querySelectorAll('select,td,dd,span,strong,b')){
+  if(node.tagName==='SELECT'&&!Array.from(node.options).some(option=>conditionColorV501(option.value)))continue;
+  if(node.tagName!=='SELECT'&&node.children.length)continue;
+  const state=conditionColorV501(node.tagName==='SELECT'?node.value:node.textContent);
+  if(state){if(node.dataset.conditionColor!==state)node.dataset.conditionColor=state;}
+  else if(node.dataset.conditionColor)delete node.dataset.conditionColor;
+ }
+ for(const row of document.querySelectorAll('tr')){const states=Array.from(row.querySelectorAll('[data-condition-color]')).map(node=>node.dataset.conditionColor),state=states.includes('unusable')?'unusable':states.includes('repair')?'repair':'';if(state){if(row.dataset.conditionColor!==state)row.dataset.conditionColor=state;}else if(row.dataset.conditionColor)delete row.dataset.conditionColor;}
+ };
+ const schedule=()=>{if(!pending){pending=true;requestAnimationFrame(render);}};
+ new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true});document.addEventListener('change',schedule);render();
+}
+conditionColorsStartV501();
+
 init();
 
 

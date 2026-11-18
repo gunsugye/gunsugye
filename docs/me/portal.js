@@ -63,6 +63,23 @@ async function load(initial){
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('submit').disabled=true;$('submit').textContent='인증 중…';$('status').textContent='명단 확인 중…';try{const authType=personalAuthModeV423(),session=await request('login',{name:$('name').value,...(authType==='cadet'?{authType,cadetNumber:$('number').value}:{firearmNumber:$('number').value})});$('number').value='';keepSessionV338(session);if(session.preview?.loading)render(session.preview);await load(session.preview&&!session.preview.loading?session.preview:null);}catch(error){$('status').textContent=error.name==='TimeoutError'?'연결이 지연됩니다. 다시 시도하세요.':error.message;}finally{$('submit').disabled=false;$('submit').textContent='본인 정보 조회';}});
 $('assetForm').addEventListener('submit',async e=>{e.preventDefault();const direct=assetSurveyPolicyV416?.mode==='direct';if(!dirty&&!direct||busy||!token)return;const current=ticket,changes=assetItems.filter(i=>JSON.stringify(i.slots)!==i.original).map(i=>({itemId:i.id,expectedUpdatedAt:i.updatedAt,slots:i.slots}));busy=true;$('saveAssets').disabled=true;$('assetForm').inert=true;$('refresh').disabled=true;$('assetStatus').textContent=direct?'저장 중…':'요청 중…';try{const result=await request('assets',{changes,campaignId:direct?assetSurveyPolicyV416.id:''});if(current!==ticket||!token)return;renderAssets(result.assets,false);$('assetStatus').textContent=result.direct?'전수조사 저장 완료 · 즉시 반영 및 기록 보관':'수정 요청 접수 · 관리자 확인 대기';}catch(error){if(current===ticket)$('assetStatus').textContent=error.message;}finally{busy=false;$('assetForm').inert=false;if(current===ticket){$('refresh').disabled=false;$('saveAssets').disabled=!dirty&&assetSurveyPolicyV416?.mode!=='direct';}}});
 $('refresh').addEventListener('click',()=>{if((dirty||uniformDirtyV350||personalDutyDirtyV400||personalFirearmDirtyV413)&&!confirm('저장하지 않은 변경을 지울까요?'))return;uniformDirtyV350=false;uniformEditV350=null;load().catch(e=>$('status').textContent=e.message);});$('logout').addEventListener('click',async()=>{if((dirty||uniformDirtyV350||personalDutyDirtyV400||personalFirearmDirtyV413)&&!confirm('저장하지 않은 변경을 지울까요?'))return;const pending=request('logout').catch(()=>{});clear('조회가 종료되었습니다.');await pending;});document.addEventListener('visibilitychange',()=>{if(token&&Date.now()>=expiresAt)clear('인증 시간이 만료되었습니다.');});window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
+function conditionColorV501(value){const text=String(value||'').replace(/\s/g,'');return /^(사용불가|교체필요)$/.test(text)?'unusable':/^수리필요(?:\(.*\))?$/.test(text)?'repair':'';}
+function conditionColorsStartV501(){
+ let pending=false;
+ const render=()=>{pending=false;for(const node of document.querySelectorAll('select,td,dd,span,strong,b')){
+  if(node.tagName==='SELECT'&&!Array.from(node.options).some(option=>conditionColorV501(option.value)))continue;
+  if(node.tagName!=='SELECT'&&node.children.length)continue;
+  const state=conditionColorV501(node.tagName==='SELECT'?node.value:node.textContent);
+  if(state){if(node.dataset.conditionColor!==state)node.dataset.conditionColor=state;}
+  else if(node.dataset.conditionColor)delete node.dataset.conditionColor;
+ }
+ for(const row of document.querySelectorAll('tr')){const states=Array.from(row.querySelectorAll('[data-condition-color]')).map(node=>node.dataset.conditionColor),state=states.includes('unusable')?'unusable':states.includes('repair')?'repair':'';if(state){if(row.dataset.conditionColor!==state)row.dataset.conditionColor=state;}else if(row.dataset.conditionColor)delete row.dataset.conditionColor;}
+ };
+ const schedule=()=>{if(!pending){pending=true;requestAnimationFrame(render);}};
+ new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true});document.addEventListener('change',schedule);render();
+}
+conditionColorsStartV501();
+
 let personalLastDataV425=null,personalLoadPartsV425=new Set(),personalSaveFlightV425=false,personalOverlayTimerV425=null;
 const personalLayoutKeyV425='logbook.personal.layout.v425',personalDataKeyV431='logbook.personal.data.v431',personalCompletedPathsV425=new Set();
 function personalLayoutReadV425(){try{const value=JSON.parse(sessionStorage.getItem(personalLayoutKeyV425)||'null');if(value&&value.expiresAt>Date.now()&&Array.isArray(value.order))return value;}catch(_){}return null;}

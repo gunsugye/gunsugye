@@ -1362,3 +1362,10 @@ textarea.field{min-height:88px;line-height:1.5}
   .eq-scroll,.roster-wrap,.wx-scroll,.labor-table-wrap,.train-scroll{scrollbar-width:thin;scrollbar-color:#9fb6d1 transparent}
   button,.btn{touch-action:manipulation}
 }
+:root{--condition-repair-bg:#fff2d8;--condition-repair-ink:#8a4506;--condition-repair-line:#d59837;--condition-unusable-bg:#ffe9ec;--condition-unusable-ink:#a12631;--condition-unusable-line:#d66c78}
+[data-condition-color="repair"]{color:var(--condition-repair-ink)!important;background-color:var(--condition-repair-bg)!important;border-color:var(--condition-repair-line)!important}
+[data-condition-color="unusable"]{color:var(--condition-unusable-ink)!important;background-color:var(--condition-unusable-bg)!important;border-color:var(--condition-unusable-line)!important}
+tr[data-condition-color="repair"]>td{background-color:var(--condition-repair-bg)!important}
+tr[data-condition-color="unusable"]>td{background-color:var(--condition-unusable-bg)!important}
+tr[data-condition-color="repair"]>td:first-child{box-shadow:inset 3px 0 var(--condition-repair-line)!important}
+tr[data-condition-color="unusable"]>td:first-child{box-shadow:inset 3px 0 var(--condition-unusable-line)!important}
