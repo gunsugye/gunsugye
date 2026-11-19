@@ -1,7 +1,7 @@
 ﻿function firearmCohortLabelV414(value){const text=String(value??'').trim().replace(/(?:\s*\uAE30)+$/u,'').trim();return text?text+'\uAE30':'';}
 const firearmsStateV410={rows:[],busy:false,cohort:'',company:'',search:''};
 function rosterIdentityOnlyV410(){
- const table=$('rosterRows').closest('table');for(const row of table.querySelectorAll('tr')){if(row.children.length===8){row.children[6].remove();row.children[5].remove();}if(row.children.length===6)row.children[5].remove();if(row.children.length===1)row.children[0].colSpan=5;}
+ const table=$('rosterRows').closest('table');for(const row of table.querySelectorAll('tr')){if(row.children.length===8){row.children[6].remove();row.children[5].remove();}if(row.children.length===6){row.children[5].hidden=!canEdit;if(row.parentElement.tagName==='THEAD')row.children[5].textContent='위탁·휴학·퇴교';}if(row.children.length===1)row.children[0].colSpan=canEdit?6:5;}
  for(const id of ['rosterFStatus','rosterFMemo'])$(id).closest('.form-item').hidden=true;
  $('rosterRepairOnly').checked=false;$('rosterRepairOnly').closest('label').hidden=true;$('rosterNormalizeCohort').closest('.roster-normal-box').hidden=true;
  $('rosterMetrics').innerHTML=[['전체 인원',rosterItems.length],['교번 등록',rosterItems.filter(r=>r.cadetNumber).length],['총기번호 등록',rosterItems.filter(r=>r.firearmNumber).length],['조회 인원',rosterFiltered().length]].map(([label,count])=>'<div class="roster-metric"><small>'+label+'</small><strong>'+count+'명</strong></div>').join('');
