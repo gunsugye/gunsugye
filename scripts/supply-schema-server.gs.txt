@@ -1,12 +1,12 @@
 function supplySchemaV408_(item){
- const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_SCHEMA_V408_'+item.id);if(raw)return JSON.parse(raw);
- return {fields:['사이즈',...(/방독면/.test(item.name)?['좌','우']:[])],options:{종류:[],사이즈:[]}};
+ const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_SCHEMA_V408_'+item.id);if(raw)return supplyMaskSchemaV517_(JSON.parse(raw),item.name);
+ return supplyMaskSchemaV517_({fields:['사이즈'],options:{종류:[],사이즈:[]}},item.name);
 }
 function supplySchemaValidateV408_(value,name){
- const fields=Array.isArray(value?.fields)?value.fields:[],allowed=['종류','사이즈','좌','우'];if(fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('종류·사이즈·좌·우 항목을 확인하세요.');
- if(!/방독면/.test(name)&&fields.some(f=>f==='좌'||f==='우'))throw Error('좌·우 항목은 방독면에서 사용하세요.');
+ const fields=Array.isArray(value?.fields)?value.fields:[],allowed=['종류','사이즈','정화통위치'];if(fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('종류·사이즈·정화통위치 항목을 확인하세요.');
+ if(!/방독면/.test(name)&&fields.includes('정화통위치'))throw Error('정화통위치는 방독면에서 사용하세요.');
  const options={};for(const key of ['종류','사이즈']){const values=value?.options?.[key]||[];if(!Array.isArray(values)||values.length>100||values.some(v=>typeof v!=='string'||!v.trim()||v.length>100||/[\r\n\t]/.test(v)))throw Error('종류·사이즈 선택지는 각 100개, 항목당 100자 이내로 입력하세요.');options[key]=[...new Set(values.map(v=>v.trim()))];}
- return {fields,options};
+ const normalized=supplyMaskSchemaV517_({fields,options},name);fields.splice(0,fields.length,...normalized.fields);Object.assign(options,normalized.options);return {fields,options};
 }
 function supplySchemaEnsureV408_(ss,item,schema){
  const r=supplyOne_(ss,item.id),missing=[...schema.fields,'수량'].filter(f=>!r.headers.includes(f));if(missing.length){const begin=r.headers.length+1;if(r.sh.getMaxColumns()<begin+missing.length-1)r.sh.insertColumnsAfter(r.sh.getMaxColumns(),begin+missing.length-1-r.sh.getMaxColumns());r.sh.getRange(1,begin,1,missing.length).setValues([missing]);}
@@ -20,3 +20,5 @@ function supplyResetAuthorizedV408_(){requireOwner_();return lockAndRun_(()=>{
  for(const id of plan.sheetIds){const sh=ss.getSheets().find(sh=>sh.getSheetId()===id);if(sh)ss.deleteSheet(sh);}
  const registry=ss.getSheets().find(sh=>sh.getSheetId()===plan.registryId);if(registry&&registry.getLastRow()>1)registry.getRange(2,1,registry.getLastRow()-1,4).clearContent();for(const id of plan.itemIds)props.deleteProperty('SUPPLY_SCHEMA_V408_'+id);plan.done=true;props.setProperty(key,JSON.stringify(plan));return plan;
 });}
+
+function supplyMaskSchemaV517_(schema,name){const mask=/방독면/.test(name),fields=(schema.fields||[]).filter(f=>!['좌','우','정화통위치'].includes(f)),options={...schema.options};delete options.좌;delete options.우;delete options.정화통위치;if(mask){fields.push('정화통위치');options.정화통위치=['좌','우'];}return {...schema,fields,options};}

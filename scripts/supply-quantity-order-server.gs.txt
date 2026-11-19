@@ -17,7 +17,7 @@ function saveSupplyQuantityRangeV500(id,range,expected){
  });
 }
 function supplyEnsureQuantityV500_(ss,id){
- let item=supplyOne_(ss,id);if(item.headers.includes('수량'))return item;
+ let item=supplyOne_(ss,id);if(/방독면/.test(item.item.name)&&!item.headers.includes('정화통위치')){supplySchemaEnsureV408_(ss,item.item,supplySchemaV408_(item.item));item=supplyOne_(ss,id);}if(item.headers.includes('수량'))return item;
  const col=item.headers.length+1;if(item.sh.getMaxColumns()<col)item.sh.insertColumnsAfter(item.sh.getMaxColumns(),col-item.sh.getMaxColumns());
  item.sh.getRange(1,col).setValue('수량');return supplyOne_(ss,id);
 }
