@@ -3,7 +3,7 @@ export function supplyQuantityOrderClientV500(source,client){
  source=source.replace('고정 항목: 수량 · 상태 · 세부사항','고정 항목: 상태 · 세부사항</p><fieldset><legend>수량 선택 범위</legend><p>최솟값: 0개</p><label>최댓값<input name="quantityMax" type="number" min="0" max="1000" step="1" required></label></fieldset><p>0개부터 최댓값까지 선택합니다.')
  .replace("field('itemName').value=initial?.name||'';", "field('quantityMax').value=initial?.quantityRange?.max??1;field('itemName').value=initial?.name||'';")
  .replace("value={fields,options:{종류:split('kinds'),사이즈:split('sizes')}}", "value={fields,options:{종류:split('kinds'),사이즈:split('sizes')},quantityRange:{min:0,max:Number(field('quantityMax').value)}}")
- .replace('종류·사이즈 항목 설정','품목 항목·수량 설정')
+ .replace('종류·사이즈 항목 설정','종류·사이즈·수량 수정')
  .replace('수량 · 상태 · 세부사항 (고정) · ', '상태 · 세부사항 (고정) · 수량 (범위 설정) · ');
  source=source.replace("${cell('extra:수량',v.extra?.['수량']??'',30)}","${supplyQuantityInputV500(p,v,disabled)}")
  .replace('function supplyCatalogUI(){','function supplyCatalogUI(){supplyOrderButtonV500();')
