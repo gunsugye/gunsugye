@@ -22,6 +22,7 @@ await import('./development-requests.test.mjs');
 await import('./notifications.test.mjs');
 if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./repairs.test.mjs');
 await import('./room-assets.test.mjs');
+await import('./asset-residents.test.mjs');
 await import('./room-assets-bulk.test.mjs');
 await import('./dorm-plan.test.mjs');
 await import('./labor-interface.test.mjs');

@@ -1,6 +1,7 @@
 // schemaVersion 2에는 활성 메뉴만 저장합니다. 삭제 목록이나 숨김 항목을 남기지 않습니다.
 export function normalizeNavigation(value, defaults, available) {
   const known = new Map(defaults.map(g => [g.id, g]));
+  known.set('requestReview',{id:'requestReview',title:'수정요청(전수조사) 검토',items:[]});
   for(const group of Array.isArray(value?.groups)?value.groups:[])if(/^g_[a-z0-9]{8,40}$/.test(group?.id)&&typeof group.title==='string'&&group.title.trim())known.set(group.id,{id:group.id,title:group.title.trim().slice(0,25),items:[]});
   const allowed = new Set(available), used = new Set(), groups = [];
   const valid = value && Array.isArray(value.groups);
@@ -66,10 +67,12 @@ export function normalizeNavigation(value, defaults, available) {
     if(allowed.has('firearms'))labels.firearms='총기·무기고 관리 현황';
   }
   if(!value?.supplyRequestsAddedV506&&allowed.has('supplyRequests')&&!groups.some(g=>g.items.includes('supplyRequests'))){let group=groups.find(g=>g.items.includes('supply'))||groups.find(g=>g.id==='devices');if(!group){const def=defaults.find(g=>g.id==='devices');group={id:'devices',title:def?.title||'군수품/장비',items:[]};groups.push(group);}const pos=group.items.indexOf('supply');group.items.splice(pos<0?group.items.length:pos+1,0,'supplyRequests');}
-  return { schemaVersion: 2, groups, labels, supplyRequestsAddedV506:true,armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.requestReviewV513&&defaults.some(g=>g.id==='personalInfo')){const ids=['assetRequests','uniformRequests','firearmRequests','supplyRequests','dutyRequests'].filter(id=>allowed.has(id));if(ids.length){for(const group of groups)group.items=group.items.filter(id=>!ids.includes(id));const old=groups.findIndex(g=>g.id==='requestReview');if(old>=0)groups.splice(old,1);const at=groups.findIndex(g=>g.id==='personalInfo'||g.items.includes('personalInterface'));groups.splice(at<0?groups.length:at,0,{id:'requestReview',title:'수정요청(전수조사) 검토',items:ids});}}
+  return { schemaVersion: 2, groups, labels, requestReviewV513:true,supplyRequestsAddedV506:true,armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 }
 
 export function updateNavigationJs(js) {
+  js=js.replace('const NAV_GROUP_DEFAULT_V233=[',"const NAV_GROUP_DEFAULT_V233=[{id:'requestReview',title:'수정요청(전수조사) 검토',items:[]},");
   js = js.replace(/function navNormalizeV233\(input\)\{[\s\S]*?\n\}\n/, `function navNormalizeV233(input){return navModelV301_(input,NAV_GROUP_DEFAULT_V233,navAllowedV221());}\n`);
   js = js.replace("const t={groups:navDeepCopyV233(NAV_GROUP_DEFAULT_V233),labels:{},hiddenGroups:[],hiddenItems:[]}", "const t={schemaVersion:2,groups:navDeepCopyV233(NAV_GROUP_DEFAULT_V233),labels:{}}")
     .replace("nav.replaceChildren(frag);v284AddUtilityNav();", "nav.replaceChildren(frag);v284AddUtilityNav();const activeItemsV301=new Set(navTreeV233.groups.flatMap(g=>g.items));qsa('.mobile-nav [data-view]').forEach(button=>button.classList.toggle('nav-removed-v301',!activeItemsV301.has(button.dataset.view)));" )

@@ -54,6 +54,7 @@ const calendarHTML = function calendarHTML(entries, options) {
 };
 const navModelV301_ = function normalizeNavigation(value, defaults, available) {
   const known = new Map(defaults.map(g => [g.id, g]));
+  known.set('requestReview',{id:'requestReview',title:'수정요청(전수조사) 검토',items:[]});
   for(const group of Array.isArray(value?.groups)?value.groups:[])if(/^g_[a-z0-9]{8,40}$/.test(group?.id)&&typeof group.title==='string'&&group.title.trim())known.set(group.id,{id:group.id,title:group.title.trim().slice(0,25),items:[]});
   const allowed = new Set(available), used = new Set(), groups = [];
   const valid = value && Array.isArray(value.groups);
@@ -119,7 +120,8 @@ const navModelV301_ = function normalizeNavigation(value, defaults, available) {
     if(allowed.has('firearms'))labels.firearms='총기·무기고 관리 현황';
   }
   if(!value?.supplyRequestsAddedV506&&allowed.has('supplyRequests')&&!groups.some(g=>g.items.includes('supplyRequests'))){let group=groups.find(g=>g.items.includes('supply'))||groups.find(g=>g.id==='devices');if(!group){const def=defaults.find(g=>g.id==='devices');group={id:'devices',title:def?.title||'군수품/장비',items:[]};groups.push(group);}const pos=group.items.indexOf('supply');group.items.splice(pos<0?group.items.length:pos+1,0,'supplyRequests');}
-  return { schemaVersion: 2, groups, labels, supplyRequestsAddedV506:true,armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
+  if(!value?.requestReviewV513&&defaults.some(g=>g.id==='personalInfo')){const ids=['assetRequests','uniformRequests','firearmRequests','supplyRequests','dutyRequests'].filter(id=>allowed.has(id));if(ids.length){for(const group of groups)group.items=group.items.filter(id=>!ids.includes(id));const old=groups.findIndex(g=>g.id==='requestReview');if(old>=0)groups.splice(old,1);const at=groups.findIndex(g=>g.id==='personalInfo'||g.items.includes('personalInterface'));groups.splice(at<0?groups.length:at,0,{id:'requestReview',title:'수정요청(전수조사) 검토',items:ids});}}
+  return { schemaVersion: 2, groups, labels, requestReviewV513:true,supplyRequestsAddedV506:true,armorySplitV493:true,firearmRequestsAddedV413:true,liveMenuPlacementV411:true,firearmsAddedV410:true,inputManagementAddedV409:true,dutyRequestsAddedV400:true,developmentRequestsAddedV381:true,departuresAddedV305:true, saberRestoredV326:true,assetRequestsAddedV336:true,uniformRequestsAddedV351:true,personalInterfaceAddedV359:true,dutyCadetsAddedV365:true,dutyItemsAddedV368:true };
 };
 const journalVisibleOn = function journalVisibleOn(entry, day) {
   if (entry.workType !== 'long') return entry.date === day;
@@ -477,7 +479,7 @@ async function addSamples(){if(!mustEdit()||!confirm('일반적인 예시 업무
   catch(err){alert('예시 저장 중 오류: '+err.message+'\n이미 저장된 업무가 있을 수 있으므로 확인하세요.');}}
 function changeDay(delta){flushNote();selectedDay=shiftDate(selectedDay,delta);renderToday()}
 /* v2.33: 계층형 사이드바 · 그룹/항목 드래그 이동 및 표시 이름 편집 */
-const NAV_GROUP_DEFAULT_V233=[{id:'weapons',title:'총기/무기고',items:['firearms','firearmRequests']},{id:'inputManagement',title:'입력 및 관리',items:['roster','dutyCadets','dorm','departures']},{id:'journal',title:'일지',items:['today','all','stats','calendar']},
+const NAV_GROUP_DEFAULT_V233=[{id:'weapons',title:'총기/무기고',items:['firearms','firearmRequests']},{id:'inputManagement',title:'입력 및 관리',items:['roster','dutyCadets','dorm','departures']},{id:'requestReview',title:'수정요청(전수조사) 검토',items:[]},{id:'journal',title:'일지',items:['today','all','stats','calendar']},
  {id:'supply',title:'보급',items:['supplyRequests','supply']},
  {id:'uniform',title:'피복',items:['uniform','uniformRequests']},
  {id:'meal',title:'급식',items:[]},
@@ -2882,6 +2884,7 @@ function assetOpenRoomV244(id){
  if(assetDirtyV244.size&&id!==assetCurrentRoomV244&&!confirm('저장하지 않은 변경을 버리고 다른 호실을 열까요?'))return;
  const room=assetDataV244?.rooms.find(x=>x.id===id);if(!room)return;
  assetCurrentRoomV244=id;assetDirtyV244.clear();$('assetRoomTitleV244').textContent=assetRoomTitleV244(room);
+ let residents=$('assetResidentsV513');if(!residents){residents=document.createElement('div');residents.id='assetResidentsV513';$('assetRoomTitleV244').after(residents);}residents.innerHTML=assetResidentsHTMLV513(room);
  const recs=assetRecMapV244(),readonly=canEdit?'':'disabled';
  $('assetEditRowsV244').innerHTML=assetDataV244.items.map(item=>{
   const r=recs.get(id+'|'+item.id),positions=item.positions||['common'];
@@ -5044,9 +5047,10 @@ function assetPlanRenderV332(){
  $('assetPlanTotalsV333').innerHTML=[['blue','정상'],['orange','수리'],['red','사용 불가'],['unknown','미점검']].map(([level,label])=>'<span class="asset-plan-'+level+'">'+label+' <b>'+[...healthByRoom.values()].filter(h=>h.level===level).length+'호</b></span>').join('');
  root.innerHTML=buildings.map(building=>'<details class="asset-group" data-asset-plan-building="'+escapeH(building)+'" '+(open.has(building)?'open':'')+'><summary>'+escapeH(building)+'</summary>'+bands.filter(g=>g.building===building).map(band=>'<section class="asset-plan-band"><h3>'+escapeH(band.unplaced?band.floor+' · '+(band.corridor||'추가 호실'):dormPlanPageLabelV334(band.page,band.building+' '+band.floor)+' · '+dormPlanCorridorV334(bands.filter(g=>!g.unplaced&&g.building===band.building&&g.floor===band.floor&&g.page===band.page).indexOf(band)))+'</h3><div class="asset-plan-scroll"><div class="asset-plan-row">'+band.rooms.map(room=>{
  const health=healthByRoom.get(room.id);
- return '<article class="asset-plan-card asset-plan-'+health.level+'"><button type="button" class="asset-plan-room" data-asset-plan-room="'+escapeH(room.id)+'" aria-label="'+escapeH(room.room+'호 · '+health.label)+'"><strong>'+escapeH(room.room)+'호</strong><span>'+health.label+'</span>'+(health.issues.length?'<small>불량 항목 '+health.issues.length+'</small>':'')+'</button><div class="asset-plan-issues" tabindex="0" aria-label="'+escapeH(room.room+'호 불량 항목')+'">'+(health.issues.length?health.issues.map(issue=>'<button type="button" class="asset-plan-issue asset-plan-'+issue.level+'" title="'+escapeH(issue.name+' · '+issue.label)+'" data-asset-plan-room="'+escapeH(room.id)+'" data-asset-plan-item="'+escapeH(issue.itemId)+'" data-asset-plan-position="'+escapeH(issue.position)+'"><span>'+escapeH(issue.name+(issue.position?' · '+(issue.position==='common'?'공용':issue.position+'번'):''))+'</span><small>'+escapeH(issue.label)+'</small></button>').join(''):'<span class="asset-plan-clear">'+(health.unknown?'점검 필요':'')+'</span>')+'</div><small class="asset-plan-pending">'+(health.unknown?'미점검 '+health.unknown:'점검 완료')+'</small></article>';
+ return '<article class="asset-plan-card asset-plan-'+health.level+'"><button type="button" class="asset-plan-room" data-asset-plan-room="'+escapeH(room.id)+'" aria-label="'+escapeH(room.room+'호 · '+health.label)+'"><strong>'+escapeH(room.room)+'호</strong><span>'+health.label+'</span>'+(health.issues.length?'<small>불량 항목 '+health.issues.length+'</small>':'')+'</button>'+assetResidentsHTMLV513(room)+'<div class="asset-plan-issues" tabindex="0" aria-label="'+escapeH(room.room+'호 불량 항목')+'">'+(health.issues.length?health.issues.map(issue=>'<button type="button" class="asset-plan-issue asset-plan-'+issue.level+'" title="'+escapeH(issue.name+' · '+issue.label)+'" data-asset-plan-room="'+escapeH(room.id)+'" data-asset-plan-item="'+escapeH(issue.itemId)+'" data-asset-plan-position="'+escapeH(issue.position)+'"><span>'+escapeH(issue.name+(issue.position?' · '+(issue.position==='common'?'공용':issue.position+'번'):''))+'</span><small>'+escapeH(issue.label)+'</small></button>').join(''):'<span class="asset-plan-clear">'+(health.unknown?'점검 필요':'')+'</span>')+'</div><small class="asset-plan-pending">'+(health.unknown?'미점검 '+health.unknown:'점검 완료')+'</small></article>';
  }).join('')+'</div></div></section>').join('')+'</details>').join('')||'<p class="asset-tip">조회 결과 없음</p>';
 }
+function assetResidentsHTMLV513(room){const people=room.assignments||[];return '<div class="asset-residents-v513">'+(people.length?people.map(p=>'<div><strong>'+escapeH((p.position?p.position+'번 · ':'')+p.name)+'</strong><small>'+escapeH([p.cohort?String(p.cohort).replace(/기+$/,'')+'기':'',p.company].filter(Boolean).join(' · '))+'</small></div>').join(''):'<small>'+(room.assignedCount?'표시 가능한 배정 정보 없음':'배정 인원 없음')+'</small>')+'</div>';}
 function assetPlanJumpV332(roomId,itemId,position){
  if(assetCurrentRoomV244!==roomId)assetOpenRoomV244(roomId);
  if(assetCurrentRoomV244!==roomId)return;

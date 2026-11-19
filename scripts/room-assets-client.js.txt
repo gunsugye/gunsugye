@@ -5,6 +5,7 @@ function assetOpenRoomV244(id){
  if(assetDirtyV244.size&&id!==assetCurrentRoomV244&&!confirm('저장하지 않은 변경을 버리고 다른 호실을 열까요?'))return;
  const room=assetDataV244?.rooms.find(x=>x.id===id);if(!room)return;
  assetCurrentRoomV244=id;assetDirtyV244.clear();$('assetRoomTitleV244').textContent=assetRoomTitleV244(room);
+ let residents=$('assetResidentsV513');if(!residents){residents=document.createElement('div');residents.id='assetResidentsV513';$('assetRoomTitleV244').after(residents);}residents.innerHTML=assetResidentsHTMLV513(room);
  const recs=assetRecMapV244(),readonly=canEdit?'':'disabled';
  $('assetEditRowsV244').innerHTML=assetDataV244.items.map(item=>{
   const r=recs.get(id+'|'+item.id),positions=item.positions||['common'];

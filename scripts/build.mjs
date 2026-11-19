@@ -316,6 +316,7 @@ return {
 };
 }
 `;
+legacy=legacy.replace('const NAV_GROUPS_V233=[',"const NAV_GROUPS_V233=[{id:'requestReview',title:'수정요청(전수조사) 검토',items:[]},");
 write('apps-script/Legacy.gs', prefix + `\nconst navModelV301_ = ${normalizeNavigation.toString()};\n` + legacy + suffix);
 write('apps-script/methods.json', JSON.stringify(uniqueMethods, null, 2) + '\n');
 console.log(`화면/CSS/JS 생성, Apps Script API ${uniqueMethods.length}개 연결 완료`);
