@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.18',title:'개인 앱 일괄 요청 버튼 위치',notes:['일괄 수정 요청 버튼을 내 군수 정보 앱 전체 화면의 맨 위와 맨 아래로 옮겼습니다.']};
+export const releaseDetails={version:'5.19',title:'방독면 설정 수정·기준 수량',notes:['방독면은 종류·사이즈 없이 정화통 위치만 선택해 저장할 수 있습니다.','고정 항목인 수량의 최댓값과 기준 수량을 각각 설정할 수 있습니다.']};

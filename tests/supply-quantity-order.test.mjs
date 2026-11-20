@@ -40,7 +40,7 @@ test('quantity dropdown preserves zero and out-of-range records',()=>{
 });
 test('item configuration exposes quantity bounds and validates them before schema save',()=>{
  const compiled=read('../docs/assets/app.js');
- assert.doesNotMatch(compiled,/name="quantityMin"/);assert.match(compiled,/name="quantityMax"/);assert.doesNotMatch(compiled,/고정 항목: 수량/);
+ assert.doesNotMatch(compiled,/name="quantityMin"/);assert.match(compiled,/name="quantityMax"/);assert.match(compiled,/고정 항목: 수량/);assert.match(compiled,/name="quantityStandard"/);
  const schema=read('../scripts/supply-schema-server.gs.txt');
  const seed="function registry(){return sh.getRange(2,1,n,4).getDisplayValues().filter(r=>r[0]).map(r=>({id:r[0],name:r[1],sheetId:Number(r[2]),createdAt:r[3]}));}\nfunction saveSupplyRow(itemId,source){}\nfunction normalizeSupplyCohort(){}\n"+schema;
  const {c}=fixture();vm.runInContext(supplyQuantityOrderServerV500(seed,''),c);
@@ -59,3 +59,5 @@ test('direct input restores selection before opening and dispatches only validat
  input.value='1.5';form.onsubmit({preventDefault(){}});assert.equal(submitted,0);
  input.value='7';form.onsubmit({preventDefault(){}});assert.equal(select.value,'7');assert.equal(select.dataset.quantityValue,'7');assert.equal(submitted,1);assert.equal(select.options.at(-1).value,'__direct');
 });
+
+test('quantity standard is independent of maximum and survives save and reload',()=>{const {c}=fixture();assert.equal(c.supplyQuantityRangeV500_('a').standard,1);c.saveSupplyQuantityRangeV500('a',{max:8,standard:2},{min:0,max:1});assert.equal(c.supplyQuantityRangeV500_('a').standard,2);assert.equal(c.supplyQuantityRangeV500_('a').max,8);for(const standard of [-1,9,1.5,''])assert.throws(()=>c.supplyValidateQuantityRangeV500_({max:8,standard}));assert.equal(c.supplyValidateQuantityRangeV500_({max:0,standard:0}).standard,0);assert.throws(()=>c.saveSupplyQuantityRangeV500('a',{max:8,standard:3},{min:0,max:8,standard:1}));});

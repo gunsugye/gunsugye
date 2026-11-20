@@ -30,10 +30,10 @@ function supplyOrderButtonV500(){
 }
 function supplyQuantityRangeOpenV500(){
  if(!canEdit||v284Scoped||!supplyItem)return;const item=supplyItem,previous={...(item.quantityRange||{min:0,max:1})},dialog=document.createElement('dialog');dialog.className='supply-schema-dialog';
- dialog.innerHTML='<form><h2>'+escapeH(item.name)+' · 수량 범위</h2><p>최솟값: 0개</p><label>최댓값<input name="max" type="number" min="0" max="1000" step="1" required></label><p>0개부터 최댓값까지 선택합니다.</p><p data-message role="status"></p><div class="supply-order-actions-v500"><button class="btn" type="button" data-cancel>취소</button><button class="btn btn-primary" type="submit">저장</button></div></form>';
- document.body.append(dialog);const form=dialog.querySelector('form');form.elements.max.value=previous.max;let saving=false;
+ dialog.innerHTML='<form><h2>'+escapeH(item.name)+' · 수량 범위</h2><p>최솟값: 0개</p><label>최댓값<input name="max" type="number" min="0" max="1000" step="1" required></label><label>기준 수량<input name="standard" type="number" min="0" max="1000" step="1" required></label><p>0개부터 최댓값까지 선택합니다.</p><p data-message role="status"></p><div class="supply-order-actions-v500"><button class="btn" type="button" data-cancel>취소</button><button class="btn btn-primary" type="submit">저장</button></div></form>';
+ document.body.append(dialog);const form=dialog.querySelector('form');form.elements.max.value=previous.max;form.elements.standard.value=previous.standard??Math.min(1,previous.max);let saving=false;
  dialog.querySelector('[data-cancel]').onclick=()=>{if(!saving)dialog.close();};dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});dialog.onclose=()=>dialog.remove();
- form.onsubmit=async event=>{event.preventDefault();if(saving)return;const range={min:0,max:Number(form.elements.max.value)};saving=true;form.inert=true;supplyOrderSavingV500=true;
+ form.onsubmit=async event=>{event.preventDefault();if(saving)return;const range={min:0,max:Number(form.elements.max.value),standard:Number(form.elements.standard.value)};saving=true;form.inert=true;supplyOrderSavingV500=true;
   try{const result=await enqueue(()=>server('saveSupplyQuantityRangeV500',item.id,range,previous));if(supplyItem?.id===item.id){supplyItem.quantityRange=result.range;supplyRender();}dialog.close();toast('수량 범위 저장 완료');}catch(error){dialog.querySelector('[data-message]').textContent=error.message;}finally{saving=false;supplyOrderSavingV500=false;form.inert=false;}
  };dialog.showModal();
 }

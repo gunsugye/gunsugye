@@ -3,9 +3,9 @@ function supplySchemaV408_(item){
  return supplyMaskSchemaV517_({fields:['사이즈'],options:{종류:[],사이즈:[]}},item.name);
 }
 function supplySchemaValidateV408_(value,name){
- const fields=Array.isArray(value?.fields)?value.fields:[],allowed=['종류','사이즈','정화통위치'];if(fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('종류·사이즈·정화통위치 항목을 확인하세요.');
+ const mask=/방독면/.test(name),incoming=Array.isArray(value?.fields)?value.fields:[],fields=[...new Set(incoming.map(f=>mask&&['좌','우','정화통 위치'].includes(f)?'정화통위치':f))],allowed=['종류','사이즈','정화통위치'];if(fields.some(f=>!allowed.includes(f))||new Set(fields).size!==fields.length)throw Error('종류·사이즈·정화통위치 항목을 확인하세요.');
  if(!/방독면/.test(name)&&fields.includes('정화통위치'))throw Error('정화통위치는 방독면에서 사용하세요.');
- const options={};for(const key of ['종류','사이즈']){const values=value?.options?.[key]||[];if(!Array.isArray(values)||values.length>100||values.some(v=>typeof v!=='string'||!v.trim()||v.length>100||/[\r\n\t]/.test(v)))throw Error('종류·사이즈 선택지는 각 100개, 항목당 100자 이내로 입력하세요.');options[key]=[...new Set(values.map(v=>v.trim()))];}
+ const options={};for(const key of ['종류','사이즈']){const values=fields.includes(key)?value?.options?.[key]||[]:[];if(!Array.isArray(values)||values.length>100||values.some(v=>typeof v!=='string'||!v.trim()||v.length>100||/[\r\n\t]/.test(v)))throw Error('종류·사이즈 선택지는 각 100개, 항목당 100자 이내로 입력하세요.');options[key]=[...new Set(values.map(v=>v.trim()))];}
  const normalized=supplyMaskSchemaV517_({fields,options},name);fields.splice(0,fields.length,...normalized.fields);Object.assign(options,normalized.options);return {fields,options};
 }
 function supplySchemaEnsureV408_(ss,item,schema){

@@ -3,16 +3,16 @@ let supplyOrderCacheV500_=null;
 function supplyValidateQuantityRangeV500_(range){
  const max=Number(range?.max);
  if(range?.max==null||range.max===''||!Number.isSafeInteger(max)||max<0||max>1000)throw Error('최댓값은 0~1,000 사이 정수로 입력하세요.');
- return {min:0,max};
+ const standard=range?.standard==null?Math.min(1,max):Number(range.standard);if(range?.standard===''||!Number.isSafeInteger(standard)||standard<0||standard>max)throw Error('기준 수량은 0부터 최댓값 사이 정수로 입력하세요.');return {min:0,max,standard};
 }
 function supplyQuantityRangeV500_(id){
- const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_QUANTITY_RANGE_V500_'+id);if(!raw)return {min:0,max:1};
+ const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_QUANTITY_RANGE_V500_'+id);if(!raw)return {min:0,max:1,standard:1};
  try{return supplyValidateQuantityRangeV500_(JSON.parse(raw));}catch(e){throw Error('수량 범위 설정을 확인하세요.');}
 }
 function saveSupplyQuantityRangeV500(id,range,expected){
  referenceAdminV409_();return lockAndRun_(()=>{
   supplyOne_(spreadsheet_(),id);const current=supplyQuantityRangeV500_(id),next=supplyValidateQuantityRangeV500_(range);
-  if(JSON.stringify(current)!==JSON.stringify(expected))throw Error('다른 화면에서 수량 범위를 변경했습니다. 다시 불러온 뒤 저장하세요.');
+  if(JSON.stringify(current)!==JSON.stringify(supplyValidateQuantityRangeV500_(expected)))throw Error('다른 화면에서 수량 범위를 변경했습니다. 다시 불러온 뒤 저장하세요.');
   PropertiesService.getScriptProperties().setProperty('SUPPLY_QUANTITY_RANGE_V500_'+id,JSON.stringify(next));return {range:next};
  });
 }
