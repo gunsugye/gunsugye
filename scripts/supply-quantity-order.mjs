@@ -24,7 +24,7 @@ export function supplyQuantityOrderServerV500(source,server){
  const start=source.indexOf('function saveSupplyRow(itemId,source){'),end=source.indexOf('function normalizeSupplyCohort(',start);
  if(start<0||end<0)throw Error('군수품 수량 저장 위치 확인');
  let save=source.slice(start,end).replace('r=supplyOne_(ss,itemId)','r=supplyEnsureQuantityV500_(ss,itemId)')
- .replace('    const timestamp=iso_();',"    supplyCheckQuantityV500_(r.item.id,extra['수량'],old?.extra?.['수량']);\n    const timestamp=iso_();");
+ .replace('    const timestamp=iso_();',"    supplyCheckQuantityV500_(r.item.id,extra['수량'],old?.extra?.['수량']);supplyPresetValidateValueV520_(supplySchemaV408_(r.item),extra);\n    const timestamp=iso_();");
  source=source.slice(0,start)+save+source.slice(end);
  return source+'\n'+server;
 }

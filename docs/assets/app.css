@@ -1378,3 +1378,5 @@ tr[data-condition-color="unusable"]>td:first-child{box-shadow:inset 3px 0 var(--
 .personal-supply-review-table-v510{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}.personal-supply-review-table-v510 th,.personal-supply-review-table-v510 td{padding:6px;border-bottom:1px solid #e2e9f2;text-align:left;overflow-wrap:anywhere}.personal-supply-review-table-v510 th{width:30%;background:#edf3fa}
 
 .personal-batch-actions-v518{width:100%;margin:12px 0}.personal-batch-actions-v518 .personal-supply-submit-v507{margin:0;min-height:44px}
+
+.personal-supply-section-v520{margin:14px 0 20px;min-width:0}.personal-supply-section-v520 h3{font-size:15px;margin:0 0 8px}
