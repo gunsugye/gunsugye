@@ -1,5 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../scripts/personal-interface-server.gs.txt',import.meta.url),'utf8');
+test('collapsed detail cards wait for core while opening one starts the pending request',async()=>{let calls=0,finishCore;const c=vm.createContext({document:{addEventListener(){}},ticket:1,request:async()=>{calls++;return {loaded:true};}});vm.runInContext(readFileSync(new URL('../scripts/personal-loading.js.txt',import.meta.url),'utf8'),c);const core=new Promise(resolve=>finishCore=resolve),pending=c.personalDetailsPriorityV525(core,false);assert.equal(calls,0);vm.runInContext('personalDeferredDetailsV525()',c);assert.equal((await pending).loaded,true);assert.equal(calls,1);finishCore();await Promise.resolve();assert.equal(calls,1);});
+test('admin collapse defaults persist separately for regular and duty profiles',()=>{const props=new Map();const c=vm.createContext({config_:()=>({canManageUsers:true}),PropertiesService:{getScriptProperties:()=>({getProperty:key=>props.get(key),setProperty:(key,value)=>props.set(key,value)})},Utilities:{getUuid:()=> 'v1'},lockAndRun_:fn=>fn()});vm.runInContext(source,c);const initial=c.getPersonalInterfaceV359();const saved=c.savePersonalInterfaceV359({regular:[...initial.order],duty:[...initial.dutyInterfaceOrder],regularCollapsed:['uniform','supplies'],dutyCollapsed:['assets']},'');assert.deepEqual(Array.from(saved.regularCollapsed),['uniform','supplies']);assert.deepEqual(Array.from(c.getPersonalInterfaceV359().dutyCollapsed),['assets']);assert.throws(()=>c.savePersonalInterfaceV359({regular:[...initial.order],regularCollapsed:['unknown']},'v1'),/접기 설정/);});
 test('개인 화면 순서는 관리자만 저장하며 누락·중복·임의 항목·동시 수정을 거절한다',()=>{
  const props=new Map();let admin=true,serial=0;
  const c=vm.createContext({config_:()=>({canManageUsers:admin}),PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k),setProperty:(k,v)=>props.set(k,v)})},Utilities:{getUuid:()=>String(++serial)},lockAndRun_:fn=>fn()});vm.runInContext(source,c);
@@ -9,10 +11,10 @@ test('개인 화면 순서는 관리자만 저장하며 누락·중복·임의 �
  admin=false;assert.throws(()=>c.savePersonalInterfaceV359(order,'1'),/관리자/);assert.throws(()=>c.getPersonalInterfaceV359(),/관리자/);assert.deepEqual(Array.from(c.personalInterfaceReadV359_().order),order);assert.equal(props.size,1);
 });
 test('개인 화면은 기존 카드 DOM을 옮기며 미설정·잘못된 항목은 기본 순서로 보완한다',()=>{
- const defaults=['room','assets','firearm','uniform','supplies'],cards=new Map(defaults.map(id=>[id,{id,closest(){return this;}}])),order=[];
- const c=vm.createContext({$:id=>cards.get(id),document:{querySelector:()=>({appendChild(card){const i=order.indexOf(card);if(i>=0)order.splice(i,1);order.push(card);}})}});vm.runInContext(readFileSync(new URL('../scripts/personal-interface-portal.js.txt',import.meta.url),'utf8'),c);
+ const defaults=['room','assets','firearm','uniform','supplies'],cards=new Map(defaults.map(id=>[id,{id,dataset:{},closest(){return this;},querySelector(selector){return selector==='h2'?{textContent:id}:selector.includes('personal-card-header')?this.header:null;},prepend(header){this.header=header;}}])),order=[];
+ const c=vm.createContext({$:id=>cards.get(id),document:{querySelector:()=>({appendChild(card){const i=order.indexOf(card);if(i>=0)order.splice(i,1);order.push(card);}}),createElement:()=>({className:'',setAttribute(){},append(...items){this.button=items.at(-1);},querySelector(){return this.button;}}),createTextNode:text=>text}});vm.runInContext(readFileSync(new URL('../scripts/personal-interface-portal.js.txt',import.meta.url),'utf8'),c);
  c.personalInterfaceOrderV359(['uniform','room','uniform','unknown']);assert.deepEqual(order.map(x=>x.id),['uniform','room','firearm','assets','supplies']);assert.equal(order[0],cards.get('uniform'));
- c.personalInterfaceOrderV359();assert.deepEqual(order.map(x=>x.id),['room','firearm','assets','uniform','supplies']);
+ c.personalInterfaceOrderV359();assert.deepEqual(order.map(x=>x.id),['room','firearm','assets','uniform','supplies']);c.personalInterfaceOrderV359(undefined,['uniform']);assert.equal(cards.get('uniform').dataset.personalCollapsed,'true');assert.equal(cards.get('assets').dataset.personalCollapsed,'false');
 });
 
 test('관리 설정은 두 구성의 순서를 함께 저장하고 기존 배열 저장과 동시 수정 검사를 유지한다',()=>{

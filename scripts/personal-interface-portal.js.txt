@@ -2,8 +2,11 @@ function personalDutyLayoutV404(order){
  const defaults=['room','firearm','duty','assets','uniform','supplies'],known=new Set(defaults);
  return [...new Set([...(Array.isArray(order)?order:[]),...defaults])].filter(id=>known.has(id));
 }
-function personalInterfaceOrderV359(order){
+const personalCollapsedOverridesV525=new Map();
+function personalDetailsExpandedV525(){return ['uniform','supplies'].some(id=>$(id)?.closest('section.card')?.dataset.personalCollapsed!=='true');}
+function personalInterfaceOrderV359(order,collapsed){
  const defaults=['room','firearm','assets','uniform','supplies'],duty=$('personalDutyV400'),eligible=!!duty&&!duty.hidden,known=new Set([...defaults,...(eligible?['duty']:[])]),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;
  const values=eligible?personalDutyLayoutV404(order):[...(Array.isArray(order)?order:defaults),...defaults];
- for(const id of values){if(!known.has(id)||seen.has(id))continue;seen.add(id);const card=id==='duty'?duty:$(id)?.closest('section.card');if(card)grid.appendChild(card);}
+ const defaultCollapsed=new Set(Array.isArray(collapsed)?collapsed:[]);
+ for(const id of values){if(!known.has(id)||seen.has(id))continue;seen.add(id);const card=id==='duty'?duty:$(id)?.closest('section.card');if(!card)continue;grid.appendChild(card);let header=card.querySelector(':scope > .personal-card-header-v525');if(!header){header=document.createElement('div');header.className='personal-card-header-v525';const title=card.querySelector('h2')?.textContent||id,button=document.createElement('button');button.type='button';button.className='personal-card-toggle-v525';button.setAttribute('aria-label',title+' 접기 또는 펼치기');button.onclick=()=>{const next=card.dataset.personalCollapsed!=='true';personalCollapsedOverridesV525.set(id,next);card.dataset.personalCollapsed=String(next);button.setAttribute('aria-expanded',String(!next));button.textContent=next?'펼치기':'접기';if(!next&&['uniform','supplies'].includes(id))personalDeferredDetailsV525?.();};header.onclick=event=>{if(event.target!==button)button.click();};header.append(document.createTextNode(title),button);card.prepend(header);}const isCollapsed=personalCollapsedOverridesV525.has(id)?personalCollapsedOverridesV525.get(id):defaultCollapsed.has(id);card.dataset.personalCollapsed=String(isCollapsed);const button=header.querySelector('button');button.setAttribute('aria-expanded',String(!isCollapsed));button.textContent=isCollapsed?'펼치기':'접기';}
 }
