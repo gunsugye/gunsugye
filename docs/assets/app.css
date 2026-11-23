@@ -1381,3 +1381,4 @@ tr[data-condition-color="unusable"]>td:first-child{box-shadow:inset 3px 0 var(--
 
 .personal-supply-section-v520{margin:14px 0 20px;min-width:0}.personal-supply-section-v520 h3{font-size:15px;margin:0 0 8px}
 .supply-bulk-v522{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}.supply-bulk-v522 label,.supply-select-request-v522{display:inline-flex;align-items:center;gap:6px}.supply-bulk-v522 button{min-height:36px}.supply-select-request-v522{font-weight:700;margin-bottom:8px}
+td[data-supply-attention="shortage"],td[data-supply-attention="absent"]{background:#fff0d4!important;color:#894300!important;font-weight:700}td[data-supply-attention="absent"]{background:#ffe6d8!important;color:#a42d11!important}td[data-supply-attention] select,td[data-supply-attention] input{background:transparent!important;color:inherit!important;font-weight:700}

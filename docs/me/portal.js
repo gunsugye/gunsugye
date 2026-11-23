@@ -43,6 +43,24 @@ function renderAssets(data,loading){assetSurveyPolicyV416=data?.policy||null;con
  const note=document.createElement('td'),textarea=document.createElement('textarea');textarea.setAttribute('aria-label',item.name+' '+slot.position+' 세부사항');textarea.maxLength=500;textarea.rows=1;textarea.value=slot.details||'';textarea.placeholder='—';textarea.addEventListener('input',()=>{slot.details=textarea.value;slot.status=select.value;changed();});note.append(textarea);if(index===0&&item.legacy){const legacy=element('details','','legacy-note');legacy.append(element('summary','이전 기록'),element('p',[item.legacy.status,item.legacy.details].filter(Boolean).join(' · ')));note.append(legacy);}row.append(note);details.append(row);}
  details.dataset.personalItem=item.id;table.append(details);}personalPlanRenderV332();}
 function personalTableV335(caption){const table=element('table','','personal-table');table.append(element('caption',caption,'sr-only'));const cols=document.createElement('colgroup');for(const cls of ['item-col','status-col','detail-col'])cols.append(element('col','',cls));table.append(cols);const head=document.createElement('thead'),row=document.createElement('tr');for(const text of ['품목','상태','세부사항']){const th=element('th',text);th.scope='col';row.append(th);}head.append(row);table.append(head);return table;}
+function supplyAttentionV523(item,key,value){
+ const text=String(value??'').trim();if(!text)return '';
+ if(text==='무'&&item.schema?.options?.[key]?.includes('유'))return 'absent';
+ const max=key==='수량'?item.quantityRange?.max??item.schema?.quantityRange?.max:item.schema?.numeric?.[key];
+ return Number.isFinite(Number(max))&&Number(max)>0&&/^\d+$/.test(text)&&Number(text)<Number(max)?'shortage':'';
+}
+function supplyRenderAlertsV523(){
+ const root=document.getElementById('supplyRows');if(!root||typeof supplyItem==='undefined'||!supplyItem)return;
+ for(const input of root.querySelectorAll('[data-supply-field^="extra:"]')){
+  const key=input.dataset.supplyField.slice(6),attention=supplyAttentionV523(supplyItem,key,input.value),cell=input.closest('td');
+  if(cell)cell.dataset.supplyAttention=attention;
+ }
+}
+document.addEventListener('change',event=>{
+ const input=event.target.closest?.('#supplyRows [data-supply-field^="extra:"]');if(!input||typeof supplyItem==='undefined'||!supplyItem)return;
+ const cell=input.closest('td');if(cell)cell.dataset.supplyAttention=supplyAttentionV523(supplyItem,input.dataset.supplyField.slice(6),input.value);
+});
+
 function supplyFieldLabelV509(key){return key==='정화통위치'?'정화통 위치':key;}
 function supplyItemNameV517(item){const position=item.fields?.정화통위치;return /방독면/.test(item.name)&&['좌','우'].includes(position)?item.name.replace(/\([좌우]\)$/,'')+'('+position+')':item.name;}
 let personalSupplyDirtyV506=false,personalSupplyModelV507=null;
@@ -51,7 +69,6 @@ function supplyMissingV507(item,value){
  const keys=['수량',...(item.schema?.fields||Object.keys(item.fields||{}).filter(k=>k!=='수량'))],missing=[];
  for(const key of keys)if(String(value.extra?.[key]??'').trim()===''&&(key==='수량'||String(value.extra?.수량)!=='0'))missing.push(supplyFieldLabelV509(key));
  if(item.schema?.includeStatus!==false&&String(value.extra?.수량)!=='0'&&!value.status)missing.push('상태');
- if(['수리 필요','사용 불가'].includes(value.status)&&!value.detail.trim())missing.push('세부사항');
  return missing;
 }
 function supplyCompletionV507(item,value){const filled=!!(value.status||value.detail.trim()||Object.values(value.extra||{}).some(v=>String(v).trim()!==''));return !filled?'empty':supplyMissingV507(item,value).length?'partial':'complete';}
@@ -84,11 +101,11 @@ function personalSupplyReviewV507(){
  };dialog.showModal();
 }
 function personalSupplyDrawV507(){
- const model=personalSupplyModelV507,root=$('supplies');if(!model)return;root.replaceChildren();const legend=element('p','미작성 · 부분작성 · 작성 완료','personal-supply-legend-v507');legend.replaceChildren(...[['empty','미작성'],['partial','부분작성'],['complete','작성 완료']].map(([state,label])=>{const span=element('span',label);span.dataset.supplyCompletion=state;return span;}));root.append(legend);
+ const model=personalSupplyModelV507,root=$('supplies');if(!model)return;root.replaceChildren();const notice=element('p',model.notice||'품목을 눌러 작성한 뒤 한 번에 제출하세요.','hint');notice.setAttribute('role','status');root.append(notice);const legend=element('p','미작성 · 부분작성 · 작성 완료','personal-supply-legend-v507');legend.replaceChildren(...[['empty','미작성'],['partial','부분작성'],['complete','작성 완료']].map(([state,label])=>{const span=element('span',label);span.dataset.supplyCompletion=state;return span;}));root.append(legend);
  const itemButton=entry=>{const missing=supplyMissingV507(entry.item,entry.value),state=supplyCompletionV507(entry.item,entry.value),button=element('button',supplyItemNameV517(entry.item)+(state==='partial'?'('+missing.join('·')+' 미작성)':''),'personal-supply-item-v507');button.type='button';button.dataset.supplyCompletion=state;button.dataset.personalSupplyItem=entry.item.id;button.disabled=model.loading||!entry.item.snapshot;button.onclick=()=>personalSupplyPopupV507(entry);return button;};
- for(const entry of model.entries){const section=element('section','','personal-supply-section-v520'),fields=['수량',...(entry.item.schema?.fields||[])],scroll=element('div','','personal-supply-scroll-v509'),table=element('table','','personal-table personal-supply-table-v509'),head=element('thead'),header=element('tr'),body=element('tbody'),row=element('tr'),name=element('th');name.scope='row';name.append(itemButton(entry));row.append(name);section.append(element('h3',supplyItemNameV517(entry.item)));scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label',entry.item.name+' 현황 · 좌우 스크롤');table.setAttribute('aria-label',entry.item.name);const values=supplyDisplayValuesV521(entry),labels=['품목',...values.map(([key])=>key)];for(const label of labels){const cell=element('th',supplyFieldLabelV509(label));cell.scope='col';header.append(cell);}head.append(header);for(const [key,value] of values){const cell=element('td',String(value??'').trim()||(key==='세부사항'?'—':'미입력'));if(key==='상태')cell.dataset.supplyStatus='';row.append(cell);}body.append(row);table.append(head,body);scroll.append(table);section.append(scroll);root.append(section);}
+ for(const entry of model.entries){const section=element('section','','personal-supply-section-v520'),fields=['수량',...(entry.item.schema?.fields||[])],scroll=element('div','','personal-supply-scroll-v509'),table=element('table','','personal-table personal-supply-table-v509'),head=element('thead'),header=element('tr'),body=element('tbody'),row=element('tr'),name=element('th');name.scope='row';name.append(itemButton(entry));row.append(name);scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label',entry.item.name+' 현황 · 좌우 스크롤');table.setAttribute('aria-label',entry.item.name);const values=supplyDisplayValuesV521(entry),labels=['품목',...values.map(([key])=>key)];for(const label of labels){const cell=element('th',supplyFieldLabelV509(label));cell.scope='col';header.append(cell);}head.append(header);for(const [key,value] of values){const cell=element('td',String(value??'').trim()||(key==='세부사항'?'—':'미입력'));if(key==='상태')cell.dataset.supplyStatus='';const attention=supplyAttentionV523(entry.item,key,value);if(attention)cell.dataset.supplyAttention=attention;row.append(cell);}body.append(row);table.append(head,body);scroll.append(table);section.append(scroll);root.append(section);}
 
- const notice=element('p',model.notice||'품목을 눌러 작성한 뒤 한 번에 제출하세요.','hint');notice.setAttribute('role','status');root.append(notice);personalSupplyActionsV518();
+ personalSupplyActionsV518();
 }
 function renderSuppliesV335(items,loading){personalSupplyDirtyV506=false;const root=$('supplies');if(!items?.length){personalSupplyModelV507=null;personalSupplyActionsV518(true);root.replaceChildren(element('p',loading?'불러오는 중…':'기록 없음','empty'));return;}personalSupplyModelV507={entries:items.map(item=>{const value=supplyDraftV507(item);return {item,value,baseline:JSON.parse(JSON.stringify(value))};}),loading,direct:items.some(item=>item.policy?.mode==='direct'),policyId:items.find(item=>item.policy?.mode==='direct')?.policy.id||'',notice:''};personalSupplyDrawV507();}
 window.addEventListener('beforeunload',event=>{if(personalSupplyDirtyV506){event.preventDefault();event.returnValue='';}});
@@ -178,8 +195,8 @@ function fields(id,values){
 window.addEventListener('beforeunload',e=>{if(uniformDirtyV350){e.preventDefault();e.returnValue='';}});
 
 function personalDutyLayoutV404(order){
- const defaults=['room','firearm','duty','assets','uniform','supplies'],known=new Set(defaults),values=[...new Set([...(Array.isArray(order)?order:[]),...defaults])].filter(id=>known.has(id)),fixed=new Set(['room','firearm','duty','assets']);
- const before=values.slice(0,values.indexOf('room')).filter(id=>!fixed.has(id)).length,rest=values.filter(id=>!fixed.has(id));rest.splice(before,0,'room','firearm','duty','assets');return rest;
+ const defaults=['room','firearm','duty','assets','uniform','supplies'],known=new Set(defaults);
+ return [...new Set([...(Array.isArray(order)?order:[]),...defaults])].filter(id=>known.has(id));
 }
 function personalInterfaceOrderV359(order){
  const defaults=['room','firearm','assets','uniform','supplies'],duty=$('personalDutyV400'),eligible=!!duty&&!duty.hidden,known=new Set([...defaults,...(eligible?['duty']:[])]),seen=new Set(),grid=document.querySelector('#dashboard>.grid');if(!grid)return;

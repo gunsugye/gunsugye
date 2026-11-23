@@ -122,7 +122,7 @@ js=js.slice(0,hook)+`\nwindow.LOGBOOK_OPEN_UPDATES=()=>navEditModeV220?null:swit
 js=js.slice(0,hook)+`\nwindow.logbookReloadState=()=>({busy:!!(dutyMoveBusyV372||dutyVerifyBusyV371||dutyItemsBusyV368||dutySavingV367||dutyCadetsBusyV365||personalInterfaceBusyV359||modalSaving||eqSaving||rosterSaving||rosterQuickSaving.size||navSavingV220||wxCalSaving||wxBulkSavingV229||wxRowSaving||syncPending||assetSavingV244||departuresBusyV305||dormPlacementBusyV344||dormPendingV237.size||dormBulkBusyV237||laborPairSavingV264||uniformStateV278.saving),dirty:!!(${leaveGuard[1]}||dutyItemDraftV368.size||dutyDialogV367.open||settingsDirtyV258||personalInterfaceDirtyV359||dormPlanDraftV315||$('dormPlanRoomDialogV315')?.open||$('dormAddDialogV344')?.open||document.querySelector('[data-request-edited]'))});\n`+js.slice(hook);
 js=js.replace('busy:!!(dutyMoveBusyV372||','busy:!!(devBusyV381||dutyMoveBusyV372||').replace('dirty:!!(','dirty:!!(devDirtyV381()||');
 js=js.replace('busy:!!(devBusyV381||','busy:!!(assetInspectionBusyV382||devBusyV381||');
-js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt')+'\n'+read('scripts/supply-blueprints-client.js.txt'));
+js=supplySchemaClientV408(js,read('scripts/supply-schema-client.js.txt')+'\n'+read('scripts/supply-blueprints-client.js.txt')+'\n'+read('scripts/supply-attention.js.txt'));
 js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
 js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
 js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
@@ -134,6 +134,7 @@ js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
 js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt'));
 js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
 js=supplyQuantityOrderClientV500(js,read('scripts/supply-quantity-order-client.js.txt'));
+js=js.replace('function supplyRender(){','function supplyRender(){queueMicrotask(supplyRenderAlertsV523);');
 js=supplyRequestsClientV506(js,read('scripts/supply-requests-client.js.txt'));
 js=quantityColorsClientV502(js);
 js=js.replace(/^init\(\);$/m,()=>read('scripts/condition-colors.js.txt')+'\ninit();');

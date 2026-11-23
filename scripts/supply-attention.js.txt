@@ -1,0 +1,17 @@
+function supplyAttentionV523(item,key,value){
+ const text=String(value??'').trim();if(!text)return '';
+ if(text==='무'&&item.schema?.options?.[key]?.includes('유'))return 'absent';
+ const max=key==='수량'?item.quantityRange?.max??item.schema?.quantityRange?.max:item.schema?.numeric?.[key];
+ return Number.isFinite(Number(max))&&Number(max)>0&&/^\d+$/.test(text)&&Number(text)<Number(max)?'shortage':'';
+}
+function supplyRenderAlertsV523(){
+ const root=document.getElementById('supplyRows');if(!root||typeof supplyItem==='undefined'||!supplyItem)return;
+ for(const input of root.querySelectorAll('[data-supply-field^="extra:"]')){
+  const key=input.dataset.supplyField.slice(6),attention=supplyAttentionV523(supplyItem,key,input.value),cell=input.closest('td');
+  if(cell)cell.dataset.supplyAttention=attention;
+ }
+}
+document.addEventListener('change',event=>{
+ const input=event.target.closest?.('#supplyRows [data-supply-field^="extra:"]');if(!input||typeof supplyItem==='undefined'||!supplyItem)return;
+ const cell=input.closest('td');if(cell)cell.dataset.supplyAttention=supplyAttentionV523(supplyItem,input.dataset.supplyField.slice(6),input.value);
+});
