@@ -1,0 +1,34 @@
+const SURVEY_DEFERRED_V537={TAB:'전수조사_후속기록',HEAD:['작업ID','접수시각','상태','기록종류','기록JSON','처리시각','오류']};
+function surveyDeferredSheetV537_(ss,create){return specialSheetV255_(ss,SURVEY_DEFERRED_V537.TAB,SURVEY_DEFERRED_V537.HEAD,create);}
+function surveyDeferredReadyV537_(ss){
+ const sh=surveyDeferredSheetV537_(ss,true),props=PropertiesService.getScriptProperties();
+ if(props.getProperty('SURVEY_DEFERRED_TRIGGER_V537')!=='1'){
+  if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='pagesSurveyDeferred_'))ScriptApp.newTrigger('pagesSurveyDeferred_').timeBased().everyMinutes(1).create();
+  props.setProperty('SURVEY_DEFERRED_TRIGGER_V537','1');
+ }
+ return sh;
+}
+function surveyDeferredEnqueueV537_(sh,kind,rows){
+ const payload=JSON.stringify(rows);if(payload.length>45000)throw Error('후속 조사 기록이 너무 큽니다. 나누어 저장하세요.');
+ const row=sh.getLastRow()+1;ensureRows_(sh,row);try{sh.getRange(row,1,1,7).setValues([[Utilities.getUuid(),iso_(),'대기',kind,payload,'','']]);}catch(error){sh.getRange(row,1,1,7).clearContent();throw error;}return row;
+}
+function surveyDeferredEnqueueManyV537_(sh,kind,batches){
+ const now=iso_(),records=batches.map(rows=>{const payload=JSON.stringify(rows);if(payload.length>45000)throw Error('후속 조사 기록이 너무 큽니다. 나누어 저장하세요.');return [Utilities.getUuid(),now,'대기',kind,payload,'',''];});
+ const start=sh.getLastRow()+1;ensureRows_(sh,start+records.length-1);try{sh.getRange(start,1,records.length,7).setValues(records);}catch(error){sh.getRange(start,1,records.length,7).clearContent();throw error;}return start;
+}
+function surveyDeferredProcessV537_(){return lockAndRun_(()=>{
+ const ss=spreadsheet_(),queue=surveyDeferredSheetV537_(ss,false);if(!queue||queue.getLastRow()<2)return;
+ const pending=queue.getRange(2,3,queue.getLastRow()-1,1).createTextFinder('대기').matchEntireCell(true).findAll().slice(0,30);
+ for(const cell of pending){
+  const index=cell.getRow(),row=queue.getRange(index,1,1,7).getValues()[0];
+  try{
+   const target=row[3]==='supply'?supplyRequestSheetV506_(ss,true,true):surveyTableV416_(ss,true,true),entries=JSON.parse(String(row[4]||'[]'));
+   for(const entry of entries){
+    const key=String(entry[0]),found=target.getLastRow()>1?target.getRange(2,1,target.getLastRow()-1,1).createTextFinder(key).matchEntireCell(true).findNext():null;
+    if(found&&row[3]==='supply'){const prior=JSON.parse(String(target.getRange(found.getRow(),6).getValue()||'{}')),data=JSON.parse(String(entry[5]));data.before=prior.before||data.before;data.changed=!supplyRequestSameV506_(data.before,data.value);entry[4]=data.changed?'변경':'확인';entry[5]=JSON.stringify(data);}
+    if(found)target.getRange(found.getRow(),1,1,6).setValues([entry]);else target.appendRow(entry);
+   }
+   queue.getRange(index,3,1,5).setValues([['완료',row[3],row[4],iso_(),'']]);
+  }catch(error){queue.getRange(index,7).setValue(String(error?.message||error).slice(0,500));}
+ }
+ });}

@@ -148,3 +148,4 @@ function pagesMigrateTriggers_() {
 }
 
 function pagesRosterSyncScheduled_(){return pagesCreateLegacy_(pagesActorForTrigger_()).rosterSyncScheduled();}
+function pagesSurveyDeferred_(){return pagesCreateLegacy_(pagesActorForTrigger_()).deferredSurvey();}

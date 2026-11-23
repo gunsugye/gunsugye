@@ -1,15 +1,14 @@
 function personalSupplyDirectBatchV532_(ss,person,policy,prepared){
- const sh=supplyRequestSheetV506_(ss,true,true),last=sh.getLastRow(),rows=last>1?sh.getRange(2,1,last-1,6).getValues():[],rowByKey=new Map(rows.map((row,index)=>[String(row[0]),{row:index+2,values:row}])),undo=[],results=[],items=[],now=iso_();let nextRow=last+1;
+ const queue=surveyDeferredReadyV537_(ss),undo=[],results=[],responses=[],now=iso_();
  try{for(const {change,own,value} of prepared){
-   const key=policy.id+'|'+person.id+'|'+change.itemId,previous=rowByKey.get(key),prior=previous?JSON.parse(String(previous.values[5])):null,changed=!supplyRequestSameV506_(own.value,value),original=prior?.before||own.value;
+   const key=policy.id+'|'+person.id+'|'+change.itemId,changed=!supplyRequestSameV506_(own.value,value),original=own.value;
    let updatedAt=own.old?.updatedAt||'';
    if(changed){const written=supplyRequestWriteV506_(ss,person,change.itemId,value,own);undo.push(written.undo);updatedAt=written.updatedAt;}
-   const data={itemId:change.itemId,itemName:own.r.item.name,requester:{cohort:person.cohort,company:person.company,name:person.name},before:original,value,campaignLabel:policy.label,changed:!supplyRequestSameV506_(original,value)},row=previous?.row||nextRow++;
-   ensureRows_(sh,row);sh.getRange(row,1,1,6).setValues([[key,policy.id,person.id,now,data.changed?'변경':'확인',JSON.stringify(data)]]);
-   undo.push(()=>{if(previous)sh.getRange(row,1,1,6).setValues([previous.values]);else sh.getRange(row,1,1,6).clearContent();});
+   const data={itemId:change.itemId,itemName:own.r.item.name,requester:{cohort:person.cohort,company:person.company,name:person.name},before:original,value,campaignLabel:policy.label,changed};
+   responses.push([key,policy.id,person.id,now,data.changed?'변경':'확인',JSON.stringify(data)]);
    results.push({direct:true,confirmed:true});
-   items.push(personalSupplyDTOv506_(ss,person,own.r.item,[],{...own,value,snapshot:personalHashV330_([person.id,change.itemId,updatedAt,value,own.schema,own.range])}));
   }
-  return {direct:true,results,items};
+  const batches=[];for(let i=0;i<responses.length;i+=20)batches.push(responses.slice(i,i+20));surveyDeferredEnqueueManyV537_(queue,'supply',batches);
+  return {direct:true,results,recordPending:true};
  }catch(error){let failed=false;for(const restore of undo.reverse())try{restore();}catch(_){failed=true;}if(failed)throw Error('군수품 전수조사 저장 복구 확인이 필요합니다. 다시 제출하지 말고 관리자에게 문의하세요.');throw error;}
 }

@@ -5,14 +5,12 @@ function personalLoginV330_(input){
  const authType=input?.authType===undefined?'firearm':input.authType,name=personalNormalizeV330_(input?.name),field=authType==='cadet'?'cadetNumber':'firearmNumber',number=personalNormalizeV330_(input?.[field]),rateKey=pagesActor_.rateKey;
  if(!['firearm','cadet'].includes(authType)||!name||name.length>60||!number||number.length>60||! /^[\w-]{43}$/.test(rateKey||''))throw Error('이름과 총기번호 또는 교번을 확인하세요.');
  const cache=CacheService.getScriptCache(),personKey='personal:name:'+personalHashV330_(name),ipKey='personal:ip:'+rateKey;
- const clean=lockAndRun_(()=>{
-  const byName=Number(cache.get(personKey)||0),byIp=Number(cache.get(ipKey)||0);
-  if(byName>=5||byIp>=30){const e=Error('인증 시도가 많습니다. 15분 후 다시 시도하세요.');e.pagesCode='RATE_LIMITED';throw e;}
-  cache.put(ipKey,String(byIp+1),900);
-  return !cache.get('personal:session-cleanup');
- });
+ const byName=Number(cache.get(personKey)||0),byIp=Number(cache.get(ipKey)||0);
+ if(byName>=5||byIp>=30){const e=Error('인증 시도가 많습니다. 15분 후 다시 시도하세요.');e.pagesCode='RATE_LIMITED';throw e;}
+ cache.put(ipKey,String(byIp+1),900);
+ const clean=!cache.get('personal:session-cleanup');
   const ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),matches=people.filter(p=>personalNormalizeV330_(p.name)===name&&personalNormalizeV330_(p[field])===number);
-  if(matches.length!==1){lockAndRun_(()=>cache.put(personKey,String(Number(cache.get(personKey)||0)+1),900));throw Error('이름과 총기번호 또는 교번을 확인하세요.');}
+  if(matches.length!==1){cache.put(personKey,String(Number(cache.get(personKey)||0)+1),900);throw Error('이름과 총기번호 또는 교번을 확인하세요.');}
   const person=matches[0],props=PropertiesService.getScriptProperties(),now=Date.now();
   if(clean){for(const [key,value] of Object.entries(props.getProperties()))if(key.startsWith('PAGES_PERSONAL_SESSION_')){let s;try{s=JSON.parse(value);}catch(_){}if(!s||s.expiresAt<=now)props.deleteProperty(key);}cache.put('personal:session-cleanup','1',900);}
   const sessionId=Utilities.getUuid(),expiresAt=now+15*60000,sub='personal:'+person.id;

@@ -158,10 +158,10 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
   const token=/^Bearer (\S+)$/.exec(request.headers.get('authorization')||'')?.[1];actor=await verifySession(token,env.API_SHARED_SECRET);
   if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))throw new ApiError(403,'개인 조회 인증이 필요합니다.');
   method={'/personal/me':'pagesPersonalGet','/personal/duty':'pagesPersonalDuty','/personal/assets':'pagesPersonalAssets','/personal/details':'pagesPersonalDetails','/personal/supplies':'pagesPersonalSupplies','/personal/uniform':'pagesPersonalUniform','/personal/logout':'pagesPersonalLogout','/personal/uniform-request':'pagesPersonalUniformRequest','/personal/duty-request':'pagesPersonalDutyRequest','/personal/firearm-request':'pagesPersonalFirearmRequest','/personal/supply-request':'pagesPersonalSupplyRequest'}[path];
-  if(path==='/personal/assets')args=[{changes:body.changes,campaignId:body.campaignId}];
-  if(path==='/personal/uniform-request')args=[{changes:body.changes,expectedUpdatedAt:body.expectedUpdatedAt,campaignId:body.campaignId}];
-  if(path==='/personal/duty-request')args=[{changes:body.changes,snapshot:body.snapshot,campaignId:body.campaignId}];
-  if(path==='/personal/firearm-request')args=[{snapshot:body.snapshot,status:body.status,detail:body.detail,campaignId:body.campaignId}];
+  if(path==='/personal/assets')args=[{changes:body.changes,campaignId:body.campaignId,...(body.deferResponse===true?{deferResponse:true}:{})}];
+  if(path==='/personal/uniform-request')args=[{changes:body.changes,expectedUpdatedAt:body.expectedUpdatedAt,campaignId:body.campaignId,...(body.deferResponse===true?{deferResponse:true}:{})}];
+  if(path==='/personal/duty-request')args=[{changes:body.changes,snapshot:body.snapshot,campaignId:body.campaignId,...(body.deferResponse===true?{deferResponse:true}:{})}];
+  if(path==='/personal/firearm-request')args=[{snapshot:body.snapshot,status:body.status,detail:body.detail,campaignId:body.campaignId,...(body.deferResponse===true?{deferResponse:true}:{})}];
   if(path==='/personal/supply-request')args=[{itemId:body.itemId,snapshot:body.snapshot,value:body.value,changes:body.changes,campaignId:body.campaignId}];
  }
  const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args}),signature=await signPayload(payload,env.API_SHARED_SECRET);
