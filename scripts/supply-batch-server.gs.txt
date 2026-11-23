@@ -5,12 +5,11 @@ function personalSupplyBatchV507_(input){return lockAndRun_(()=>{
  const prepared=changes.map(change=>{const own=supplyRequestOwnV506_(ss,person,String(change.itemId||'')),value=supplyRequestValueV506_(change.value,own);if(change.snapshot!==own.snapshot&&(policy.mode!=='direct'||!supplyRequestSameV506_(value,own.value)))throw Error(own.r.item.name+' 기록이 변경되었습니다. 새로고침하세요.');return {change,own,value};}),undo=[],results=[];
  if(policy.mode==='direct')return personalSupplyDirectBatchV532_(ss,person,policy,prepared);
  const backup=(sh,row,width)=>{ensureRows_(sh,row);const previous=sh.getRange(row,1,1,width).getValues()[0];undo.push(()=>sh.getRange(row,1,1,width).setValues([previous]));};
- try{for(const {change,own} of prepared){const r=supplyEnsureQuantityV500_(ss,change.itemId);backup(r.sh,own.old?.row||r.sh.getLastRow()+1,r.headers.length);
-   const survey=policy.mode==='direct',sh=supplyRequestSheetV506_(ss,survey,true);let row;
-   if(survey){const key=policy.id+'|'+person.id+'|'+change.itemId,found=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,1).createTextFinder(key).matchEntireCell(true).findNext():null;row=found?.getRow()||sh.getLastRow()+1;}
-   else{const pending=supplyRequestRowsV506_(ss,person.id).find(r=>r.itemId===change.itemId&&r.status==='대기');row=pending?.row||sh.getLastRow()+1;}
-   backup(sh,row,survey?6:8);results.push(personalSupplyOneV507_({...change,campaignId:input.campaignId||''},{person,ss},own));
+ const pendingByItem=new Map(supplyRequestRowsV506_(ss,person.id).filter(r=>r.status==='대기').map(r=>[r.itemId,r])),sh=supplyRequestSheetV506_(ss,false,true);
+ try{for(const {change,own} of prepared){
+   const pending=pendingByItem.get(change.itemId)||null,row=pending?.row||sh.getLastRow()+1;
+   backup(sh,row,8);results.push(personalSupplyOneV507_({...change,campaignId:input.campaignId||''},{person,ss},own,pending));
   }
-  const history=supplyRequestRowsV506_(ss,person.id),items=prepared.map(({own})=>personalSupplyDTOv506_(ss,person,own.r.item,history));return {direct:policy.mode==='direct',results,items};
+  const history=supplyRequestRowsV506_(ss,person.id),items=prepared.map(({own})=>personalSupplyDTOv506_(ss,person,own.r.item,history,own));return {direct:false,results,items};
  }catch(error){let failed=false;for(const restore of undo.reverse())try{restore();}catch(_){failed=true;}if(failed)throw Error('군수품 일괄 처리 복구 확인이 필요합니다. 다시 제출하지 말고 관리자에게 문의하세요.');throw error;}
 });}
