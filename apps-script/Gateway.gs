@@ -149,3 +149,8 @@ function pagesMigrateTriggers_() {
 
 function pagesRosterSyncScheduled_(){return pagesCreateLegacy_(pagesActorForTrigger_()).rosterSyncScheduled();}
 function pagesSurveyDeferred_(){return pagesCreateLegacy_(pagesActorForTrigger_()).deferredSurvey();}
+function pagesSupplyFormsPoll_(){return pagesCreateLegacy_(pagesActorForTrigger_()).supplyFormsPoll();}
+function pagesSupplyFormClose_(){return pagesCreateLegacy_(pagesActorForTrigger_()).supplyFormsClose();}
+// 이전 버전이 등록한 트리거도 새 실행 경로로 연결합니다.
+function supplyFormCloseDueV550_(){return pagesSupplyFormClose_();}
+function supplyFormCloseRetryV550_(){return pagesSupplyFormsPoll_();}

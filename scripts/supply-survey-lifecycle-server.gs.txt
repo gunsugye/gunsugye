@@ -11,11 +11,16 @@ function supplyFormCloseDueV550_(){
  }if(failed)throw Error('일부 전수조사 폼 마감을 재시도해야 합니다.');
 }
 function supplyFormScheduleV550_(policy){
- for(const trigger of ScriptApp.getProjectTriggers())if(trigger.getHandlerFunction()==='supplyFormCloseDueV550_')ScriptApp.deleteTrigger(trigger);
- if(policy.mode==='direct')ScriptApp.newTrigger('supplyFormCloseDueV550_').timeBased().at(new Date(policy.endsAt)).create();
- if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='supplyFormCloseRetryV550_'))ScriptApp.newTrigger('supplyFormCloseRetryV550_').timeBased().everyMinutes(1).create();
+ for(const trigger of ScriptApp.getProjectTriggers())if(['supplyFormCloseDueV550_','supplyFormCloseRetryV550_','pagesSupplyFormClose_'].includes(trigger.getHandlerFunction()))ScriptApp.deleteTrigger(trigger);
+ if(policy.mode==='direct')ScriptApp.newTrigger('pagesSupplyFormClose_').timeBased().at(new Date(policy.endsAt)).create();
+ if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='pagesSupplyFormsPoll_'))ScriptApp.newTrigger('pagesSupplyFormsPoll_').timeBased().everyMinutes(1).create();
 }
-function supplyFormCloseRetryV550_(){supplyFormCloseDueV550_();}
+function supplyFormsPollV551_(){
+ const props=PropertiesService.getScriptProperties();let error;try{supplyFormCloseDueV550_();}catch(e){error=e;}
+ for(const [key,raw] of Object.entries(props.getProperties())){if(!key.startsWith('SUPPLY_FORM_V546_'))continue;const meta=JSON.parse(raw);if(!meta.ready||Date.parse(meta.policy?.endsAt)<Date.now()-86400000)continue;
+  try{const result=supplyFormImportV551_(meta);props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportAt:iso_(),lastImportError:'',importRemaining:result.remaining}));}catch(e){props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportError:String(e.message).slice(0,300)}));error=e;}
+ }if(error)throw error;
+}
 function supplyFormSyncPolicyV550_(policy){
  const props=PropertiesService.getScriptProperties(),key=supplyFormKeyV546_(policy.id),raw=props.getProperty(key);if(!raw)return;
  const meta=JSON.parse(raw);if(!meta.ready)return;const form=FormApp.openById(meta.id),open=policy.mode==='direct';
@@ -29,7 +34,7 @@ function setSupplySurveyV506(input){
  if(title)PropertiesService.getScriptProperties().setProperty(title.key,String(title.round));
  supplyFormSyncPolicyV550_(result);supplyFormScheduleV550_(result);return result;
 }
-function supplyReceiptNewerV550_(a,b){return Date.parse(a[1])-Date.parse(b[1])||String(a[0]).localeCompare(String(b[0]));}
+function supplyReceiptNewerV550_(a,b){const time=Date.parse(a[1])-Date.parse(b[1]);if(time)return time;try{const x=JSON.parse(a[5]),y=JSON.parse(b[5]);if(x.formResponseId&&x.formResponseId===y.formResponseId)return Number(x.responseRevision||0)-Number(y.responseRevision||0)||String(a[0]).localeCompare(String(b[0]));}catch(_){}return String(a[0]).localeCompare(String(b[0]));}
 function supplyReceiptLatestV550_(record,saved,rows){
  if(saved.policy.mode!=='direct')return saved.payload.changes;
  if(!Number.isFinite(Date.parse(record[1])))throw Error('제출 시각을 확인하세요.');

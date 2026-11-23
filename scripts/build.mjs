@@ -347,7 +347,9 @@ return {
  rosterSyncScheduled: function(){if(PropertiesService.getScriptProperties().getProperty('ROSTER_LINK_AUTO_V412')==='yes')return syncRosterLinkageV412(false);},
  training: function() { return trainingScheduledHandoffV227(); },
  survey: function(event) { return surveysOnSubmitV299(event); },
- deferredSurvey: function() { const inbox=supplyInboxProcessV542_();surveyDeferredProcessV537_();return inbox; }
+ deferredSurvey: function() { const inbox=supplyInboxProcessV542_();surveyDeferredProcessV537_();return inbox; },
+ supplyFormsPoll: function(){return supplyFormsPollV551_();},
+ supplyFormsClose: function(){return supplyFormCloseDueV550_();}
 };
 }
 `;
