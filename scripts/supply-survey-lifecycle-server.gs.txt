@@ -17,6 +17,7 @@ function supplyFormScheduleV550_(policy){
 }
 function supplyFormsPollV551_(){
  const props=PropertiesService.getScriptProperties();let error;try{supplyFormCloseDueV550_();}catch(e){error=e;}
+ try{supplyFormsKoreanV553_();}catch(e){error=e;}
  for(const [key,raw] of Object.entries(props.getProperties())){if(!key.startsWith('SUPPLY_FORM_V546_'))continue;const meta=JSON.parse(raw);if(!meta.ready||Date.parse(meta.policy?.endsAt)<Date.now()-86400000)continue;
   try{supplyFormResponseTabV552_(meta);const result=supplyFormImportV551_(meta);props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportAt:iso_(),lastImportError:'',importRemaining:result.remaining}));}catch(e){props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportError:String(e.message).slice(0,300)}));error=e;}
  }if(error)throw error;
@@ -24,7 +25,7 @@ function supplyFormsPollV551_(){
 function supplyFormSyncPolicyV550_(policy){
  const props=PropertiesService.getScriptProperties(),key=supplyFormKeyV546_(policy.id),raw=props.getProperty(key);if(!raw)return;
  const meta=JSON.parse(raw);if(!meta.ready)return;const form=FormApp.openById(meta.id),open=policy.mode==='direct';
- form.setTitle(policy.label);form.setAcceptingResponses(open);const updated={...meta,lifecycleVersion:550,closed:!open,policy:{...meta.policy,label:policy.label,endsAt:policy.endsAt}};props.setProperty(key,JSON.stringify(updated));supplyFormResponseTabV552_(updated);
+ form.setTitle(policy.label);form.setAcceptingResponses(open);const updated={...meta,lifecycleVersion:550,closed:!open,policy:{...meta.policy,label:policy.label,endsAt:policy.endsAt}};props.setProperty(key,JSON.stringify(updated));supplyFormResponseTabV552_(updated);supplyFormsKoreanV553_();
 }
 function supplyFormResponseTabV552_(meta){
  const book=supplyInboxBookV542_(false);if(!book)return;

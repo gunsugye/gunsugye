@@ -74,4 +74,5 @@ await import('./supply-requests.test.mjs');
 await import('./supply-inbox.test.mjs');
 await import('./supply-forms.test.mjs');
 await import('./supply-survey-lifecycle.test.mjs');
+await import('./supply-form-korean.test.mjs');
 import './supply-blueprints.test.mjs';

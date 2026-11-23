@@ -1,0 +1,14 @@
+function supplyFormsKoreanV553_(){
+ const book=supplyInboxBookV542_(false);if(!book)return;
+ if(book.getSpreadsheetLocale()!=='ko_KR')book.setSpreadsheetLocale('ko_KR');
+ if(book.getSpreadsheetTimeZone()!=='Asia/Seoul')book.setSpreadsheetTimeZone('Asia/Seoul');
+ const headers={'タイムスタンプ':'제출 시각','Timestamp':'제출 시각','メールアドレス':'이메일 주소','メール アドレス':'이메일 주소','Email Address':'이메일 주소','スコア':'점수','Score':'점수'};
+ for(const tab of book.getSheets()){
+  if(!tab.getFormUrl())continue;
+  const width=tab.getLastColumn();if(width){const values=tab.getRange(1,1,1,width).getDisplayValues()[0];for(let col=0;col<width;col++){
+   const label=String(values[col]||'').trim();if(headers[label])tab.getRange(1,col+1).setValue(headers[label]);
+   if(['タイムスタンプ','Timestamp','제출 시각'].includes(label)&&tab.getLastRow()>1)tab.getRange(2,col+1,tab.getLastRow()-1,1).setNumberFormat('yyyy-mm-dd hh:mm:ss');
+  }}
+  const match=tab.getName().match(/^(?:フォームの回答|Form Responses)\s*(\d*)$/i);if(match){const base='설문 응답 '+(match[1]||'1');let name=base,n=2;while(book.getSheetByName(name)&&book.getSheetByName(name).getSheetId()!==tab.getSheetId())name=base+' ('+(n++)+')';tab.setName(name);}
+ }
+}
