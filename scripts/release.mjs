@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.46',title:'Google Forms 전수조사·접수 검토 처리',notes:['군수품 전수조사를 시작하면 현재 품목 설정으로 Google Forms를 생성하고 응답 주소를 표시합니다.','Forms 응답을 별도 접수 시트로 가져와 명단을 대조하고 관리자 검토 후 반영합니다.','검토 필요 접수를 앱에서 열어 현재값과 비교하고 수정·반영하거나 삭제할 수 있습니다.']};
+export const releaseDetails={version:'5.47',title:'군수품 목록 저장 잠금 오류 수정',notes:['완료된 군수품 초기 구성 확인은 저장 잠금 없이 진행합니다.','군수품 목록 조회를 저장 대기열에서 분리해 다른 작업 저장 중 오류를 방지합니다.']};
