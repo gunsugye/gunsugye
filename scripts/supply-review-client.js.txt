@@ -1,4 +1,15 @@
 let supplyReviewDialogV531=null,supplyReviewSavingV531=false;
+function supplyReviewMatchesV541(row,draft,fields){return !!row&&String(row.status||'')===String(draft.status||'')&&String(row.detail||'')===String(draft.detail||'')&&fields.every(field=>String(row.extra?.[field]||'')===String(draft.extra?.[field]||''));}
+async function supplyReviewSaveV541(itemId,copies,fields){
+ try{return await server('saveSupplyRowsV531',itemId,copies);}
+ catch(error){
+  if(!/서버 응답 시간 초과|서버 연결|연결 실패|응답을 확인|네트워크|network/i.test(String(error?.message||error)))throw error;
+  let latest;try{latest=await server('getSupplyItemData',itemId);}catch(_){throw Error(error.message+' · 저장 결과를 조회하지 못했습니다. 입력값을 유지한 채 잠시 후 반영 여부를 확인하세요.');}
+  const rows=copies.map(copy=>latest.rows?.find(row=>row.id===copy.id)).filter((row,i)=>supplyReviewMatchesV541(row,copies[i],fields));
+  if(rows.length===copies.length)return {rows,recovered:true};
+  throw Error('저장 응답이 끊겼습니다. '+rows.length+'/'+copies.length+'명 반영을 확인했습니다. 입력값은 유지되므로 잠시 후 남은 내용을 확인하세요.');
+ }
+}
 function supplyReviewUpdateV531(){
  const table=$('supplyRows')?.closest('.roster-wrap');if(!table)return;
  for(const side of ['before','after']){
@@ -22,7 +33,7 @@ function supplyReviewOpenV531(ids){
  dialog.querySelector('[data-review-status]').textContent='';
  dialog.querySelector('[data-review-save]').onclick=async()=>{
   if(supplyReviewSavingV531)return;supplyReviewSavingV531=true;supplyBulkSaving=true;supplyReviewUpdateV531();dialog.querySelector('[data-review-save]').disabled=true;dialog.querySelector('[data-review-cancel]').disabled=true;dialog.querySelector('[data-review-status]').textContent='저장 중…';
-  try{const result=await enqueue(async()=>{try{return await server('saveSupplyRowsV531',itemId,copies);}catch(error){if(!/서버 응답 시간 초과|서버 연결|연결 실패|응답을 확인|네트워크|network/i.test(String(error?.message||error)))throw error;return server('saveSupplyRowsV531',itemId,copies);}});
+  try{const result=await enqueue(()=>supplyReviewSaveV541(itemId,copies,supplyItem.fields));
    if(supplyItem?.id===itemId){for(const row of result.rows){const index=supplyItem.rows.findIndex(old=>old.id===row.id);if(index>=0)supplyItem.rows[index]=row;const draft=supplyDrafts.get(row.id),saved=copies.find(copy=>copy.id===row.id);if(draft&&JSON.stringify({...draft,updatedAt:''})===JSON.stringify({...saved,updatedAt:''}))supplyDrafts.delete(row.id);else if(draft)draft.updatedAt=row.updatedAt;}supplyRender();}
    dialog.close();toast(result.rows.length+'명 군수품 저장 완료');
   }catch(error){dialog.querySelector('[data-review-status]').textContent='저장 실패: '+error.message+' · 입력값은 유지됩니다.';}

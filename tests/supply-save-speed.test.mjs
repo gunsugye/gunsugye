@@ -5,6 +5,17 @@ import {readFileSync} from 'node:fs';
 
 const source=readFileSync(new URL('../Code.gs.txt',import.meta.url),'utf8');
 const app=readFileSync(new URL('../docs/assets/app.js',import.meta.url),'utf8');
+const reviewClient=readFileSync(new URL('../scripts/supply-review-client.js.txt',import.meta.url),'utf8');
+
+test('lost save response is checked against stored rows without resending the write',async()=>{
+ const code=reviewClient.slice(reviewClient.indexOf('function supplyReviewMatchesV541'),reviewClient.indexOf('function supplyReviewUpdateV531'));
+ const calls=[],draft={id:'a',status:'수리 필요',detail:'확인',extra:{수량:'1'}};
+ const context=vm.createContext({server:async(method)=>{calls.push(method);if(method==='saveSupplyRowsV531')throw Error('서버 연결 실패');return {rows:[{...draft,updatedAt:'saved'}]};}});
+ vm.runInContext(code,context);
+ const result=await context.supplyReviewSaveV541('item',[draft],['수량']);
+ assert.equal(result.recovered,true);assert.equal(result.rows[0].updatedAt,'saved');
+ assert.deepEqual(calls,['saveSupplyRowsV531','getSupplyItemData']);
+});
 
 test('군수품 한 명 저장은 전체 품목 행을 읽지 않는다',()=>{
  const start=source.indexOf('function supplyRows_('),end=source.indexOf('\nfunction supplyActivePayload_',start);
