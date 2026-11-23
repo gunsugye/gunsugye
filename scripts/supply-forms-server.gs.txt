@@ -1,0 +1,46 @@
+function supplyFormKeyV546_(id){return 'SUPPLY_FORM_V546_'+id;}
+function getSupplyFormV546(){referenceAdminV409_();const policy=supplySurveyPolicyV506_(),raw=PropertiesService.getScriptProperties().getProperty(supplyFormKeyV546_(policy.id));return raw?JSON.parse(raw):null;}
+function createSupplyFormV546(){referenceAdminV409_();return lockAndRun_(()=>{
+ const policy=supplySurveyPolicyV506_();if(policy.mode!=='direct')throw Error('전수조사를 먼저 시작하세요.');
+ const props=PropertiesService.getScriptProperties(),key=supplyFormKeyV546_(policy.id),old=JSON.parse(props.getProperty(key)||'null');if(old?.ready)return old;
+ const ss=spreadsheet_(),items=supplyRegistryItems_(ss);if(!items.length)throw Error('등록된 군수품이 없습니다.');
+ const form=old?FormApp.openById(old.id):FormApp.create(policy.label+' · 군수품 전수조사');
+ const meta=old||{id:form.getId(),publishedUrl:form.getPublishedUrl(),editUrl:form.getEditUrl(),campaignId:policy.id,ready:false};props.setProperty(key,JSON.stringify(meta));
+ form.setAcceptingResponses(false);if(form.supportsAdvancedResponderPermissions())form.setPublished(false);
+ while(form.getItems().length)form.deleteItem(0);
+ form.setDescription('기수·중대·이름·교번을 정확히 입력하세요. 제출 내용은 군수계 검토 후 반영됩니다.').setCollectEmail(false).setLimitOneResponsePerUser(false).setPublishingSummary(false).setProgressBar(true).setConfirmationMessage('응답이 저장되었습니다. 군수계 검토 후 반영됩니다.');
+ for(const title of ['기수','중대','이름','교번'])form.addTextItem().setTitle(title).setRequired(true);
+ const mapping=[];
+ for(const item of items){const schema=supplySchemaV408_(item),range=supplyQuantityRangeV500_(item.id),fields=[...new Set(['수량',...(schema.fields||[])])];
+  form.addPageBreakItem().setTitle(item.name);
+  for(const field of fields){const numeric=field==='수량'?range.max:schema.numeric?.[field],options=Number.isInteger(numeric)?Array.from({length:Math.min(numeric,100)+1},(_,i)=>String(i)):schema.options?.[field]||(field==='정화통위치'?['좌','우']:[]),title=item.name+' · '+field;
+   if(options.length){const q=form.addMultipleChoiceItem().setTitle(title).setChoiceValues(options);if(Number.isInteger(numeric)||!schema.preset)q.showOtherOption(true);q.setRequired(true);}else form.addTextItem().setTitle(title).setRequired(true);
+  }
+  if(schema.includeStatus!==false)form.addMultipleChoiceItem().setTitle(item.name+' · 상태').setChoiceValues(['정상','수리 필요','사용 불가']).setRequired(true);
+  form.addParagraphTextItem().setTitle(item.name+' · 세부사항').setRequired(false);mapping.push({itemId:item.id,name:item.name,fields,includeStatus:schema.includeStatus!==false});
+ }
+ const book=supplyInboxBookV542_(true);form.setDestination(FormApp.DestinationType.SPREADSHEET,book.getId());
+ if(form.supportsAdvancedResponderPermissions())form.setPublished(true);form.setAcceptingResponses(true);
+ const saved={...meta,ready:true,bookUrl:book.getUrl(),mapping,policy:{id:policy.id,label:policy.label,mode:'direct',endsAt:policy.endsAt}};props.setProperty(key,JSON.stringify(saved));return saved;
+});}
+function supplyFormPersonV546_(people,identity){const norm=v=>String(v||'').normalize('NFKC').replace(/\s/g,''),matches=people.filter(p=>norm(p.name)===norm(identity.name)&&norm(p.cadetNumber)===norm(identity.cadetNumber)&&norm(p.cohort).replace(/기/g,'')===norm(identity.cohort).replace(/기/g,'')&&norm(p.company).replace(/중대/g,'')===norm(identity.company).replace(/중대/g,''));return matches.length===1?matches[0]:null;}
+function importSupplyFormV546(){referenceAdminV409_();return lockAndRun_(()=>{
+ const meta=getSupplyFormV546();if(!meta?.ready)throw Error('Google Forms를 먼저 생성하세요.');
+ const book=supplyInboxBookV542_(true),sh=supplyInboxTabV542_(book,true,true),ids=new Set(sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().flat():[]),ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),all=FormApp.openById(meta.id).getResponses(),pending=all.filter(r=>!ids.has('form:'+meta.id+':'+r.getId())),rows=[];
+ for(const response of pending.slice(0,40)){const answers=Object.fromEntries(response.getItemResponses().map(r=>[r.getItem().getTitle(),String(r.getResponse()??'')])),identity={name:answers.이름,cohort:answers.기수,company:answers.중대,cadetNumber:answers.교번},person=supplyFormPersonV546_(people,identity),changes=meta.mapping.map(m=>({itemId:m.itemId,snapshot:'form-review',value:{status:m.includeStatus?answers[m.name+' · 상태']||'':'',detail:answers[m.name+' · 세부사항']||'',extra:Object.fromEntries(m.fields.map(field=>[field,answers[m.name+' · '+field]||'']))}})),saved={personId:person?.id||'',identity,source:'Google Forms',policy:meta.policy,payload:{campaignId:meta.campaignId,changes}},json=JSON.stringify(saved);
+  if(json.length>45000)throw Error('응답 내용이 너무 깁니다. 응답 시트를 확인하세요.');rows.push(['form:'+meta.id+':'+response.getId(),response.getTimestamp().toISOString(),'검토 필요',person?.id||'',meta.campaignId,json,'',person?'Google Forms 응답 · 관리자 확인 후 반영':'명단 불일치 · 기수·중대·이름·교번 확인',0]);
+ }
+ if(rows.length){const start=sh.getLastRow()+1;ensureRows_(sh,start+rows.length-1);sh.getRange(start,1,rows.length,9).setValues(rows);}return {imported:rows.length,remaining:Math.max(0,pending.length-rows.length)};
+});}
+function supplyInboxFindV546_(id){const book=supplyInboxBookV542_(false);if(book)for(const direct of [true,false]){const sh=supplyInboxTabV542_(book,direct,false);if(!sh||sh.getLastRow()<2)continue;const found=sh.getRange(2,1,sh.getLastRow()-1,1).createTextFinder(String(id)).matchEntireCell(true).findNext();if(found){const row=found.getRow(),record=sh.getRange(row,1,1,9).getDisplayValues()[0];return {sh,row,record,saved:JSON.parse(record[5])};}}throw Error('접수 기록을 찾을 수 없습니다.');}
+function getSupplyInboxReviewV546(id){referenceAdminV409_();const entry=supplyInboxFindV546_(id),ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),person=people.find(p=>p.id===entry.saved.personId)||supplyFormPersonV546_(people,entry.saved.identity||{}),items=new Map(supplyRegistryItems_(ss).map(i=>[i.id,i.name]));return {id,status:entry.record[2],error:entry.record[7],version:personalHashV330_(entry.record),person:person?{name:person.name,cohort:person.cohort,company:person.company}:null,identity:entry.saved.identity||null,changes:entry.saved.payload.changes.map(c=>{let current=null,snapshot='';if(person)try{const own=supplyRequestOwnV506_(ss,person,c.itemId);current=own.value;snapshot=own.snapshot;}catch(_){}return {...c,name:items.get(c.itemId)||c.itemId,current,currentSnapshot:snapshot};})};}
+function resolveSupplyInboxV546(input){referenceAdminV409_();return lockAndRun_(()=>{
+ const {sh,row,record,saved}=supplyInboxFindV546_(input?.id);if(personalHashV330_(record)!==input.version||!['검토 필요','재시도'].includes(record[2]))throw Error('접수 상태가 변경되었습니다. 다시 열어주세요.');
+ if(input.action==='delete'){sh.getRange(row,3).setValue('삭제');sh.getRange(row,7).setValue(iso_());return {status:'삭제'};}
+ if(input.action!=='apply')throw Error('처리 방법을 확인하세요.');const ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),person=people.find(p=>p.id===saved.personId)||supplyFormPersonV546_(people,input.identity||saved.identity||{});
+ if(!person)throw Error('명단과 일치하는 인원이 없습니다. 기수·중대·이름·교번을 확인하세요.');
+ if(!Array.isArray(input.changes)||input.changes.length!==saved.payload.changes.length||new Set(input.changes.map(c=>c.itemId)).size!==input.changes.length)throw Error('검토 품목을 다시 확인하세요.');
+ const changes=input.changes.map(c=>{if(!saved.payload.changes.some(old=>old.itemId===c.itemId))throw Error('등록되지 않은 검토 품목입니다.');const own=supplyRequestOwnV506_(ss,person,c.itemId);if(c.currentSnapshot&&c.currentSnapshot!==own.snapshot)throw Error('검토 중 원본이 변경되었습니다. 다시 열어주세요.');return {itemId:c.itemId,snapshot:own.snapshot,value:supplyRequestValueV506_(c.value,own)};});
+ personalSupplyBatchV507_({...saved.payload,changes},{person,ss},saved.policy,true);
+ sh.getRange(row,3).setValue('완료');sh.getRange(row,7,1,3).setValues([[iso_(),'관리자 검토 완료',Number(record[8]||0)+1]]);return {status:'완료'};
+});}
