@@ -59,7 +59,7 @@ function supplyInboxProcessV542_(){
   });
  }return {processed};
 }
-function getSupplyInboxV542(){referenceAdminV409_();const book=supplyInboxBookV542_(false);if(!book)return {url:'',pending:0,failed:0,completed:0,records:[]};
+function getSupplyInboxV542(){referenceAdminV409_();const book=supplyInboxBookV542_(true);
  const records=[],count={pending:0,failed:0,completed:0};for(const direct of [true,false]){const sh=supplyInboxTabV542_(book,direct,false);if(!sh||sh.getLastRow()<2)continue;
   for(const [status] of sh.getRange(2,3,sh.getLastRow()-1,1).getDisplayValues()){if(['대기','재시도'].includes(status))count.pending++;else if(status==='검토 필요')count.failed++;else if(status==='완료')count.completed++;}
   const rows=sh.getRange(Math.max(2,sh.getLastRow()-199),1,Math.min(199,sh.getLastRow()-1),9).getDisplayValues();for(const row of rows)if(row[0])records.push({id:row[0],at:row[1],status:row[2],personId:row[3],kind:direct?'전수조사':'수정 요청',error:row[7]});
