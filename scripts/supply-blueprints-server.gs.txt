@@ -1,6 +1,6 @@
 ﻿function supplyBlueprintsV520_(){
  const q=(name,max,fields=[],options={},numeric={})=>({name,schema:{fields,options,numeric,includeStatus:true,preset:true,quantityRange:{min:0,max,standard:max}}});
- return [q('모포',1),q('방탄모',1,['종류','사이즈','방탄모피','턱끈 상태'],{종류:['구형','신형'],사이즈:['대','중','소'],방탄모피:['유','무'],'턱끈 상태':['정상','수리 필요','사용 불가']}),q('전투조끼',1,['부착물'],{}, {부착물:6}),q('수통',1,['수통피','수통피 클립'],{수통피:['유','무']},{'수통피 클립':2}),q('야전삽',1,['야전삽피','야전삽피 클립'],{야전삽피:['유','무']},{'야전삽피 클립':2}),q('탄띠',1),q('탄입대',2),q('총기 손질 도구',1),q('방독면',1,['사이즈','방독면피','정화통위치'],{사이즈:['대','중','소'],방독면피:['유','무'],정화통위치:['좌','우']}),q('공격 배낭',1),q('군장',1,['보조낭'],{},{보조낭:2})];
+ return [q('모포',1),q('방탄모',1,['종류','사이즈','방탄모피','턱끈 상태'],{종류:['구형','신형'],사이즈:['대','중','소'],방탄모피:['유','무'],'턱끈 상태':['정상','수리 필요','사용 불가']}),q('전투조끼',1,['부착물'],{}, {부착물:6}),q('수통',1,['수통피','수통피 클립'],{수통피:['유','무']},{'수통피 클립':2}),q('야전삽',1,['야전삽피','야전삽피 클립'],{야전삽피:['유','무']},{'야전삽피 클립':2}),q('탄띠',1),q('탄입대',2),q('총기 손질 도구',1),q('방독면',1,['사이즈','방독면 보호두건','방독면 휴대주머니','정화통위치'],{사이즈:['대','중','소'],'방독면 보호두건':['유','무'],'방독면 휴대주머니':['유','무'],정화통위치:['좌','우']}),q('공격 배낭',1),q('군장',1,['보조낭'],{},{보조낭:2})];
 }
 function supplyPresetSchemaV520_(value,name){
  const preset=supplyBlueprintsV520_().find(p=>p.name===name);if(!preset)throw Error('군수품 품목 구성을 확인하세요.');
@@ -24,3 +24,5 @@ function rebuildSupplyV520(){
 }
 
 function supplyPresetValidateValueV520_(schema,extra){if(!schema?.preset)return;for(const field of schema.fields){const value=String(extra[field]??'').trim();if(value==='')continue;if(Object.hasOwn(schema.numeric,field)){if(!/^\d+$/.test(value)||!Number.isSafeInteger(Number(value))||Number(value)>100000)throw Error(field+' 수량은 0~100,000 사이 정수로 입력하세요.');}else if(!(schema.options[field]||[]).includes(value))throw Error(field+' 선택지를 확인하세요.');}}
+
+function ensureSupplyPresetColumnsV522(itemId){referenceAdminV409_();return lockAndRun_(()=>{const ss=spreadsheet_(),item=supplyOne_(ss,itemId);if(!supplySchemaV408_(item.item).preset)throw Error('새 군수품 품목이 아닙니다.');const updated=supplyEnsureQuantityV500_(ss,itemId);return {fields:updated.fields};});}

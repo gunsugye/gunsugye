@@ -1,5 +1,5 @@
 function supplySchemaV408_(item){
- const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_SCHEMA_V408_'+item.id);if(raw)return supplyMaskSchemaV517_(JSON.parse(raw),item.name);
+ const raw=PropertiesService.getScriptProperties().getProperty('SUPPLY_SCHEMA_V408_'+item.id);if(raw){const stored=JSON.parse(raw);if(stored.preset){const preset=supplyBlueprintsV520_().find(p=>p.name===item.name);if(preset){stored.fields=[...preset.schema.fields];stored.options={...stored.options,...Object.fromEntries(preset.schema.fields.map(f=>[f,stored.options?.[f]||preset.schema.options?.[f]]).filter(([,v])=>v))};stored.numeric={...preset.schema.numeric,...stored.numeric};}}return supplyMaskSchemaV517_(stored,item.name);}
  return supplyMaskSchemaV517_({fields:['사이즈'],options:{종류:[],사이즈:[]}},item.name);
 }
 function supplySchemaValidateV408_(value,name){

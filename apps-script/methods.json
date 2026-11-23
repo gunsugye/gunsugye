@@ -38,6 +38,7 @@
   "diagnoseConnectionV272",
   "dismissChangePageV286",
   "dismissChangeV283",
+  "ensureSupplyPresetColumnsV522",
   "ensureSupplySizeQtyColumns",
   "getArmoryV493",
   "getBootstrap",
