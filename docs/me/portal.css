@@ -114,3 +114,4 @@ td[data-supply-attention="shortage"],td[data-supply-attention="absent"]{backgrou
 #dashboard .save-bar span{font-size:12px}
 #dashboard .save-bar button{margin-top:0!important}
 #dashboard .personal-batch-actions-v518 .personal-supply-submit-v507{box-sizing:border-box;width:100%;min-height:44px;padding:9px 14px;border:1px solid #245fa8;border-radius:9px;background:#245fa8;color:#fff;font:700 14px/1.35 system-ui,sans-serif}
+#dashboard :is(#personalFirearmV413 form,#personalDutyV400 form,#uniform form,#assetForm,#supplies) :is(button[type=submit],.personal-supply-submit-v507){display:none!important}
