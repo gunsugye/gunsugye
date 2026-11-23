@@ -1,7 +1,7 @@
 ﻿let personalDutyDirtyV400=false;
 function personalDutyColumnsV420(table){const columns=element('colgroup');for(const width of ['26%','37%','37%']){const col=element('col');col.style.width=width;columns.append(col);}table.prepend(columns);}
 const personalDutyDraftsV400=new Map();
-function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;}
+function personalDutyResetV400(){personalDutyDirtyV400=false;personalDutyDraftsV400.clear();personalDutyReviewV533=null;$('personalDutyCardsV400').replaceChildren();$('personalDutyV400').hidden=true;}
 function personalDutyRenderV400(data){
  if(data.loading){personalDutyResetV400();if(data.duty?.isDuty){$('personalDutyV400').hidden=false;$('personalDutyCardsV400').append(element('p','불러오는 중…','hint'));}return;}
  const duty=data.duty;if(!duty?.isDuty||!duty.assignments?.length){personalDutyResetV400();return;}
@@ -19,14 +19,14 @@ function personalDutyRenderV400(data){
    select.value=item.quantity===null?'':item.quantity<=item.required?String(item.quantity):'direct';custom.type='number';custom.min='0';custom.max='1000';custom.step='1';custom.value=item.quantity??'';custom.hidden=select.value!=='direct';custom.setAttribute('aria-label',assignment.duty+' '+item.label+' 직접 입력');custom.placeholder='직접 입력 수량';
    note.value=item.detail||'';note.maxLength=1500;note.placeholder='세부사항';note.setAttribute('aria-label',assignment.duty+' '+item.label+' 세부사항');note.dataset.dutyDetail='true';
    select.onchange=()=>{custom.hidden=select.value!=='direct';if(!custom.hidden)custom.focus?.();form.oninput?.();};quantity.append(select,custom);details.append(note);row.append(name,quantity,details);body.append(row);
-   editors.push({key:assignment.id+'|'+item.item,before:{quantity:item.quantity,detail:item.detail||''},read:()=>({quantity:select.value==='direct'?(custom.value===''?null:Number(custom.value)):select.value===''?null:Number(select.value),detail:note.value.trim()})});
+   editors.push({key:assignment.id+'|'+item.item,label:assignment.duty+' · '+item.label,before:{quantity:item.quantity,detail:item.detail||''},read:()=>({quantity:select.value==='direct'?(custom.value===''?null:Number(custom.value)):select.value===''?null:Number(select.value),detail:note.value.trim()})});
   }
   table.append(body);form.append(table);
  }
  const direct=duty.policy?.mode==='direct',message=element('p',direct?'전수조사 기간 · 저장 즉시 반영하고 조사 기록으로 보관합니다.':'입력한 내용은 관리자 확인 후 반영됩니다.','hint'),button=element('button',direct?'전수조사 저장':'수정 요청');button.type='submit';button.disabled=!direct;form.append(message,button);root.append(form);
- const changes=()=>editors.map(editor=>({key:editor.key,value:editor.read(),before:editor.before})).filter(change=>JSON.stringify(change.value)!==JSON.stringify(change.before));
+ const changes=()=>editors.map(editor=>({key:editor.key,label:editor.label||editor.key,value:editor.read(),before:editor.before})).filter(change=>JSON.stringify(change.value)!==JSON.stringify(change.before));personalDutyReviewV533={duty,direct,changes};
  form.oninput=()=>{personalDutyDirtyV400=changes().length>0;personalDutyDraftsV400.set(form,personalDutyDirtyV400);button.disabled=!direct&&!personalDutyDirtyV400;};
- form.onsubmit=async event=>{event.preventDefault();if(busy||!token||!direct&&!changes().length)return;if(changes().some(change=>'quantity' in change.value&&(!Number.isInteger(change.value.quantity)||change.value.quantity<0||change.value.quantity>1000))){message.textContent='수량을 선택하거나 0~1000 사이 정수로 직접 입력하세요.';return;}busy=true;form.inert=true;$('refresh').disabled=true;const current=ticket;message.textContent=direct?'저장 중…':'요청 중…';try{const result=await request('duty-request',{snapshot:duty.snapshot,campaignId:direct?duty.policy.id:'',changes:changes().map(({key,value})=>({key,value}))});if(current!==ticket||!token)return;personalDutyDirtyV400=false;personalDutyDraftsV400.clear();if(result.direct){personalDutyRenderV400({duty:result.duty});root.prepend(element('p','전수조사 저장 완료 · 즉시 반영 및 기록 보관','hint'));}else{for(const editor of editors)editor.before=editor.read();button.disabled=true;message.textContent='수정 요청 접수 · 관리자 확인 대기';}}catch(error){if(current===ticket)message.textContent=error.message;}finally{busy=false;form.inert=false;if(current===ticket)$('refresh').disabled=false;}};
+ form.onsubmit=event=>{event.preventDefault();personalAllReviewV533('duty');};
  if(duty.requests?.length){const history=element('details');history.append(element('summary','수정 요청 내역'));for(const request of duty.requests)history.append(element('p',request.createdAt.slice(0,10)+' · '+request.status+(request.note?' · '+request.note:''),'hint'));root.append(history);}
 }
 window.addEventListener('beforeunload',event=>{if(personalDutyDirtyV400){event.preventDefault();event.returnValue='';}});
