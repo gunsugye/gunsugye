@@ -278,6 +278,7 @@ legacy=supplyQuantityOrderServerV500(legacy,read('scripts/supply-quantity-order-
 legacy=supplyRequestsServerV506(legacy,read('scripts/supply-requests-server.gs.txt')+'\n'+read('scripts/supply-batch-server.gs.txt')+'\n'+read('scripts/supply-direct-batch-server.gs.txt'));
 legacy+='\n'+read('scripts/supply-review-server.gs.txt');
 legacy+='\n'+read('scripts/survey-deferred-server.gs.txt');
+legacy+='\n'+read('scripts/supply-inbox-server.gs.txt');
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
@@ -322,7 +323,7 @@ return {
   if(action==='uniform-request')return personalUniformRequestV350_(input);
   if(action==='duty-request')return personalDutyRequestV400_(input);
   if(action==='firearm-request')return personalFirearmRequestV413_(input);
-  if(action==='supply-request')return personalSupplyRequestV506_(input);
+  if(action==='supply-request')return personalSupplyStageV542_(input);
   if(action==='logout'){personalSessionV330_();PropertiesService.getScriptProperties().deleteProperty('PAGES_PERSONAL_SESSION_'+pagesActor_.sessionId);return true;}
   pagesForbidden_();
  },
@@ -343,7 +344,7 @@ return {
  rosterSyncScheduled: function(){if(PropertiesService.getScriptProperties().getProperty('ROSTER_LINK_AUTO_V412')==='yes')return syncRosterLinkageV412(false);},
  training: function() { return trainingScheduledHandoffV227(); },
  survey: function(event) { return surveysOnSubmitV299(event); },
- deferredSurvey: function() { return surveyDeferredProcessV537_(); }
+ deferredSurvey: function() { const inbox=supplyInboxProcessV542_();surveyDeferredProcessV537_();return inbox; }
 };
 }
 `;

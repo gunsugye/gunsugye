@@ -1,15 +1,16 @@
 function personalSupplyRequestV506_(input){if(Array.isArray(input?.changes))return personalSupplyBatchV507_(input);return lockAndRun_(()=>personalSupplyOneV507_(input));}
-function personalSupplyBatchV507_(input){return lockAndRun_(()=>{
- const {person,ss}=personalPersonV331_(),changes=input.changes;if(!changes.length||changes.length>100||new Set(changes.map(c=>c.itemId)).size!==changes.length)throw Error('서로 다른 품목을 1~100개 제출하세요.');
- const policy=supplySurveyPolicyV506_();if(policy.mode==='direct'&&input.campaignId!==policy.id||policy.mode!=='direct'&&input.campaignId)throw Error('전수조사 기간이 변경되었습니다. 새로고침하세요.');
+function personalSupplyBatchV507_(input,context,policyOverride,alreadyLocked){const run=()=>personalSupplyBatchApplyV542_(input,context,policyOverride);return alreadyLocked?run():lockAndRun_(run);}
+function personalSupplyBatchApplyV542_(input,context,policyOverride){
+ const {person,ss}=context||personalPersonV331_(),changes=input.changes;if(!changes.length||changes.length>100||new Set(changes.map(c=>c.itemId)).size!==changes.length)throw Error('서로 다른 품목을 1~100개 제출하세요.');
+ const policy=policyOverride||supplySurveyPolicyV506_();if(policy.mode==='direct'&&input.campaignId!==policy.id||policy.mode!=='direct'&&input.campaignId)throw Error('전수조사 기간이 변경되었습니다. 새로고침하세요.');
  const prepared=changes.map(change=>{const own=supplyRequestOwnV506_(ss,person,String(change.itemId||'')),value=supplyRequestValueV506_(change.value,own);if(change.snapshot!==own.snapshot&&(policy.mode!=='direct'||!supplyRequestSameV506_(value,own.value)))throw Error(own.r.item.name+' 기록이 변경되었습니다. 새로고침하세요.');return {change,own,value};}),undo=[],results=[];
  if(policy.mode==='direct')return personalSupplyDirectBatchV532_(ss,person,policy,prepared);
  const backup=(sh,row,width)=>{ensureRows_(sh,row);const previous=sh.getRange(row,1,1,width).getValues()[0];undo.push(()=>sh.getRange(row,1,1,width).setValues([previous]));};
  const pendingByItem=new Map(supplyRequestRowsV506_(ss,person.id).filter(r=>r.status==='대기').map(r=>[r.itemId,r])),sh=supplyRequestSheetV506_(ss,false,true);
  try{for(const {change,own} of prepared){
    const pending=pendingByItem.get(change.itemId)||null,row=pending?.row||sh.getLastRow()+1;
-   backup(sh,row,8);results.push(personalSupplyOneV507_({...change,campaignId:input.campaignId||''},{person,ss},own,pending));
+   backup(sh,row,8);results.push(personalSupplyOneV507_({...change,campaignId:input.campaignId||''},{person,ss},own,pending,policy));
   }
   const history=supplyRequestRowsV506_(ss,person.id),items=prepared.map(({own})=>personalSupplyDTOv506_(ss,person,own.r.item,history,own));return {direct:false,results,items};
  }catch(error){let failed=false;for(const restore of undo.reverse())try{restore();}catch(_){failed=true;}if(failed)throw Error('군수품 일괄 처리 복구 확인이 필요합니다. 다시 제출하지 말고 관리자에게 문의하세요.');throw error;}
-});}
+}

@@ -1,0 +1,67 @@
+const SUPPLY_INBOX_V542={PROP:'SUPPLY_INBOX_BOOK_V542',HEAD:['접수ID','접수시각','상태','명단ID','조사ID','입력JSON','반영시각','오류','시도'],SURVEY:'전수조사_접수',REQUEST:'수정요청_접수'};
+function supplyInboxBookV542_(create){
+ const props=PropertiesService.getScriptProperties(),id=props.getProperty(SUPPLY_INBOX_V542.PROP);
+ if(id)return SpreadsheetApp.openById(id);
+ if(!create)return null;
+ const book=SpreadsheetApp.create('군수계 군수품 전수조사·수정요청 접수');
+ const first=book.getSheets()[0];first.setName(SUPPLY_INBOX_V542.SURVEY);supplyInboxTabV542_(book,true,true);
+ supplyInboxTabV542_(book,false,true);props.setProperty(SUPPLY_INBOX_V542.PROP,book.getId());return book;
+}
+function supplyInboxTabV542_(book,direct,create){
+ const name=direct?SUPPLY_INBOX_V542.SURVEY:SUPPLY_INBOX_V542.REQUEST;
+ let sh=book.getSheetByName(name);if(!sh&&create)sh=book.insertSheet(name);
+ if(sh&&create&&sh.getLastRow()===0)sh.getRange(1,1,1,9).setValues([SUPPLY_INBOX_V542.HEAD]);return sh;
+}
+function supplyInboxTriggerV542_(){
+ const props=PropertiesService.getScriptProperties();if(props.getProperty('SUPPLY_INBOX_TRIGGER_V542')==='1')return;
+ if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='pagesSurveyDeferred_'))ScriptApp.newTrigger('pagesSurveyDeferred_').timeBased().everyMinutes(1).create();
+ props.setProperty('SUPPLY_INBOX_TRIGGER_V542','1');
+}
+function personalSupplyStageV542_(input){
+ const {person,ss}=personalPersonV331_(),changes=Array.isArray(input?.changes)?input.changes:[input],policy=supplySurveyPolicyV506_();
+ if(!changes.length||changes.length>100||new Set(changes.map(c=>String(c?.itemId||''))).size!==changes.length)throw Error('서로 다른 품목을 1~100개 제출하세요.');
+ if(policy.mode==='direct'&&input?.campaignId!==policy.id||policy.mode!=='direct'&&input?.campaignId)throw Error('전수조사 기간이 변경되었습니다. 새로고침하세요.');
+ const ids=new Set(supplyRegistryItems_(ss).map(item=>item.id));
+ for(const change of changes)if(!ids.has(String(change?.itemId||''))||typeof change?.snapshot!=='string'||!change.snapshot||!change.value||typeof change.value!=='object'||!change.value.extra||typeof change.value.detail!=='string')throw Error('군수품 입력값을 확인하세요.');
+ const payload={changes,campaignId:input?.campaignId||''},json=JSON.stringify(payload);
+ if(json.length>44000)throw Error('입력 내용이 너무 큽니다. 나누어 제출하세요.');
+ const receiptId=personalHashV330_(['군수품 접수 v542',person.id,policy.id,policy.mode,json]),direct=policy.mode==='direct';
+ const lock=LockService.getUserLock();lock.waitLock(10000);
+ try{
+  const book=supplyInboxBookV542_(true),sh=supplyInboxTabV542_(book,direct,true),found=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,1).createTextFinder(receiptId).matchEntireCell(true).findNext():null;
+  if(found){const row=sh.getRange(found.getRow(),1,1,9).getDisplayValues()[0];if(row[2]==='검토 필요')throw Error('이 접수는 원본 반영 확인이 필요합니다. 관리자에게 접수 ID '+receiptId.slice(0,12)+'을 알려주세요.');try{supplyInboxTriggerV542_();}catch(_){}return {queued:true,direct,receiptId,receiptStatus:row[2],results:changes.map(()=>({requested:!direct,confirmed:direct}))};}
+  const saved={payload,policy:{id:policy.id,label:policy.label,mode:policy.mode,endsAt:policy.endsAt},personId:person.id};
+  sh.appendRow([receiptId,iso_(),'대기',person.id,policy.id,JSON.stringify(saved),'','',0]);try{supplyInboxTriggerV542_();}catch(_){}
+  return {queued:true,direct,receiptId,receiptStatus:'대기',results:changes.map(()=>({requested:!direct,confirmed:direct}))};
+ }finally{lock.releaseLock();}
+}
+function supplyInboxPendingV542_(book){
+ for(const direct of [true,false]){const sh=supplyInboxTabV542_(book,direct,false);if(!sh||sh.getLastRow()<2)continue;
+  const statuses=sh.getRange(2,3,sh.getLastRow()-1,1).getDisplayValues();
+  const index=statuses.findIndex(row=>row[0]==='대기'||row[0]==='재시도');if(index>=0)return {sh,row:index+2,direct};
+ }return null;
+}
+function supplyInboxProcessV542_(){
+ const book=supplyInboxBookV542_(false);if(!book)return {processed:0};let processed=0,start=Date.now();
+ for(let n=0;n<8&&Date.now()-start<240000;n++){
+  const next=supplyInboxPendingV542_(book);if(!next)break;
+  lockAndRun_(()=>{
+   const {sh,row}=next,record=sh.getRange(row,1,1,9).getValues()[0];
+   if(!['대기','재시도'].includes(String(record[2])))return;
+   try{
+    const saved=JSON.parse(String(record[5])),ss=spreadsheet_(),person=rosterRows_(rosterRequired_(ss)).find(p=>p.id===saved.personId);
+    if(!person)throw Error('원본 명단에서 인원을 찾을 수 없습니다.');
+    personalSupplyBatchV507_(saved.payload,{person,ss},saved.policy,true);
+    sh.getRange(row,3).setValue('완료');sh.getRange(row,7,1,3).setValues([[iso_(),'',Number(record[8]||0)+1]]);processed++;
+   }catch(error){const attempts=Number(record[8]||0)+1,message=String(error?.message||error).slice(0,500),stale=/변경되었습니다|찾을 수 없습니다|확인하세요/.test(message);
+    sh.getRange(row,3).setValue(stale||attempts>=5?'검토 필요':'재시도');sh.getRange(row,8,1,2).setValues([[message,attempts]]);
+   }
+  });
+ }return {processed};
+}
+function getSupplyInboxV542(){referenceAdminV409_();const book=supplyInboxBookV542_(false);if(!book)return {url:'',pending:0,failed:0,completed:0,records:[]};
+ const records=[],count={pending:0,failed:0,completed:0};for(const direct of [true,false]){const sh=supplyInboxTabV542_(book,direct,false);if(!sh||sh.getLastRow()<2)continue;
+  for(const [status] of sh.getRange(2,3,sh.getLastRow()-1,1).getDisplayValues()){if(['대기','재시도'].includes(status))count.pending++;else if(status==='검토 필요')count.failed++;else if(status==='완료')count.completed++;}
+  const rows=sh.getRange(Math.max(2,sh.getLastRow()-199),1,Math.min(199,sh.getLastRow()-1),9).getDisplayValues();for(const row of rows)if(row[0])records.push({id:row[0],at:row[1],status:row[2],personId:row[3],kind:direct?'전수조사':'수정 요청',error:row[7]});
+ }return {url:book.getUrl(),...count,records:records.slice(-30).reverse()};}
+function processSupplyInboxV542(){referenceAdminV409_();return supplyInboxProcessV542_();}
