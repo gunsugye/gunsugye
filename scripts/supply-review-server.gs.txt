@@ -1,0 +1,27 @@
+function saveSupplyRowsV531(itemId,sources){
+ requireOwner_();
+ if(!Array.isArray(sources)||!sources.length||sources.length>200)throw Error('저장할 군수품 수정 내역을 확인하세요.');
+ return lockAndRun_(()=>{
+  const ss=spreadsheet_(),r=supplyEnsureQuantityV500_(ss,itemId),roster=new Map(supplyRoster_(ss).map(p=>[String(p.id),p]));
+  const stored=supplyRows_(r.sh,r.headers),byId=new Map(stored.map(row=>[String(row.id),row])),seen=new Set(),schema=supplySchemaV408_(r.item),now=iso_();
+  let nextRow=r.sh.getLastRow()+1;
+  const prepared=sources.map(source=>{
+   const id=text_(source?.id,100),person=roster.get(id),old=byId.get(id);
+   if(!id||!person||seen.has(id))throw Error('저장 대상 명단을 확인하세요.');seen.add(id);
+   const status=canonicalRepairStateV216_(text_(source.status,40));if(!SUPPLY.STATUSES.includes(status))throw Error('상태는 정상 / 수리 필요 / 사용 불가 중에서 선택하세요.');
+   const detail=text_(source.detail,3000),extra=Object.fromEntries(r.fields.map(f=>[f,text_(Object.prototype.hasOwnProperty.call(source.extra||{},f)?source.extra[f]:old?.extra?.[f],500)]));
+   if('수량' in extra&&extra['수량']&&!/^\d+(?:\.\d{1,2})?$/.test(extra['수량']))throw Error('수량은 숫자로 입력하세요.');
+   supplyCheckQuantityV500_(r.item.id,extra['수량'],old?.extra?.['수량']);supplyPresetValidateValueV520_(schema,extra);
+   const same=!!old&&old.status===status&&old.detail===detail&&r.fields.every(f=>String(old.extra?.[f]||'')===String(extra[f]||''));
+   if(String(source?.updatedAt||'')!==String(old?.updatedAt||'')&&!same)throw Error(person.name+'의 기록이 다른 화면에서 변경됐습니다. 새로고침하세요.');
+   if(same)return {id,row:old.row,person,status,detail,extra,updatedAt:old.updatedAt,write:false};
+   const base=r.legacy?[id,person.cohort,person.company,person.name,person.cadetNumber,status,extra['사이즈']||'',extra['수량']||'',detail,now,'재학']:[id,person.cohort,person.company,person.name,person.cadetNumber,status,detail,now,'재학'];
+   const fields=r.legacy?r.fields.filter(f=>f!=='사이즈'&&f!=='수량'):r.fields;
+   return {id,row:old?.row||nextRow++,person,status,detail,extra,updatedAt:now,write:true,cells:[...base,...fields.map(f=>extra[f])].map(safeCell_)};
+  });
+  const pending=prepared.filter(x=>x.write).sort((a,b)=>a.row-b.row);
+  if(pending.length){ensureRows_(r.sh,nextRow-1);for(let i=0;i<pending.length;){let j=i+1;while(j<pending.length&&pending[j].row===pending[j-1].row+1)j++;r.sh.getRange(pending[i].row,1,j-i,pending[i].cells.length).setValues(pending.slice(i,j).map(x=>x.cells));i=j;}
+   supplyWriteAudit_(ss,'군수품 수정 내역 일괄 저장',itemId,r.item.name+' / '+pending.length+'명');}
+  return {saved:pending.length,rows:prepared.map(x=>({...x.person,status:x.status,detail:x.detail,updatedAt:x.updatedAt,membership:'재학',extra:x.extra}))};
+ });
+}

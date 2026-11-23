@@ -158,10 +158,17 @@ function supplyTrack(el){`)
  .replace(supplySaveCallV530,"const saved=await enqueue(()=>supplyWriteWithRetryV530(itemId,copy));")
  .replace('supplyTrack(x);supplySave(x.dataset.id);','supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);')
  .replace("if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplySave(x.dataset.id);}","if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);}");
+js=js.replace('function supplyRender(){queueMicrotask(supplyRenderAlertsV523);','function supplyRender(){queueMicrotask(supplyRenderAlertsV523);supplyReviewUpdateV531();')
+ .replaceAll('supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);','supplyTrack(x);supplyReviewUpdateV531();')
+ .replace('  supplyMetricsOnly();\n}\nasync function supplySave','  supplyMetricsOnly();supplyReviewUpdateV531();\n}\nasync function supplySave')
+ .replace("if(x)supplySave(x.dataset.supplySave);","if(x)supplyReviewOpenV531([x.dataset.supplySave]);")
+ .replace("data-supply-save=\"${escapeH(p.id)}\" ${supplyDrafts.has(p.id)?'':'hidden'}>저장</button>","data-supply-save=\"${escapeH(p.id)}\" ${supplyDrafts.has(p.id)?'':'hidden'}>검토</button>");
+js=js.replace(/^init\(\);$/m,()=>read('scripts/supply-review-client.js.txt')+'\ninit();');
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css') + read('scripts/condition-colors.css');
 html=personalInterfaceHtml(html).replace('예시 화면 · ⠿ 이동을 끌어 순서 변경 · 저장 후 반영','예시 화면 · 이동으로 순서 변경 · 접기로 기본 펼침 설정 · 저장 후 반영');
 html=dutyRequestsHtmlV400(html);
 html=surveyHistoryHtmlV528(html);
+html=html.replace('상태는 선택 시 저장되고, 사이즈·수량·세부내용은 입력 후 다른 칸을 누르면 자동 저장됩니다. 행별 저장 버튼도 사용할 수 있습니다.','값을 수정한 뒤 수정 내역을 확인하고 저장하세요.');
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -269,6 +276,7 @@ legacy=managedDeleteServerV426(legacy,read('scripts/managed-delete-server.gs.txt
 legacy=armoryServerV493(legacy,read('scripts/armory-server.gs.txt'));
 legacy=supplyQuantityOrderServerV500(legacy,read('scripts/supply-quantity-order-server.gs.txt'));
 legacy=supplyRequestsServerV506(legacy,read('scripts/supply-requests-server.gs.txt')+'\n'+read('scripts/supply-batch-server.gs.txt'));
+legacy+='\n'+read('scripts/supply-review-server.gs.txt');
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];

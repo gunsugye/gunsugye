@@ -1344,7 +1344,7 @@ function supplyMetricsOnly(){
   const rows=supplyItem?.rows||[],statuses=rows.map(x=>supplyDrafts.get(x.id)?.status??x.status);
   $('supplyMetrics').innerHTML=[['관리 인원',rows.length+'명'],['정상',statuses.filter(x=>x==='정상').length+'명'],['보고 완료',statuses.filter(x=>x==='수리 필요').length+'명'],['미보고',statuses.filter(x=>x==='수리 필요').length+'명'],['수량 입력',rows.filter(x=>String((supplyDrafts.get(x.id)||x).extra?.['수량']||'').trim()!=='').length+'명']].map(([a,b])=>`<div class="roster-metric"><small>${escapeH(a)}</small><strong>${escapeH(b)}</strong></div>`).join('');
 }
-function supplyRender(){queueMicrotask(supplyRenderAlertsV523);
+function supplyRender(){queueMicrotask(supplyRenderAlertsV523);supplyReviewUpdateV531();
   if(!supplyItem){$('supplyActive').classList.add('hidden');return;}
   $('supplyActive').classList.remove('hidden');$('supplySelectedName').textContent=supplyItem.name;
   $('supplySheetLink').href=supplyItem.sheetUrl;
@@ -1366,7 +1366,7 @@ function supplyRender(){queueMicrotask(supplyRenderAlertsV523);
     const v=supplyDrafts.get(p.id)||p,disabled=canEdit?'':'disabled',bad=isRepairV216(v.status);
     const cell=(field,value,size=20)=>`<input class="supply-input" type="text" data-supply-field="${escapeH(field)}" data-id="${escapeH(p.id)}" maxlength="${size}" value="${escapeH(value||'')}" ${disabled} aria-label="${escapeH(p.name)} ${escapeH(field)}">`;
     const details=`<textarea class="supply-note" data-supply-field="detail" data-id="${escapeH(p.id)}" maxlength="3000" rows="1" placeholder="상태 세부내용" ${disabled}>${escapeH(v.detail||'')}</textarea>`;
-    return heading+`<tr data-supply-id="${escapeH(p.id)}" class="${bad?'supply-bad':''}" data-dirty="${supplyDrafts.has(p.id)}"><td>${escapeH(p.cohort)}</td><td>${escapeH(p.company)}</td><td class="supply-name">${escapeH(p.name)}${bad?`<span class="roster-repair-flag">${repairBadgeV216(v.status)}</span>`:''}</td><td>${escapeH(p.cadetNumber||'-')}</td><td>${supplyQuantityInputV500(p,v,disabled)}</td>${supplyItem.schema?.includeStatus===false?'':`<td><select class="supply-select ${bad?'is-repair':''}" data-supply-field="status" data-id="${escapeH(p.id)}" ${disabled}>${supplyStatusHTML(v.status||'')}</select></td>`}${optional.map(f=>`<td>${supplyItem.schema?.preset?supplyPresetFieldV520(p,v,f,disabled):cell('extra:'+f,v.extra?.[f]??'',100)}</td>`).join('')}<td>${details}</td><td>${canEdit?`<button class="small-link supply-save-btn" data-supply-save="${escapeH(p.id)}" ${supplyDrafts.has(p.id)?'':'hidden'}>저장</button>`:'조회 전용'}</td></tr>`;
+    return heading+`<tr data-supply-id="${escapeH(p.id)}" class="${bad?'supply-bad':''}" data-dirty="${supplyDrafts.has(p.id)}"><td>${escapeH(p.cohort)}</td><td>${escapeH(p.company)}</td><td class="supply-name">${escapeH(p.name)}${bad?`<span class="roster-repair-flag">${repairBadgeV216(v.status)}</span>`:''}</td><td>${escapeH(p.cadetNumber||'-')}</td><td>${supplyQuantityInputV500(p,v,disabled)}</td>${supplyItem.schema?.includeStatus===false?'':`<td><select class="supply-select ${bad?'is-repair':''}" data-supply-field="status" data-id="${escapeH(p.id)}" ${disabled}>${supplyStatusHTML(v.status||'')}</select></td>`}${optional.map(f=>`<td>${supplyItem.schema?.preset?supplyPresetFieldV520(p,v,f,disabled):cell('extra:'+f,v.extra?.[f]??'',100)}</td>`).join('')}<td>${details}</td><td>${canEdit?`<button class="small-link supply-save-btn" data-supply-save="${escapeH(p.id)}" ${supplyDrafts.has(p.id)?'':'hidden'}>검토</button>`:'조회 전용'}</td></tr>`;
   }).join(''):`<tr><td colspan="${labels.length}" style="padding:30px;text-align:center;color:#8899ad">해당 조건의 명단이 없습니다.</td></tr>`;
   $('supplyCount').textContent=`${rows.length.toLocaleString()}명 표시 · 총 ${supplyItem.rows.length.toLocaleString()}명 · ${companyFirst?'중대별':'기수별'} 정렬`;
   supplyBatchScopeText(rows);
@@ -1436,7 +1436,7 @@ function supplyTrack(el){
   row.dataset.dirty=String(dirty);row.classList.toggle('supply-bad',isRepairV216(v.status));
   row.querySelector('.supply-select')?.classList.toggle('is-repair',isRepairV216(v.status));
   const btn=row.querySelector('.supply-save-btn');if(btn&&!supplySaving.has(rec.id))btn.hidden=!dirty;
-  supplyMetricsOnly();
+  supplyMetricsOnly();supplyReviewUpdateV531();
 }
 async function supplySave(id){clearTimeout(supplySaveTimersV530.get(id));supplySaveTimersV530.delete(id);if(!supplyQuantityValidV500(id))return;
   if(!canEdit||!supplyItem||supplySaving.has(id))return;
@@ -1681,9 +1681,9 @@ function supplyInit(){
   $('supplySortCohort').addEventListener('click',()=>{if(!supplyConfirmLeave())return;supplyMode='cohort';supplyRender();});
   ['supplySearch','supplyCohort','supplyCompany','supplyRepairOnly'].forEach(x=>$(x).addEventListener(x==='supplySearch'?'input':'change',()=>{if(supplyConfirmLeave())supplyRender();}));
   $('supplyRows').addEventListener('input',e=>supplyTrack(e.target.closest('[data-supply-field]')));
-  $('supplyRows').addEventListener('change',e=>{const x=e.target.closest('[data-supply-field="status"],[data-supply-field="extra:수량"]');if(x){supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);}});
-  $('supplyRows').addEventListener('focusout',e=>{const x=e.target.closest('[data-supply-field]');if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);}});
-  $('supplyRows').addEventListener('click',e=>{const x=e.target.closest('[data-supply-save]');if(x)supplySave(x.dataset.supplySave);
+  $('supplyRows').addEventListener('change',e=>{const x=e.target.closest('[data-supply-field="status"],[data-supply-field="extra:수량"]');if(x){supplyTrack(x);supplyReviewUpdateV531();}});
+  $('supplyRows').addEventListener('focusout',e=>{const x=e.target.closest('[data-supply-field]');if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplyReviewUpdateV531();}});
+  $('supplyRows').addEventListener('click',e=>{const x=e.target.closest('[data-supply-save]');if(x)supplyReviewOpenV531([x.dataset.supplySave]);
     const m=e.target.closest('[data-supply-special-move]');if(m)supplyMoveSpecialV256(m.dataset.supplySpecialMove);});
 }
 
@@ -4452,6 +4452,39 @@ function conditionColorsStartV501(){
  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true});document.addEventListener('change',schedule);render();
 }
 conditionColorsStartV501();
+
+let supplyReviewDialogV531=null,supplyReviewSavingV531=false;
+function supplyReviewUpdateV531(){
+ const table=$('supplyRows')?.closest('.roster-wrap');if(!table)return;
+ for(const side of ['before','after']){
+  let bar=document.getElementById('supplyReviewBarV531'+side);
+  if(!bar){bar=document.createElement('div');bar.id='supplyReviewBarV531'+side;bar.className='asset-actions';bar.style.cssText='display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap';bar.innerHTML='<span data-supply-review-count></span><button type="button" class="btn btn-primary" data-supply-review-open>수정 내역 확인 · 저장</button>';table[side](bar);bar.querySelector('button').onclick=()=>supplyReviewOpenV531();}
+  bar.hidden=!canEdit||!supplyItem;bar.querySelector('[data-supply-review-count]').textContent=supplyDrafts.size+'건 수정';bar.querySelector('button').disabled=!supplyDrafts.size||supplyReviewSavingV531;
+ }
+}
+function supplyReviewChangesV531(old,next){
+ const fields=[['수량',old.extra?.['수량'],next.extra?.['수량']],...(supplyItem.schema?.includeStatus===false?[]:[['상태',old.status,next.status]]),...supplyItem.fields.filter(f=>f!=='수량').map(f=>[f,old.extra?.[f],next.extra?.[f]]),['세부사항',old.detail,next.detail]];
+ return fields.filter(([,before,after])=>String(before??'')!==String(after??'')).map(([field,before,after])=>field+': '+(String(before??'')||'미입력')+' → '+(String(after??'')||'미입력'));
+}
+function supplyReviewOpenV531(ids){
+ if(!canEdit||!supplyItem||supplyReviewSavingV531)return;
+ const selected=[...supplyDrafts.entries()].filter(([id])=>!ids||ids.includes(id));if(!selected.length)return;
+ for(const [id] of selected)if(!supplyQuantityValidV500(id))return;
+ if(!supplyReviewDialogV531){const dialog=document.createElement('dialog');dialog.id='supplyReviewDialogV531';dialog.style.cssText='width:min(94vw,760px);max-height:86vh;border:1px solid #ccd6e3;border-radius:12px;padding:20px;box-shadow:0 20px 60px #182d4d55';dialog.innerHTML='<h2 style="margin:0 0 8px">군수품 수정 내역 확인</h2><p data-review-summary></p><div data-review-list style="max-height:55vh;overflow:auto"></div><p data-review-status role="status"></p><div class="asset-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button type="button" class="btn" data-review-cancel>취소</button><button type="button" class="btn btn-primary" data-review-save>확인 후 저장</button></div>';document.body.append(dialog);dialog.querySelector('[data-review-cancel]').onclick=()=>dialog.close();supplyReviewDialogV531=dialog;}
+ const dialog=supplyReviewDialogV531,itemId=supplyItem.id,copies=selected.map(([,draft])=>JSON.parse(JSON.stringify(draft)));
+ dialog.querySelector('[data-review-summary]').textContent=supplyItem.name+' · '+copies.length+'명';
+ dialog.querySelector('[data-review-list]').innerHTML=selected.map(([id,draft])=>{const old=supplyItem.rows.find(row=>row.id===id),changes=old?supplyReviewChangesV531(old,draft):[];return '<div style="border-top:1px solid #e0e7ef;padding:10px 0"><strong>'+escapeH([old?.cohort,old?.company,old?.name].filter(Boolean).join(' · '))+'</strong><ul style="margin:7px 0 0;padding-left:20px">'+changes.map(value=>'<li>'+escapeH(value)+'</li>').join('')+'</ul></div>';}).join('');
+ dialog.querySelector('[data-review-status]').textContent='';
+ dialog.querySelector('[data-review-save]').onclick=async()=>{
+  if(supplyReviewSavingV531)return;supplyReviewSavingV531=true;supplyBulkSaving=true;supplyReviewUpdateV531();dialog.querySelector('[data-review-save]').disabled=true;dialog.querySelector('[data-review-cancel]').disabled=true;dialog.querySelector('[data-review-status]').textContent='저장 중…';
+  try{const result=await enqueue(async()=>{try{return await server('saveSupplyRowsV531',itemId,copies);}catch(error){if(!/서버 응답 시간 초과|서버 연결|연결 실패|응답을 확인|네트워크|network/i.test(String(error?.message||error)))throw error;return server('saveSupplyRowsV531',itemId,copies);}});
+   if(supplyItem?.id===itemId){for(const row of result.rows){const index=supplyItem.rows.findIndex(old=>old.id===row.id);if(index>=0)supplyItem.rows[index]=row;const draft=supplyDrafts.get(row.id),saved=copies.find(copy=>copy.id===row.id);if(draft&&JSON.stringify({...draft,updatedAt:''})===JSON.stringify({...saved,updatedAt:''}))supplyDrafts.delete(row.id);else if(draft)draft.updatedAt=row.updatedAt;}supplyRender();}
+   dialog.close();toast(result.rows.length+'명 군수품 저장 완료');
+  }catch(error){dialog.querySelector('[data-review-status]').textContent='저장 실패: '+error.message+' · 입력값은 유지됩니다.';}
+  finally{supplyReviewSavingV531=false;supplyBulkSaving=false;dialog.querySelector('[data-review-save]').disabled=false;dialog.querySelector('[data-review-cancel]').disabled=false;supplyReviewUpdateV531();}
+ };
+ dialog.showModal();
+}
 
 init();
 

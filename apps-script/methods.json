@@ -151,6 +151,7 @@
   "saveSupplyOrderV500",
   "saveSupplyQuantityRangeV500",
   "saveSupplyRow",
+  "saveSupplyRowsV531",
   "saveSupplySchemaV408",
   "saveTrainingAssetV473",
   "saveTrainingConfigV473",
