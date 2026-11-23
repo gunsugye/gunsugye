@@ -14,7 +14,6 @@ export function buildPersonal(){
  source=personalFirearmPortalV413(source,read('scripts/personal-firearm.js.txt'));
  source=source.replace(/\}\)\(\);\s*$/,()=>read('scripts/personal-condition.js.txt')+'\n})();');
  source=source.replace('const restored=sessionStore.read();',quantityColorV502.toString()+'\n'+read('scripts/condition-colors.js.txt')+'\n'+read('scripts/personal-loading.js.txt')+'\nconst restored=sessionStore.read();');
- source=source.replace("const tasks=[['core',initial?Promise.resolve(initial):request('me')],['details',request('details')]]","const corePending=initial?Promise.resolve(initial):request('me');const tasks=[['core',corePending],['details',personalDetailsPriorityV525(corePending,personalDetailsExpandedV525())]]");
  source=source.replace("row.dataset.dutyItem=item.item;", "row.dataset.dutyItem=item.item;name.style.cssText=quantityColorV502(item.required,item.quantity);");
  source=personalSupplyPortalV506(source,read('scripts/supply-attention.js.txt')+'\n'+read('scripts/personal-supply-popup.js.txt'));
  const personalJs=conditionTextV497('const personalSessionStoreV338='+personalSessionStore.toString()+';\nconst personalAssetHealthV332='+assetRoomHealth.toString()+';\n'+source);

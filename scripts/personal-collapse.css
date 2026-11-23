@@ -1,11 +1,7 @@
-#dashboard .card>.personal-card-header-v525{margin:-18px -18px 12px}
-.card:has(>.personal-card-header-v525)>h2{display:none!important}
-.personal-card-toggle-v525{display:flex;width:100%;min-height:46px;align-items:center;gap:10px;padding:10px 14px;border:0;border-bottom:1px solid #dce6f1;border-radius:10px 10px 0 0;background:#edf4fc;color:#244365;text-align:left;font:700 15px/1.35 system-ui,sans-serif;cursor:pointer}
-.personal-card-toggle-v525::before{content:'▾';display:inline-block;flex:none;font-size:17px;line-height:1;transition:transform .15s ease}
-.personal-card-toggle-v525[aria-expanded=false]::before{transform:rotate(-90deg)}
-.personal-card-toggle-v525:focus-visible{outline:2px solid #245fa8;outline-offset:-3px}
-#dashboard .card[data-personal-collapsed=true]{padding-bottom:0}
-#dashboard .card[data-personal-collapsed=true]>.personal-card-header-v525{margin-bottom:0}
-.card[data-personal-collapsed=true] .personal-card-toggle-v525{border-bottom:0;border-radius:10px}
-.card[data-personal-collapsed=true]>:not(.personal-card-header-v525){display:none!important}
-@media(max-width:600px){#dashboard .card>.personal-card-header-v525{margin:-14px -14px 12px}.personal-card-toggle-v525{min-height:42px;padding:9px 12px;font-size:14px}}
+#dashboard .card>.personal-card-header-v525{margin:0 0 12px;padding:0 0 10px;border-bottom:1px solid #dce6f1;color:#244365;font:700 16px/1.4 system-ui,sans-serif;cursor:pointer}
+#dashboard .card>.personal-card-header-v525:hover{color:#245fa8}
+#dashboard .card>.personal-card-header-v525:focus-visible{outline:2px solid #245fa8;outline-offset:3px;border-radius:3px}
+#dashboard .card:has(>.personal-card-header-v525)>h2:not(.personal-card-header-v525){display:none!important}
+#dashboard .card[data-personal-collapsed=true]>.personal-card-header-v525{margin-bottom:0;padding-bottom:0;border-bottom:0}
+#dashboard .card[data-personal-collapsed=true]>:not(.personal-card-header-v525){display:none!important}
+@media(max-width:600px){#dashboard .card>.personal-card-header-v525{font-size:14px}}
