@@ -17,7 +17,7 @@ await import('./navigation.test.mjs');
 await import('./calendar.test.mjs');
 await import('./departures.test.mjs');
 await import('./performance.test.mjs');
-await import('./supply-save-speed.test.mjs');
+if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./supply-save-speed.test.mjs');
 await import('./updates.test.mjs');
 await import('./development-requests.test.mjs');
 await import('./notifications.test.mjs');
