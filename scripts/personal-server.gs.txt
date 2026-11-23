@@ -13,7 +13,7 @@ function personalLoginV330_(input){
   if(matches.length!==1){cache.put(personKey,String(Number(cache.get(personKey)||0)+1),900);throw Error('이름과 총기번호 또는 교번을 확인하세요.');}
   const person=matches[0],props=PropertiesService.getScriptProperties(),now=Date.now();
   if(clean){for(const [key,value] of Object.entries(props.getProperties()))if(key.startsWith('PAGES_PERSONAL_SESSION_')){let s;try{s=JSON.parse(value);}catch(_){}if(!s||s.expiresAt<=now)props.deleteProperty(key);}cache.put('personal:session-cleanup','1',900);}
-  const sessionId=Utilities.getUuid(),expiresAt=now+15*60000,sub='personal:'+person.id;
+  const sessionId=Utilities.getUuid(),expiresAt=now+30*86400000,sub='personal:'+person.id;
   props.setProperty('PAGES_PERSONAL_SESSION_'+sessionId,JSON.stringify({personId:person.id,sub,expiresAt,authType,fingerprint:personalFingerprintV330_(person,authType)}));
   return {sessionId,expiresAt,sub,preview:personalPreviewV331_(person)};
 }

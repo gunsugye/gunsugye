@@ -169,7 +169,7 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
  if(!response.ok)throw new ApiError(502,'조회 서버 연결을 확인하세요.');
  let result;try{result=await response.json();}catch(_){throw new ApiError(502,'조회 서버 응답을 확인하세요.');}
  if(!result||typeof result.ok!=='boolean')throw new ApiError(502,'조회 서버 응답을 확인하세요.');
- if(login&&result.ok){const {sessionId,expiresAt,sub,preview}=result.result||{};if(!/^[0-9a-f-]{36}$/.test(sessionId||'')||!Number.isFinite(expiresAt)||expiresAt>Date.now()+16*60000||expiresAt<=Date.now()||!String(sub).startsWith('personal:'))throw new ApiError(502,'인증 서버를 확인하세요.');result.result={expiresAt,preview,token:await sessionToken({email:'personal@portal.invalid',sub,sessionId,expiresAt},env.API_SHARED_SECRET)};}
+ if(login&&result.ok){const {sessionId,expiresAt,sub,preview}=result.result||{};if(!/^[0-9a-f-]{36}$/.test(sessionId||'')||!Number.isFinite(expiresAt)||expiresAt>Date.now()+30*86400000||expiresAt<=Date.now()||!String(sub).startsWith('personal:'))throw new ApiError(502,'인증 서버를 확인하세요.');result.result={expiresAt,preview,token:await sessionToken({email:'personal@portal.invalid',sub,sessionId,expiresAt},env.API_SHARED_SECRET)};}
  return reply(result.ok?200:result.code==='SESSION_EXPIRED'?401:result.code==='RATE_LIMITED'?429:400,result);
 }
 
