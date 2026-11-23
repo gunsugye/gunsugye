@@ -16,9 +16,9 @@ function doPost(e) {
       if(actor.email!=='personal@portal.invalid'||actor.sub!=='personal-login'||actor.sessionId)pagesForbidden_();
       return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal('login',actor.args[0])});
     }
-    if(['pagesPersonalGet','pagesPersonalLogout','pagesPersonalAssets','pagesPersonalDetails','pagesPersonalSupplies','pagesPersonalUniform','pagesPersonalUniformRequest','pagesPersonalDutyRequest','pagesPersonalFirearmRequest','pagesPersonalSupplyRequest'].includes(actor.method)){
+    if(['pagesPersonalGet','pagesPersonalDuty','pagesPersonalLogout','pagesPersonalAssets','pagesPersonalDetails','pagesPersonalSupplies','pagesPersonalUniform','pagesPersonalUniformRequest','pagesPersonalDutyRequest','pagesPersonalFirearmRequest','pagesPersonalSupplyRequest'].includes(actor.method)){
       if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))pagesForbidden_();
-      const action={pagesPersonalGet:'get',pagesPersonalAssets:'assets',pagesPersonalDetails:'details',pagesPersonalSupplies:'supplies',pagesPersonalUniform:'uniform',pagesPersonalLogout:'logout',pagesPersonalUniformRequest:'uniform-request',pagesPersonalDutyRequest:'duty-request',pagesPersonalFirearmRequest:'firearm-request',pagesPersonalSupplyRequest:'supply-request'}[actor.method];
+      const action={pagesPersonalGet:'get',pagesPersonalDuty:'duty',pagesPersonalAssets:'assets',pagesPersonalDetails:'details',pagesPersonalSupplies:'supplies',pagesPersonalUniform:'uniform',pagesPersonalLogout:'logout',pagesPersonalUniformRequest:'uniform-request',pagesPersonalDutyRequest:'duty-request',pagesPersonalFirearmRequest:'firearm-request',pagesPersonalSupplyRequest:'supply-request'}[actor.method];
       return pagesJson_({ok:true,result:pagesCreateLegacy_(actor).personal(action,actor.args[0])});
     }
     if(actor.sub.startsWith('personal:')||actor.sub==='personal-login')pagesForbidden_();

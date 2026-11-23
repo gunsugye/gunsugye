@@ -1,4 +1,5 @@
 import {surveyServerV416,surveyClientV416} from './survey-periods.mjs';
+import {surveyHistoryClientV528,surveyHistoryHtmlV528} from './survey-history.mjs';
 import {rosterGunAuditClientV417} from './roster-firearm-audit.mjs';
 import {personGroupsClientV424} from './person-groups.mjs';
 import {managedDeleteClientV426,managedDeleteServerV426} from './managed-delete.mjs';
@@ -128,6 +129,7 @@ js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('script
 js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
 js=firearmRequestClientV413(js,read('scripts/firearm-requests-client.js.txt'));
 js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
+js=surveyHistoryClientV528(js,read('scripts/survey-history-client.js.txt'));
 js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'));
 js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
 js=managedDeleteClientV426(js,read('scripts/managed-delete-client.js.txt'));
@@ -144,6 +146,7 @@ js=saberGroupsClientV498(js);
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css') + read('scripts/condition-colors.css');
 html=personalInterfaceHtml(html).replace('예시 화면 · ⠿ 이동을 끌어 순서 변경 · 저장 후 반영','예시 화면 · 이동으로 순서 변경 · 접기로 기본 펼침 설정 · 저장 후 반영');
 html=dutyRequestsHtmlV400(html);
+html=surveyHistoryHtmlV528(html);
 // 원본 업무 화면은 유지하되 Apps Script 전용 압축 부트스트랩/진단 코드는 제거합니다.
 html = html.replace(/<template id="v275(?:Css|Js)Gzip">[\s\S]*?<\/template>/g, '');
 html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
@@ -285,9 +288,10 @@ const pagesMethods_ = {${uniqueMethods.join(',')}};
 return {
  instructorTemporary: function(action,id,input){return trainV490Temporary_(action,id,input);},
  personal: function(action,input){
-  if(['login','get','details','supplies','uniform'].includes(action)){pagesReadRequestV307_={};}
+  if(['login','get','duty','details','supplies','uniform'].includes(action)){pagesReadRequestV307_={};}
   if(action==='login')return personalLoginV330_(input);
-  if(action==='get')return personalDashboardV330_(false);
+  if(action==='get')return personalDashboardV330_(false,false);
+  if(action==='duty')return personalDutyDetailsV529_();
   if(action==='details')return personalDetailsV337_();
   if(action==='supplies'||action==='uniform')return personalDetailsV337_(action);
   if(action==='assets')return personalSaveAssetsV331_(input);
@@ -318,7 +322,7 @@ return {
 };
 }
 `;
-legacy=legacy.replace('const NAV_GROUPS_V233=[',"const NAV_GROUPS_V233=[{id:'requestReview',title:'수정요청(전수조사) 검토',items:[]},");
+legacy=legacy.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['surveyRecords',").replace('const NAV_GROUPS_V233=[',"const NAV_GROUPS_V233=[{id:'requestReview',title:'수정요청(전수조사) 검토',items:['surveyRecords']},");
 write('apps-script/Legacy.gs', prefix + `\nconst navModelV301_ = ${normalizeNavigation.toString()};\n` + legacy + suffix);
 write('apps-script/methods.json', JSON.stringify(uniqueMethods, null, 2) + '\n');
 console.log(`화면/CSS/JS 생성, Apps Script API ${uniqueMethods.length}개 연결 완료`);

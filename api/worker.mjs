@@ -103,7 +103,7 @@ export async function handleRequest(request, env, fetcher = fetch) {
   headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
   headers['Access-Control-Max-Age'] = '600';
   const path = new URL(request.url).pathname;
-  if (!['/instructor/temporary','/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/logout','/personal/assets','/personal/details','/personal/supplies','/personal/uniform','/personal/uniform-request','/personal/duty-request','/personal/firearm-request','/personal/supply-request'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
+  if (!['/instructor/temporary','/rpc', '/session', '/logout','/personal/login','/personal/me','/personal/duty','/personal/logout','/personal/assets','/personal/details','/personal/supplies','/personal/uniform','/personal/uniform-request','/personal/duty-request','/personal/firearm-request','/personal/supply-request'].includes(path)) return reply(404, { ok: false, error: '주소를 확인하세요.' });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'POST 요청만 가능합니다.' });
   try {
@@ -157,7 +157,7 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
  }else{
   const token=/^Bearer (\S+)$/.exec(request.headers.get('authorization')||'')?.[1];actor=await verifySession(token,env.API_SHARED_SECRET);
   if(actor.email!=='personal@portal.invalid'||!actor.sub.startsWith('personal:'))throw new ApiError(403,'개인 조회 인증이 필요합니다.');
-  method={'/personal/me':'pagesPersonalGet','/personal/assets':'pagesPersonalAssets','/personal/details':'pagesPersonalDetails','/personal/supplies':'pagesPersonalSupplies','/personal/uniform':'pagesPersonalUniform','/personal/logout':'pagesPersonalLogout','/personal/uniform-request':'pagesPersonalUniformRequest','/personal/duty-request':'pagesPersonalDutyRequest','/personal/firearm-request':'pagesPersonalFirearmRequest','/personal/supply-request':'pagesPersonalSupplyRequest'}[path];
+  method={'/personal/me':'pagesPersonalGet','/personal/duty':'pagesPersonalDuty','/personal/assets':'pagesPersonalAssets','/personal/details':'pagesPersonalDetails','/personal/supplies':'pagesPersonalSupplies','/personal/uniform':'pagesPersonalUniform','/personal/logout':'pagesPersonalLogout','/personal/uniform-request':'pagesPersonalUniformRequest','/personal/duty-request':'pagesPersonalDutyRequest','/personal/firearm-request':'pagesPersonalFirearmRequest','/personal/supply-request':'pagesPersonalSupplyRequest'}[path];
   if(path==='/personal/assets')args=[{changes:body.changes,campaignId:body.campaignId}];
   if(path==='/personal/uniform-request')args=[{changes:body.changes,expectedUpdatedAt:body.expectedUpdatedAt,campaignId:body.campaignId}];
   if(path==='/personal/duty-request')args=[{changes:body.changes,snapshot:body.snapshot,campaignId:body.campaignId}];

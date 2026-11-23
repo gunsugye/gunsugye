@@ -50,15 +50,16 @@ function personalAssetsV331_(ss,room,personId){
 function personalSaveAssetsV331_(input){
  return lockAndRun_(()=>{const {person,ss}=personalPersonV331_(),room=personalRoomV331_(ss,person);if(!room)throw Error('배정된 생활실이 없습니다.');return assetRequestCreateV336_(ss,person,room,input?.changes);});
 }
-function personalDashboardV330_(includeDetails){
- const {person,ss}=personalPersonV331_(),result=personalCoreV339_(person,ss);if(includeDetails!==false){delete result.detailsLoading;personalAppendDetailsV337_(person,ss,result);}return result;
+function personalDashboardV330_(includeDetails,includeDuty=true){
+ const {person,ss}=personalPersonV331_(),result=personalCoreV339_(person,ss,includeDuty);if(includeDetails!==false){delete result.detailsLoading;personalAppendDetailsV337_(person,ss,result);}return result;
 }
-function personalCoreV339_(person,ss){
+function personalCoreV339_(person,ss,includeDuty=true){
  const result=personalPreviewV331_(person),warnings=result.warnings;delete result.loading;
  try{const room=personalRoomV331_(ss,person);if(room){result.room={building:room.building,floor:room.floor,room:room.room,position:room.personalPosition};if(!room.personalPosition)warnings.push('자리 확인 필요 · 공용 비품만 표시');try{result.assets=personalAssetsV331_(ss,room,person.id);}catch(_){warnings.push('비품 조회 실패');}}}catch(_){warnings.push('생활실 배정 확인 필요');}
- try{result.duty=personalDutyV400_(person,ss);if(result.duty.isDuty){result.interfaceOrder=result.dutyInterfaceOrder;result.interfaceCollapsed=result.dutyInterfaceCollapsed;}}catch(_){result.duty=null;warnings.push('근무생도 물품 조회 실패 · 군수 담당자 확인 필요');}
+ if(includeDuty)try{result.duty=personalDutyV400_(person,ss);if(result.duty.isDuty){result.interfaceOrder=result.dutyInterfaceOrder;result.interfaceCollapsed=result.dutyInterfaceCollapsed;}}catch(_){result.duty=null;warnings.push('근무생도 물품 조회 실패 · 군수 담당자 확인 필요');}
  try{result.firearm=personalFirearmDTOv413_(person,true);}catch(_){warnings.push('총기 요청 내역 조회 실패');}result.detailsLoading=true;return result;
 }
+function personalDutyDetailsV529_(){const {person,ss}=personalPersonV331_();return {duty:personalDutyV400_(person,ss),updatedAt:iso_()};}
 function personalDetailsV337_(section){const {person,ss}=personalPersonV331_(),result={supplies:[],uniform:null,warnings:[],updatedAt:iso_()};personalAppendDetailsV337_(person,ss,result,section);return result;}
 function personalAppendDetailsV337_(person,ss,result,section){
  if(section!=='supplies')try{const row=uniformRequestOwnV350_(ss,person);result.uniform=row.sizes||{};result.uniformEdit=uniformRequestInfoV350_(ss,person,row);}catch(_){}

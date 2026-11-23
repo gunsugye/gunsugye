@@ -9,6 +9,8 @@ function surveyViewV416(view){
   if(!state){
    const panel=document.createElement('div');panel.className='panel';panel.dataset.surveyKind=kind;
    panel.innerHTML='<h2>일반 기간 / 전수조사 기간</h2><fieldset data-survey-mode-choice style="display:flex;flex-wrap:wrap;gap:12px;border:0;padding:0;margin:16px 0" disabled><legend style="margin-bottom:8px;font-weight:700">운영 기간 선택</legend><label class="btn" style="display:flex;align-items:center;gap:8px"><input type="radio" name="survey-mode-'+kind+'" value="request">일반 기간</label><label class="btn" style="display:flex;align-items:center;gap:8px"><input type="radio" name="survey-mode-'+kind+'" value="direct">전수조사 기간</label></fieldset><p data-survey-mode role="status"></p><p>일반 기간은 수정 요청을 검토 후 반영합니다. 전수조사 기간은 본인 입력을 즉시 반영하고 기록을 보관합니다. 선택하면 바로 전환되며, 종료 일시가 지나면 일반 기간으로 돌아옵니다.</p><details data-survey-settings><summary>전수조사 이름·종료일 설정</summary><form data-survey-form class="supply-actions"><label>조사 이름<input class="field" name="label" required maxlength="100" placeholder="전수조사 이름"></label><label>종료 일시<input class="field" name="endsAt" type="datetime-local" required></label></form><p class="help">기본 조사 기간은 7일입니다. 필요하면 이름·종료일을 바꾼 뒤 위의 전수조사 기간을 선택하세요. 진행 중인 조사 설정을 바꾸려면 일반 기간으로 전환한 후 새 조사를 시작하세요.</p></details><p data-survey-message role="status"></p><details data-survey-history><summary>저장된 전수조사 기록 열기</summary><div class="supply-actions"><select class="field" data-survey-period aria-label="전수조사 기록 선택"></select><button type="button" class="btn" data-survey-refresh>기록 새로고침</button><input type="search" class="field" data-survey-search placeholder="기수·중대·이름 검색"></div><p data-survey-count></p><div data-survey-records></div></details>';
+   const save=document.createElement('button');save.type='button';save.className='btn btn-primary';save.dataset.surveySave='';save.textContent='조사명·종료일 수정';save.hidden=true;panel.querySelector('[data-survey-settings]').append(save);
+   panel.querySelector('[data-survey-settings] .help').textContent='조사 기간을 선택하기 전에 이름과 종료일을 설정하세요. 진행 중에도 제목과 종료일을 수정할 수 있습니다.';
    root.prepend(panel);state={kind,panel,busy:false,data:null};surveyPanelsV416.set(kind,state);
    surveyDraftResetV419(state);
    panel.querySelector('form').onsubmit=event=>event.preventDefault();
@@ -16,6 +18,7 @@ function surveyViewV416(view){
    panel.querySelector('[data-survey-period]').onchange=()=>surveyLoadV416(state);
    panel.querySelector('[data-survey-refresh]').onclick=()=>surveyLoadV416(state);
    panel.querySelector('[data-survey-search]').oninput=()=>surveyRecordsV416(state);
+   save.onclick=()=>surveyUpdateV528(state);
    if(kind==='firearm'){const oldForm=$('firearmSurveyFormV413');if(oldForm)oldForm.closest('details').hidden=true;const oldTable=$('firearmSurveyRowsV413');if(oldTable)oldTable.closest('.panel').hidden=true;}
   }
   surveyLoadV416(state);
@@ -29,7 +32,8 @@ function surveyDraftResetV419(state){
 function surveyModeRenderV419(state){
  const policy=state.data?.policy,group=state.panel.querySelector('[data-survey-mode-choice]');group.disabled=state.busy||!policy;
  for(const radio of group.querySelectorAll('input')){radio.checked=radio.value===policy?.mode;radio.closest('label').classList.toggle('btn-primary',radio.checked);}
- state.panel.querySelector('form').inert=state.busy||policy?.mode==='direct';
+ state.panel.querySelector('form').inert=state.busy;
+ const save=state.panel.querySelector('[data-survey-save]');save.hidden=policy?.mode!=='direct';save.disabled=state.busy;
  if(policy)state.panel.querySelector('[data-survey-mode]').textContent=policy.mode==='direct'?'현재: 전수조사 기간 · '+policy.label+' · '+surveyTimeV416(policy.endsAt)+'까지 입력 즉시 반영':'현재: 일반 기간 · 수정 요청 검토 후 반영';
 }
 async function surveyChooseV419(state,mode){
@@ -43,14 +47,20 @@ async function surveyChooseV419(state,mode){
  }
  await surveySetV416(state,{enabled:true,label:form.elements.label.value.trim(),endsAt:new Date(end).toISOString()});
 }
+async function surveyUpdateV528(state){
+ if(state.busy||state.data?.policy?.mode!=='direct')return;
+ const form=state.panel.querySelector('form'),end=Date.parse(form.elements.endsAt.value);
+ if(!form.checkValidity()||!Number.isFinite(end)||end<=Date.now()||end>Date.now()+90*86400000){form.reportValidity();state.panel.querySelector('[data-survey-message]').textContent='조사 이름과 종료 일시를 확인하세요.';return;}
+ await surveySetV416(state,{update:true,id:state.data.policy.id,label:form.elements.label.value.trim(),endsAt:new Date(end).toISOString()});
+}
 async function surveySetV416(state,input){
  if(state.busy)return;state.busy=true;surveyModeRenderV419(state);
  const message=state.panel.querySelector('[data-survey-message]');message.textContent='기간 변경 중…';
  try{
   const policy=await server('setSurveyPeriodV416',state.kind,input);state.data={...state.data,policy};
-  if(!input.enabled)surveyDraftResetV419(state);
+  if(input.enabled===false)surveyDraftResetV419(state);
   state.busy=false;const loaded=await surveyLoadV416(state,true);
-  message.textContent=(input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.');
+  message.textContent=(input.update?'조사명·종료일을 수정했습니다.':input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.');
  }catch(error){message.textContent=error.message;}finally{state.busy=false;surveyModeRenderV419(state);}
 }
 async function surveyLoadV416(state,reset=false){

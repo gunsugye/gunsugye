@@ -1,0 +1,7 @@
+let surveyHistoryBusyV528=false,surveyHistoryDataV528=null,surveyHistoryReadyV528=false;
+async function surveyHistoryLoadV528(){
+ const root=$('surveyRecordsView');if(!root||root.classList.contains('hidden')||surveyHistoryBusyV528||!canEdit||v284Scoped)return;
+ if(!surveyHistoryReadyV528){surveyHistoryReadyV528=true;root.querySelector('#surveyRecordsKindV528').onchange=()=>{root.querySelector('[data-survey-period]').value='';surveyHistoryLoadV528();};root.querySelector('[data-survey-period]').onchange=()=>surveyHistoryLoadV528();root.querySelector('[data-survey-search]').oninput=()=>surveyRecordsV416({panel:root,data:surveyHistoryDataV528});$('surveyRecordsRefreshV528').onclick=()=>surveyHistoryLoadV528();}
+ surveyHistoryBusyV528=true;const status=$('surveyRecordsStatusV528'),kindSelect=$('surveyRecordsKindV528'),kind=kindSelect.value,select=root.querySelector('[data-survey-period]'),selected=select.value;kindSelect.disabled=select.disabled=true;status.textContent='기록을 불러오는 중…';
+ try{const data=await server('getSurveyPeriodsV416',kind,selected);if(root.classList.contains('hidden')||kind!==kindSelect.value)return;surveyHistoryDataV528=data;select.replaceChildren(new Option('조사 선택',''),...data.periods.map(period=>new Option(period.label+' · '+surveyTimeV416(period.startedAt),period.id)));select.value=data.selected;surveyRecordsV416({panel:root,data});status.textContent='';}catch(error){status.textContent=error.message;}finally{surveyHistoryBusyV528=false;kindSelect.disabled=select.disabled=false;}
+}
