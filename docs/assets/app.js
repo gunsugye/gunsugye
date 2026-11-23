@@ -1387,14 +1387,17 @@ function supplyCatalogUI(){supplyRequestShortcutV524();supplyOrderButtonV500();
 async function supplyLoadCatalog(selectId){
   if(supplyPageLoading)return;supplyPageLoading=true;
   try{
-    await supplyRebuildV520();const r=await server('getSupplyCatalog');supplyLoaded=!!r.initialized;supplyCatalog=r.items||[];
+    await supplyRebuildV520();const r=await server('getSupplyCatalog',selectId||supplySelected,true);supplyLoaded=!!r.initialized;supplyCatalog=r.items||[];
     const previousSpecial=$('supplySpecialItemV256').value;
     $('supplySpecialItemV256').innerHTML='<option value="">전체 품목 공통</option>'+supplyCatalog.map(p=>'<option value="'+escapeH(p.id)+'">'+escapeH(p.name)+'</option>').join('');
     if(supplyCatalog.some(p=>p.id===previousSpecial))$('supplySpecialItemV256').value=previousSpecial;
     if(!r.rosterReady){$('supplySetup').classList.remove('hidden');$('supplySetupInfo').textContent='먼저 「명단(총기번호) 관리」에서 명단을 초기화해야 합니다.';}
     supplySelected=selectId||supplySelected||supplyCatalog[0]?.id||'';
     supplyCatalogUI();
-    if(supplyLoaded&&supplySelected)await supplyLoadItem(supplySelected,true);
+    if(supplyLoaded&&supplySelected){
+      if(r.selected?.id===supplySelected&&(!canEdit||(r.selected.schema?.preset?r.selected.schema.fields.every(f=>r.selected.fields.includes(f)):r.selected.fields.includes('사이즈')&&r.selected.fields.includes('수량')))){supplyItem=r.selected;supplyCatalogUI();supplyRender();}
+      else await supplyLoadItem(supplySelected,true);
+    }
     else $('supplyActive').classList.add('hidden');
   }catch(e){alert('군수품 목록을 불러오지 못했습니다: '+e.message);}
   finally{supplyPageLoading=false;}
@@ -1420,6 +1423,9 @@ function supplySnapshot(tr,record){
     else result[el.dataset.supplyField]=el.value;
   });return result;
 }
+const supplySaveTimersV530=new Map();
+function supplyScheduleSaveV530(id){clearTimeout(supplySaveTimersV530.get(id));supplySaveTimersV530.set(id,setTimeout(()=>{supplySaveTimersV530.delete(id);supplySave(id);},450));}
+async function supplyWriteWithRetryV530(itemId,copy){try{return await server('saveSupplyRow',itemId,copy);}catch(error){if(!/서버 응답 시간 초과|서버 연결|연결 실패|응답을 확인|네트워크|network/i.test(String(error?.message||error)))throw error;return server('saveSupplyRow',itemId,copy);}}
 function supplyTrack(el){
   if(!canEdit||!supplyItem||!el)return;
   const row=el.closest('tr[data-supply-id]'),rec=supplyItem.rows.find(x=>x.id===row?.dataset.supplyId);
@@ -1432,14 +1438,14 @@ function supplyTrack(el){
   const btn=row.querySelector('.supply-save-btn');if(btn&&!supplySaving.has(rec.id))btn.hidden=!dirty;
   supplyMetricsOnly();
 }
-async function supplySave(id){if(!supplyQuantityValidV500(id))return;
+async function supplySave(id){clearTimeout(supplySaveTimersV530.get(id));supplySaveTimersV530.delete(id);if(!supplyQuantityValidV500(id))return;
   if(!canEdit||!supplyItem||supplySaving.has(id))return;
   const draft=supplyDrafts.get(id),rec=supplyItem.rows.find(x=>x.id===id);if(!draft||!rec)return;
   const itemId=supplyItem.id,copy=JSON.parse(JSON.stringify(draft));
   supplySaving.add(id);const row=[...$('supplyRows').querySelectorAll('tr[data-supply-id]')].find(x=>x.dataset.supplyId===id);
   const btn=row?.querySelector('.supply-save-btn');if(btn){btn.hidden=false;btn.disabled=true;btn.textContent='저장 중';}
   try{
-    const saved=await enqueue(()=>server('saveSupplyRow',itemId,copy));
+    const saved=await enqueue(()=>supplyWriteWithRetryV530(itemId,copy));
     const index=supplyItem?.id===itemId?supplyItem.rows.findIndex(x=>x.id===id):-1;
     if(index>=0)supplyItem.rows[index]=saved;
     const latest=supplyDrafts.get(id);
@@ -1675,8 +1681,8 @@ function supplyInit(){
   $('supplySortCohort').addEventListener('click',()=>{if(!supplyConfirmLeave())return;supplyMode='cohort';supplyRender();});
   ['supplySearch','supplyCohort','supplyCompany','supplyRepairOnly'].forEach(x=>$(x).addEventListener(x==='supplySearch'?'input':'change',()=>{if(supplyConfirmLeave())supplyRender();}));
   $('supplyRows').addEventListener('input',e=>supplyTrack(e.target.closest('[data-supply-field]')));
-  $('supplyRows').addEventListener('change',e=>{const x=e.target.closest('[data-supply-field="status"],[data-supply-field="extra:수량"]');if(x){supplyTrack(x);supplySave(x.dataset.id);}});
-  $('supplyRows').addEventListener('focusout',e=>{const x=e.target.closest('[data-supply-field]');if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplySave(x.dataset.id);}});
+  $('supplyRows').addEventListener('change',e=>{const x=e.target.closest('[data-supply-field="status"],[data-supply-field="extra:수량"]');if(x){supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);}});
+  $('supplyRows').addEventListener('focusout',e=>{const x=e.target.closest('[data-supply-field]');if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);}});
   $('supplyRows').addEventListener('click',e=>{const x=e.target.closest('[data-supply-save]');if(x)supplySave(x.dataset.supplySave);
     const m=e.target.closest('[data-supply-special-move]');if(m)supplyMoveSpecialV256(m.dataset.supplySpecialMove);});
 }

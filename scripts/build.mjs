@@ -138,11 +138,26 @@ js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
 js=supplyQuantityOrderClientV500(js,read('scripts/supply-quantity-order-client.js.txt'));
 js=js.replace('function supplyRender(){','function supplyRender(){queueMicrotask(supplyRenderAlertsV523);');
 js=js.replace('function supplyCatalogUI(){','function supplyCatalogUI(){supplyRequestShortcutV524();');
+js=js.replace("const r=await server('getSupplyCatalog');supplyLoaded=", "const r=await server('getSupplyCatalog',selectId||supplySelected,true);supplyLoaded=")
+ .replace('if(supplyLoaded&&supplySelected)await supplyLoadItem(supplySelected,true);',`if(supplyLoaded&&supplySelected){
+      if(r.selected?.id===supplySelected&&(!canEdit||(r.selected.schema?.preset?r.selected.schema.fields.every(f=>r.selected.fields.includes(f)):r.selected.fields.includes('사이즈')&&r.selected.fields.includes('수량')))){supplyItem=r.selected;supplyCatalogUI();supplyRender();}
+      else await supplyLoadItem(supplySelected,true);
+    }`);
 js=supplyRequestsClientV506(js,read('scripts/supply-requests-client.js.txt'));
 js=quantityColorsClientV502(js);
 js=js.replace(/^init\(\);$/m,()=>read('scripts/condition-colors.js.txt')+'\ninit();');
 js=conditionTextV497(js);
 js=saberGroupsClientV498(js);
+const supplySaveCallV530="const saved=await enqueue(()=>server('saveSupplyRow',itemId,copy));";
+if(!js.includes(supplySaveCallV530))throw Error('군수품 저장 호출 위치를 찾지 못했습니다.');
+js=js.replace('function supplyTrack(el){',`const supplySaveTimersV530=new Map();
+function supplyScheduleSaveV530(id){clearTimeout(supplySaveTimersV530.get(id));supplySaveTimersV530.set(id,setTimeout(()=>{supplySaveTimersV530.delete(id);supplySave(id);},450));}
+async function supplyWriteWithRetryV530(itemId,copy){try{return await server('saveSupplyRow',itemId,copy);}catch(error){if(!/서버 응답 시간 초과|서버 연결|연결 실패|응답을 확인|네트워크|network/i.test(String(error?.message||error)))throw error;return server('saveSupplyRow',itemId,copy);}}
+function supplyTrack(el){`)
+ .replace('async function supplySave(id){','async function supplySave(id){clearTimeout(supplySaveTimersV530.get(id));supplySaveTimersV530.delete(id);')
+ .replace(supplySaveCallV530,"const saved=await enqueue(()=>supplyWriteWithRetryV530(itemId,copy));")
+ .replace('supplyTrack(x);supplySave(x.dataset.id);','supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);')
+ .replace("if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplySave(x.dataset.id);}","if(x&&x.dataset.supplyField!=='status'){supplyTrack(x);supplyScheduleSaveV530(x.dataset.id);}");
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css') + read('scripts/condition-colors.css');
 html=personalInterfaceHtml(html).replace('예시 화면 · ⠿ 이동을 끌어 순서 변경 · 저장 후 반영','예시 화면 · 이동으로 순서 변경 · 접기로 기본 펼침 설정 · 저장 후 반영');
 html=dutyRequestsHtmlV400(html);
