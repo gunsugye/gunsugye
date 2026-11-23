@@ -1,5 +1,5 @@
 function personalSupplyDirectBatchV532_(ss,person,policy,prepared){
- const queue=surveyDeferredReadyV537_(ss),undo=[],results=[],responses=[],now=iso_();
+ const queue=surveyDeferredReadyV537_(ss),undo=[],results=[],responses=[],now=policy.submittedAt||iso_();
  try{for(const {change,own,value} of prepared){
    const key=policy.id+'|'+person.id+'|'+change.itemId,changed=!supplyRequestSameV506_(own.value,value),original=own.value;
    let updatedAt=own.old?.updatedAt||'';

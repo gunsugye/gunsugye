@@ -280,6 +280,8 @@ legacy+='\n'+read('scripts/supply-review-server.gs.txt');
 legacy+='\n'+read('scripts/survey-deferred-server.gs.txt');
 legacy+='\n'+read('scripts/supply-inbox-server.gs.txt');
 legacy+='\n'+read('scripts/supply-forms-server.gs.txt');
+legacy=legacy.replace('function setSupplySurveyV506(input){','function supplySurveySetBaseV550_(input){');
+legacy+='\n'+read('scripts/supply-survey-lifecycle-server.gs.txt');
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];

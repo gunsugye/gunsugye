@@ -1,0 +1,49 @@
+function supplySurveyTitleV550_(){
+ const props=PropertiesService.getScriptProperties(),term=String(props.getProperty(STAFF_TERM_V285_PROP)||'').trim();
+ if(!/^\d{2,3}-\d{1,3}차$/.test(term))throw Error('현재 근무 기수·차수를 먼저 설정하세요.');
+ const key='SUPPLY_SURVEY_ROUND_V550_'+term,round=Number(props.getProperty(key)||0)+1;
+ return {label:term+' (군수품) 전수조사('+round+'차)',key,round};
+}
+function supplyFormCloseDueV550_(){
+ const props=PropertiesService.getScriptProperties();let failed=false;
+ for(const [key,raw] of Object.entries(props.getProperties())){if(!key.startsWith('SUPPLY_FORM_V546_'))continue;const meta=JSON.parse(raw);if(!meta.ready||meta.closed||!(Date.parse(meta.policy?.endsAt)<=Date.now()))continue;
+  try{FormApp.openById(meta.id).setAcceptingResponses(false);props.setProperty(key,JSON.stringify({...meta,closed:true}));}catch(_){failed=true;}
+ }if(failed)throw Error('일부 전수조사 폼 마감을 재시도해야 합니다.');
+}
+function supplyFormScheduleV550_(policy){
+ for(const trigger of ScriptApp.getProjectTriggers())if(trigger.getHandlerFunction()==='supplyFormCloseDueV550_')ScriptApp.deleteTrigger(trigger);
+ if(policy.mode==='direct')ScriptApp.newTrigger('supplyFormCloseDueV550_').timeBased().at(new Date(policy.endsAt)).create();
+ if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='supplyFormCloseRetryV550_'))ScriptApp.newTrigger('supplyFormCloseRetryV550_').timeBased().everyMinutes(1).create();
+}
+function supplyFormCloseRetryV550_(){supplyFormCloseDueV550_();}
+function supplyFormSyncPolicyV550_(policy){
+ const props=PropertiesService.getScriptProperties(),key=supplyFormKeyV546_(policy.id),raw=props.getProperty(key);if(!raw)return;
+ const meta=JSON.parse(raw);if(!meta.ready)return;const form=FormApp.openById(meta.id),open=policy.mode==='direct';
+ form.setTitle(policy.label);form.setAcceptingResponses(open);props.setProperty(key,JSON.stringify({...meta,lifecycleVersion:550,closed:!open,policy:{...meta.policy,label:policy.label,endsAt:policy.endsAt}}));
+}
+function setSupplySurveyV506(input){
+ referenceAdminV409_();const old=supplySurveyPolicyV506_();let title;
+ if(input?.enabled===false)supplyFormSyncPolicyV550_({...old,mode:'request'});
+ if(input?.enabled!==false&&!input?.update){title=supplySurveyTitleV550_();input={...input,label:title.label};}
+ const result=supplySurveySetBaseV550_(input);
+ if(title)PropertiesService.getScriptProperties().setProperty(title.key,String(title.round));
+ supplyFormSyncPolicyV550_(result);supplyFormScheduleV550_(result);return result;
+}
+function supplyReceiptNewerV550_(a,b){return Date.parse(a[1])-Date.parse(b[1])||String(a[0]).localeCompare(String(b[0]));}
+function supplyReceiptLatestV550_(record,saved,rows){
+ if(saved.policy.mode!=='direct')return saved.payload.changes;
+ if(!Number.isFinite(Date.parse(record[1])))throw Error('제출 시각을 확인하세요.');
+ const latest=new Map();
+ for(const row of rows){if(row[2]==='삭제'||!Number.isFinite(Date.parse(row[1])))continue;let candidate;try{candidate=JSON.parse(String(row[5]));}catch(_){continue;}
+  if(candidate.personId!==saved.personId||candidate.policy?.mode!=='direct'||candidate.source==='Google Forms'&&Date.parse(row[1])>Date.parse(candidate.policy.endsAt))continue;
+  for(const change of candidate.payload?.changes||[]){const prior=latest.get(change.itemId);if(!prior||supplyReceiptNewerV550_(row,prior)>0)latest.set(change.itemId,row);}
+ }
+ return saved.payload.changes.filter(c=>!latest.has(c.itemId)||supplyReceiptNewerV550_(record,latest.get(c.itemId))>=0);
+}
+function supplyReceiptApplyV550_(record,saved,context){
+ if(saved.source==='Google Forms'&&Date.parse(record[1])>Date.parse(saved.policy.endsAt))throw Error('전수조사 마감 이후 제출된 응답입니다. 제출 시각을 확인하세요.');
+ const book=supplyInboxBookV542_(false),sh=book&&supplyInboxTabV542_(book,true,false),rows=sh&&sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,9).getValues():[];
+ const changes=supplyReceiptLatestV550_(record,saved,rows),skipped=saved.payload.changes.length-changes.length;
+ if(changes.length){const prepared=saved.policy.mode==='direct'?changes.map(c=>({...c,snapshot:supplyRequestOwnV506_(context.ss,context.person,c.itemId).snapshot})):changes;personalSupplyBatchV507_({...saved.payload,changes:prepared},context,{...saved.policy,submittedAt:new Date(record[1]).toISOString()},true);}
+ return skipped?'최신 제출 우선 · 이전 제출 '+skipped+'개 제외':'';
+}

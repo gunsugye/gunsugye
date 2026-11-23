@@ -73,4 +73,5 @@ await import('./quantity-colors.test.mjs');
 await import('./supply-requests.test.mjs');
 await import('./supply-inbox.test.mjs');
 await import('./supply-forms.test.mjs');
+await import('./supply-survey-lifecycle.test.mjs');
 import './supply-blueprints.test.mjs';
