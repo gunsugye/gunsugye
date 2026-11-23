@@ -1,7 +1,7 @@
 let personalDutyReviewV533=null,personalUniformReviewV533=null,personalFirearmReviewV533=null,personalAllSavingV533=false;
 function personalAllActionsV533(clear=false){
  const dashboard=$('dashboard');if(!dashboard)return;dashboard.querySelectorAll('[data-personal-batch-v518]').forEach(node=>node.remove());if(!token)return;
- const make=()=>{const bar=element('div','','personal-batch-actions-v518'),button=element('button','일괄 전수조사/수정요청','personal-supply-submit-v507');bar.dataset.personalBatchV518='';button.type='button';button.onclick=()=>personalAllReviewV533();bar.append(button);return bar;};dashboard.prepend(make());dashboard.append(make());
+ const make=()=>{const bar=element('div','','personal-batch-actions-v518'),button=element('button','일괄 전수조사 기록/수정 요청','personal-supply-submit-v507');bar.dataset.personalBatchV518='';button.type='button';button.onclick=()=>personalAllReviewV533();bar.append(button);return bar;};dashboard.prepend(make());dashboard.append(make());
 }
 function personalAllPlansV533(only=''){
  const plans=[],add=(kind,name,path,body,changes,direct)=>{if((!only||only===kind)&&(changes.length||direct))plans.push({kind,name,path,body,changes,direct});};
