@@ -13,7 +13,10 @@ export function buildPersonal(){
  source=personalDutyPortalV400(source,read('scripts/personal-duty-portal.js.txt')).replaceAll('dirty||uniformDirtyV350','dirty||uniformDirtyV350||personalDutyDirtyV400');
  source=personalFirearmPortalV413(source,read('scripts/personal-firearm.js.txt'));
  source=source.replace(/\}\)\(\);\s*$/,()=>read('scripts/personal-condition.js.txt')+'\n})();');
- source=source.replace('const restored=sessionStore.read();',quantityColorV502.toString()+'\n'+read('scripts/condition-colors.js.txt')+'\n'+read('scripts/personal-loading.js.txt')+'\nconst restored=sessionStore.read();');
+ const loadingAnchor='// PERSONAL_LOADING_BOOTSTRAP';
+ if(source.split(loadingAnchor).length!==2)throw Error('개인 앱 로딩 코드 삽입 위치를 확인하세요.');
+ source=source.replace(loadingAnchor,()=>quantityColorV502.toString()+'\n'+read('scripts/condition-colors.js.txt')+'\n'+read('scripts/personal-loading.js.txt'));
+ if(!source.includes('function personalLoadShellV425('))throw Error('개인 앱 로딩 함수가 누락되었습니다.');
  source=source.replace("row.dataset.dutyItem=item.item;", "row.dataset.dutyItem=item.item;name.style.cssText=quantityColorV502(item.required,item.quantity);");
  source=personalSupplyPortalV506(source,read('scripts/supply-attention.js.txt')+'\n'+read('scripts/personal-supply-popup.js.txt'));
  source=source.replace(/\}\)\(\);\s*$/,()=>read('scripts/personal-all-review.js.txt')+'\n})();');
