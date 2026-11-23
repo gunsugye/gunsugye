@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.51',title:'Google Forms 수정 응답 자동 접수',notes:['Forms에서 수정 후 제출한 최신 답변을 약 1분 간격으로 자동 접수합니다.','동일 응답 ID의 수정도 구분하며 같은 버전은 중복 접수하지 않습니다.','자동 접수·폼 마감 트리거를 실제 서버 실행 경로에 연결했습니다.']};
+export const releaseDetails={version:'5.52',title:'Forms 수정 자동 접수·응답 탭 한글화',notes:['Forms에서 수정 후 제출한 최신 답변을 약 1분 간격으로 자동 접수합니다.','응답 탭 이름을 조사 제목 · 응답 형식으로 자동 변경합니다.','동일 수정 응답은 중복 접수하지 않으며 기존 응답 데이터는 보존합니다.']};

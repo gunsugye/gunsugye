@@ -18,13 +18,21 @@ function supplyFormScheduleV550_(policy){
 function supplyFormsPollV551_(){
  const props=PropertiesService.getScriptProperties();let error;try{supplyFormCloseDueV550_();}catch(e){error=e;}
  for(const [key,raw] of Object.entries(props.getProperties())){if(!key.startsWith('SUPPLY_FORM_V546_'))continue;const meta=JSON.parse(raw);if(!meta.ready||Date.parse(meta.policy?.endsAt)<Date.now()-86400000)continue;
-  try{const result=supplyFormImportV551_(meta);props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportAt:iso_(),lastImportError:'',importRemaining:result.remaining}));}catch(e){props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportError:String(e.message).slice(0,300)}));error=e;}
+  try{supplyFormResponseTabV552_(meta);const result=supplyFormImportV551_(meta);props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportAt:iso_(),lastImportError:'',importRemaining:result.remaining}));}catch(e){props.setProperty(key,JSON.stringify({...JSON.parse(props.getProperty(key)),lastImportError:String(e.message).slice(0,300)}));error=e;}
  }if(error)throw error;
 }
 function supplyFormSyncPolicyV550_(policy){
  const props=PropertiesService.getScriptProperties(),key=supplyFormKeyV546_(policy.id),raw=props.getProperty(key);if(!raw)return;
  const meta=JSON.parse(raw);if(!meta.ready)return;const form=FormApp.openById(meta.id),open=policy.mode==='direct';
- form.setTitle(policy.label);form.setAcceptingResponses(open);props.setProperty(key,JSON.stringify({...meta,lifecycleVersion:550,closed:!open,policy:{...meta.policy,label:policy.label,endsAt:policy.endsAt}}));
+ form.setTitle(policy.label);form.setAcceptingResponses(open);const updated={...meta,lifecycleVersion:550,closed:!open,policy:{...meta.policy,label:policy.label,endsAt:policy.endsAt}};props.setProperty(key,JSON.stringify(updated));supplyFormResponseTabV552_(updated);
+}
+function supplyFormResponseTabV552_(meta){
+ const book=supplyInboxBookV542_(false);if(!book)return;
+ const normalize=url=>String(url||'').split('?')[0].replace(/\/$/,''),urls=[meta.publishedUrl,meta.editUrl].filter(Boolean).map(normalize);
+ const tab=book.getSheets().find(sh=>{const url=normalize(sh.getFormUrl());return url&&(urls.includes(url)||url.includes('/'+meta.id+'/'));});if(!tab)return;
+ const base=(String(meta.policy?.label||'군수품 전수조사')+' · 응답').replace(/[\[\]:*?\/\\]/g,' ').slice(0,90);let name=base,n=2;
+ while(book.getSheetByName(name)&&book.getSheetByName(name).getSheetId()!==tab.getSheetId())name=base+' ('+(n++)+')';
+ if(tab.getName()!==name)tab.setName(name);
 }
 function setSupplySurveyV506(input){
  referenceAdminV409_();const old=supplySurveyPolicyV506_();let title;
