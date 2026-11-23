@@ -1,6 +1,12 @@
 function supplyFormKeyV546_(id){return 'SUPPLY_FORM_V546_'+id;}
 function getSupplyFormV546(){referenceAdminV409_();const policy=supplySurveyPolicyV506_(),raw=PropertiesService.getScriptProperties().getProperty(supplyFormKeyV546_(policy.id));return raw?JSON.parse(raw):null;}
-function createSupplyFormV546(){referenceAdminV409_();return lockAndRun_(()=>{
+function supplyFormCreateRunV548_(run){
+ const props=PropertiesService.getScriptProperties(),key='SUPPLY_FORM_CREATE_LEASE_V548',lock=LockService.getUserLock(),token=Utilities.getUuid();
+ if(!lock.tryLock(1000))throw Error('폼 생성 준비 중입니다. 잠시 후 다시 시도하세요.');
+ try{const lease=JSON.parse(props.getProperty(key)||'null');if(lease&&lease.until>Date.now())throw Error('이미 Google Forms를 생성 중입니다. 잠시 후 다시 확인하세요.');props.setProperty(key,JSON.stringify({token,until:Date.now()+360000}));}finally{lock.releaseLock();}
+ try{return run();}finally{const lease=JSON.parse(props.getProperty(key)||'null');if(lease?.token===token)props.deleteProperty(key);}
+}
+function createSupplyFormV546(){referenceAdminV409_();const existing=getSupplyFormV546();if(existing?.ready)return existing;return supplyFormCreateRunV548_(()=>{
  const policy=supplySurveyPolicyV506_();if(policy.mode!=='direct')throw Error('전수조사를 먼저 시작하세요.');
  const props=PropertiesService.getScriptProperties(),key=supplyFormKeyV546_(policy.id),old=JSON.parse(props.getProperty(key)||'null');if(old?.ready)return old;
  const ss=spreadsheet_(),items=supplyRegistryItems_(ss);if(!items.length)throw Error('등록된 군수품이 없습니다.');

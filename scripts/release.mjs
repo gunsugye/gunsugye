@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.47',title:'군수품 목록 저장 잠금 오류 수정',notes:['완료된 군수품 초기 구성 확인은 저장 잠금 없이 진행합니다.','군수품 목록 조회를 저장 대기열에서 분리해 다른 작업 저장 중 오류를 방지합니다.']};
+export const releaseDetails={version:'5.48',title:'Google Forms 생성 잠금 분리',notes:['Google Forms 생성을 군수품 저장 잠금과 분리했습니다.','같은 폼의 중복 생성은 별도로 차단하고, 이미 생성된 주소는 바로 반환합니다.']};
