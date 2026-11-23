@@ -1366,7 +1366,7 @@ function supplyRender(){queueMicrotask(supplyRenderAlertsV523);
   $('supplyCount').textContent=`${rows.length.toLocaleString()}명 표시 · 총 ${supplyItem.rows.length.toLocaleString()}명 · ${companyFirst?'중대별':'기수별'} 정렬`;
   supplyBatchScopeText(rows);
 }
-function supplyCatalogUI(){supplyOrderButtonV500();
+function supplyCatalogUI(){supplyRequestShortcutV524();supplyOrderButtonV500();
   $('supplySetup').classList.toggle('hidden',supplyLoaded);
   $('supplyControls').classList.toggle('hidden',!supplyLoaded);
   if(!supplyLoaded)return;
@@ -4047,6 +4047,10 @@ document.addEventListener('change',event=>{
  const input=event.target.closest?.('#supplyRows [data-supply-field^="extra:"]');if(!input||typeof supplyItem==='undefined'||!supplyItem)return;
  const cell=input.closest('td');if(cell)cell.dataset.supplyAttention=supplyAttentionV523(supplyItem,input.dataset.supplyField.slice(6),input.value);
 });
+function supplyRequestShortcutV524(){
+ const header=document.getElementById('supplySelectedName')?.closest('.panel-head');if(!header||header.querySelector('[data-supply-request-shortcut]'))return;
+ const button=document.createElement('button');button.type='button';button.className='btn';button.dataset.supplyRequestShortcut='';button.textContent='군수품 수정 요청';button.onclick=()=>switchView('supplyRequests');header.append(button);
+}
 
 const referenceBatchV409=new Map(),referenceColumnsV409={roster:[['기수','cohort'],['중대','company'],['이름','name'],['교번','cadetNumber'],['총기번호','firearmNumber'],['총기상태','firearmStatus'],['비고','memo']],dutyCadets:[['기수','cohort'],['중대','company'],['이름','name'],['근무','duty'],['조직','organization'],['학년','grade']],dorm:[['기수','cohort'],['중대','company'],['이름','name'],['관','building'],['층','floor'],['복도','corridor'],['호실','room'],['자리','position'],['여생도','female']]};
 function referenceDownloadV409(kind,rows,cohort,template=false){const columns=referenceColumnsV409[kind],clean=v=>String(v??'').replace(/[\t\r\n]/g,' '),text=[columns.map(c=>c[0]),...rows.map(row=>columns.map(([,key])=>clean(row[key])))].map(row=>row.join('\t')).join('\r\n');download(new Blob(['\ufeff',text],{type:'text/tab-separated-values;charset=utf-8'}),(template?'입학입력양식_':'기준명단_')+kind+'_'+(cohort||'전체')+'.tsv');}

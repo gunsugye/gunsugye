@@ -135,6 +135,7 @@ js=trainingManagementJsV473(js,read('scripts/training-management-client.js.txt')
 js=armoryClientV493(js,read('scripts/armory-client.js.txt'));
 js=supplyQuantityOrderClientV500(js,read('scripts/supply-quantity-order-client.js.txt'));
 js=js.replace('function supplyRender(){','function supplyRender(){queueMicrotask(supplyRenderAlertsV523);');
+js=js.replace('function supplyCatalogUI(){','function supplyCatalogUI(){supplyRequestShortcutV524();');
 js=supplyRequestsClientV506(js,read('scripts/supply-requests-client.js.txt'));
 js=quantityColorsClientV502(js);
 js=js.replace(/^init\(\);$/m,()=>read('scripts/condition-colors.js.txt')+'\ninit();');

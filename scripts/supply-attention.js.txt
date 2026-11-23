@@ -15,3 +15,7 @@ document.addEventListener('change',event=>{
  const input=event.target.closest?.('#supplyRows [data-supply-field^="extra:"]');if(!input||typeof supplyItem==='undefined'||!supplyItem)return;
  const cell=input.closest('td');if(cell)cell.dataset.supplyAttention=supplyAttentionV523(supplyItem,input.dataset.supplyField.slice(6),input.value);
 });
+function supplyRequestShortcutV524(){
+ const header=document.getElementById('supplySelectedName')?.closest('.panel-head');if(!header||header.querySelector('[data-supply-request-shortcut]'))return;
+ const button=document.createElement('button');button.type='button';button.className='btn';button.dataset.supplyRequestShortcut='';button.textContent='군수품 수정 요청';button.onclick=()=>switchView('supplyRequests');header.append(button);
+}
