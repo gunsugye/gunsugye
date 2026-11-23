@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.37',title:'품목 우선 저장·인증 충돌 개선',notes:['일괄 저장은 품목 기록과 후속 작업 접수가 끝나면 완료되며, 전수조사 응답표는 이후 자동 반영합니다.','개인 로그인 인증이 다른 저장 작업의 잠금에 막히지 않도록 수정했습니다.']};
+export const releaseDetails={version:'5.38',title:'총기 손질 도구 클립 항목 추가',notes:['총기 손질 도구에 클립 수량 항목을 추가합니다. 기본 선택 범위는 0~1개입니다.']};
