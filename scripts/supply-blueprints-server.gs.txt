@@ -1,5 +1,5 @@
 ﻿function supplyBlueprintsV520_(){
- const q=(name,max,fields=[],options={},numeric={})=>({name,schema:{fields,options,numeric,includeStatus:false,preset:true,quantityRange:{min:0,max,standard:max}}});
+ const q=(name,max,fields=[],options={},numeric={})=>({name,schema:{fields,options,numeric,includeStatus:true,preset:true,quantityRange:{min:0,max,standard:max}}});
  return [q('모포',1),q('방탄모',1,['종류','사이즈','방탄모피','턱끈 상태'],{종류:['구형','신형'],사이즈:['대','중','소'],방탄모피:['유','무'],'턱끈 상태':['정상','수리 필요','사용 불가']}),q('전투조끼',1,['부착물'],{}, {부착물:6}),q('수통',1,['수통피','수통피 클립'],{수통피:['유','무']},{'수통피 클립':2}),q('야전삽',1,['야전삽피','야전삽피 클립'],{야전삽피:['유','무']},{'야전삽피 클립':2}),q('탄띠',1),q('탄입대',2),q('총기 손질 도구',1),q('방독면',1,['사이즈','방독면피','정화통위치'],{사이즈:['대','중','소'],방독면피:['유','무'],정화통위치:['좌','우']}),q('공격 배낭',1),q('군장',1,['보조낭'],{},{보조낭:2})];
 }
 function supplyPresetSchemaV520_(value,name){
@@ -7,7 +7,7 @@ function supplyPresetSchemaV520_(value,name){
  const fields=value.fields||preset.schema.fields;if(JSON.stringify(fields)!==JSON.stringify(preset.schema.fields))throw Error('품목 세부항목 구성이 변경되었습니다. 다시 불러오세요.');
  const options={},numeric={};for(const field of fields){if(Object.hasOwn(preset.schema.numeric,field)){const n=Number(value.numeric?.[field]??preset.schema.numeric[field]);if(!Number.isSafeInteger(n)||n<0||n>1000)throw Error(field+' 최댓값을 확인하세요.');numeric[field]=n;}else{const values=value.options?.[field]||preset.schema.options[field];if(!Array.isArray(values)||!values.length||values.length>100||values.some(v=>typeof v!=='string'||!v.trim()||v.length>100||/[\r\n\t]/.test(v)))throw Error(field+' 선택지를 확인하세요.');options[field]=[...new Set(values.map(v=>v.trim()))];}}
  options.정화통위치=/방독면/.test(name)?['좌','우']:undefined;if(!/방독면/.test(name))delete options.정화통위치;
- return {fields:[...fields],options,numeric,preset:true,includeStatus:false,quantityRange:supplyValidateQuantityRangeV500_(value.quantityRange||preset.schema.quantityRange)};
+ return {fields:[...fields],options,numeric,preset:true,includeStatus:true,quantityRange:supplyValidateQuantityRangeV500_(value.quantityRange||preset.schema.quantityRange)};
 }
 const SUPPLY_REBUILD_KEY_V520='SUPPLY_REBUILD_20261120_V520';
 function supplyRebuildGuardV520_(){const raw=PropertiesService.getScriptProperties().getProperty(SUPPLY_REBUILD_KEY_V520);if(raw&&!JSON.parse(raw).done)throw Error('군수품 새 구성 적용 중입니다. 관리자 화면에서 완료 후 다시 조회하세요.');}

@@ -22,4 +22,4 @@ function supplyResetAuthorizedV408_(){requireOwner_();return lockAndRun_(()=>{
  const registry=ss.getSheets().find(sh=>sh.getSheetId()===plan.registryId);if(registry&&registry.getLastRow()>1)registry.getRange(2,1,registry.getLastRow()-1,4).clearContent();for(const id of plan.itemIds)props.deleteProperty('SUPPLY_SCHEMA_V408_'+id);plan.done=true;props.setProperty(key,JSON.stringify(plan));return plan;
 });}
 
-function supplyMaskSchemaV517_(schema,name){const mask=/방독면/.test(name),fields=(schema.fields||[]).filter(f=>!['좌','우','정화통위치'].includes(f)),options={...schema.options};delete options.좌;delete options.우;delete options.정화통위치;if(mask){fields.push('정화통위치');options.정화통위치=['좌','우'];}return {...schema,fields,options};}
+function supplyMaskSchemaV517_(schema,name){if(schema.preset)schema={...schema,includeStatus:true};const mask=/방독면/.test(name),fields=(schema.fields||[]).filter(f=>!['좌','우','정화통위치'].includes(f)),options={...schema.options};delete options.좌;delete options.우;delete options.정화통위치;if(mask){fields.push('정화통위치');options.정화통위치=['좌','우'];}return {...schema,fields,options};}
