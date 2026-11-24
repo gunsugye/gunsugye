@@ -1371,7 +1371,7 @@ function supplyRender(){queueMicrotask(supplyRenderAlertsV523);supplyReviewUpdat
   $('supplyCount').textContent=`${rows.length.toLocaleString()}명 표시 · 총 ${supplyItem.rows.length.toLocaleString()}명 · ${companyFirst?'중대별':'기수별'} 정렬`;
   supplyBatchScopeText(rows);
 }
-function supplyCatalogUI(){supplyRequestShortcutV524();supplyOrderButtonV500();
+function supplyCatalogUI(){queueMicrotask(supplyOverviewMountV558);supplyRequestShortcutV524();supplyOrderButtonV500();
   $('supplySetup').classList.toggle('hidden',supplyLoaded);
   $('supplyControls').classList.toggle('hidden',!supplyLoaded);
   if(!supplyLoaded)return;
@@ -4502,6 +4502,62 @@ function supplyReviewOpenV531(ids){
   finally{supplyReviewSavingV531=false;supplyBulkSaving=false;dialog.querySelector('[data-review-save]').disabled=false;dialog.querySelector('[data-review-cancel]').disabled=false;supplyReviewUpdateV531();}
  };
  dialog.showModal();
+}
+
+const supplyOverviewV558=function supplyOverview(item){
+ const out={people:0,quantity:0,repair:0,unusable:0,shortage:0,absent:0,incomplete:0,issues:[]};
+ const schema=item.schema||{},blank=v=>v===undefined||v===null||String(v).trim()==='';
+ const numeric=v=>!blank(v)&&Number.isFinite(Number(v))&&Number(v)>=0;
+ for(const p of item.rows||[]){
+  out.people++;const extra=p.extra||{},flags=new Set(),reasons=[];
+  const mark=(type,text)=>{flags.add(type);reasons.push(text);};
+  const fields=[['수량',extra.수량],...(schema.includeStatus===false?[]:[['상태',p.status]]),...(schema.fields||[]).filter(f=>!['수량','상태','세부사항','세부내용'].includes(f)).map(f=>[f,extra[f]])];
+  if(numeric(extra.수량))out.quantity+=Number(extra.수량);
+  for(const [key,value] of fields){
+   if(blank(value)){mark('incomplete',key+' 미작성');continue;}
+   const text=String(value).trim();
+   if(/사용\s*불가|교체\s*필요/.test(text))mark('unusable',key+' · 사용불가');
+   else if(/수리\s*필요/.test(text))mark('repair',key+' · 수리 필요');
+   if(text==='무'&&schema.options?.[key]?.includes('유'))mark('absent',key+' 없음');
+   const max=key==='수량'?(item.quantityRange?.max??schema.quantityRange?.max):schema.numeric?.[key];
+   if(max!==undefined&&numeric(value)&&Number(value)<Number(max))mark('shortage',key+' '+(Number(max)-Number(value))+'개 부족');
+  }
+  for(const flag of flags)out[flag]++;
+  if(flags.size)out.issues.push({...p,reasons,flags:[...flags]});
+ }
+ return out;
+};
+const supplyOverviewDataV558=new Map();let supplyOverviewBusyV558=false;
+function supplyOverviewMountV558(){
+ if(!supplyLoaded||$('supplyOverviewV558'))return;
+ const root=document.createElement('details');root.id='supplyOverviewV558';root.className='panel supply-overview';
+ root.innerHTML='<summary>군수품 전체 현황</summary><div class="supply-actions"><button type="button" class="btn" data-refresh>다시 불러오기</button><label><input type="checkbox" data-only> 이상·미작성만</label></div><p data-message role="status">조회 가능한 전체 인원 · 저장된 기록 기준</p><div class="supply-overview-scroll"><table><thead><tr><th>품목</th><th>인원</th><th>보유 수량</th><th>수리 필요</th><th>사용불가</th><th>수량 부족</th><th>부속품 없음</th><th>미작성</th></tr></thead><tbody></tbody></table></div><p class="panel-sub">수량 부족은 설정된 최댓값 기준 · 이상 항목은 중복 집계 · 품목을 누르면 명단 확인</p>';
+ $('supplyControls').after(root);root.addEventListener('toggle',()=>{if(root.open&&!supplyOverviewDataV558.size)supplyOverviewLoadV558();});
+ root.querySelector('[data-refresh]').onclick=()=>supplyOverviewLoadV558();root.querySelector('[data-only]').onchange=supplyOverviewRenderV558;
+ root.querySelector('tbody').onclick=e=>{const b=e.target.closest('[data-overview-item]');if(b)supplyOverviewDialogV558(b.dataset.overviewItem);};
+}
+function supplyOverviewRenderV558(){
+ const root=$('supplyOverviewV558');if(!root)return;const only=root.querySelector('[data-only]').checked;
+ root.querySelector('tbody').innerHTML=supplyCatalog.map(item=>{
+  const data=supplyOverviewDataV558.get(item.id),s=data?.summary;
+  if(only&&s&&!s.issues.length)return '';
+  const label='<th scope="row"><button class="small-link" type="button" data-overview-item="'+escapeH(item.id)+'" '+(!s?'disabled':'')+'>'+escapeH(item.name)+'</button></th>';
+  if(!s)return '<tr>'+label+'<td colspan="7">'+escapeH(data?.error||'불러오는 중…')+'</td></tr>';
+  const cell=(key,kind)=>'<td class="'+(s[key]?kind:'')+'">'+s[key].toLocaleString()+'</td>';
+  return '<tr>'+label+cell('people','')+cell('quantity','')+cell('repair','overview-orange')+cell('unusable','overview-red')+cell('shortage','overview-orange')+cell('absent','overview-orange')+cell('incomplete','overview-gray')+'</tr>';
+ }).join('')||'<tr><td colspan="8">표시할 항목이 없습니다.</td></tr>';
+}
+async function supplyOverviewLoadV558(){
+ if(supplyOverviewBusyV558)return;supplyOverviewBusyV558=true;const root=$('supplyOverviewV558'),items=[...supplyCatalog];let index=0,done=0;
+ supplyOverviewDataV558.clear();root.querySelector('[data-refresh]').disabled=true;supplyOverviewRenderV558();
+ const worker=async()=>{while(index<items.length){const item=items[index++];try{const data=await server('getSupplyItemData',item.id);supplyOverviewDataV558.set(item.id,{summary:supplyOverviewV558(data)});}catch(error){supplyOverviewDataV558.set(item.id,{error:'조회 실패 · '+error.message});}done++;root.querySelector('[data-message]').textContent='불러오기 '+done+' / '+items.length;supplyOverviewRenderV558();}};
+ try{await Promise.all([worker(),worker()]);const failed=[...supplyOverviewDataV558.values()].filter(x=>x.error).length;root.querySelector('[data-message]').textContent='저장된 기록 기준 · '+new Date().toLocaleTimeString('ko-KR')+(failed?' · '+failed+'개 조회 실패':'');}
+ finally{supplyOverviewBusyV558=false;root.querySelector('[data-refresh]').disabled=false;}
+}
+function supplyOverviewDialogV558(id){
+ const data=supplyOverviewDataV558.get(id)?.summary;if(!data)return;const item=supplyCatalog.find(x=>x.id===id),dialog=document.createElement('dialog');dialog.className='supply-overview-dialog';
+ dialog.innerHTML='<h2>'+escapeH(item?.name||'군수품')+' · 이상·미작성 명단</h2><div class="supply-overview-scroll"><table><thead><tr><th>기수</th><th>중대</th><th>이름</th><th>확인 항목</th><th>세부사항</th></tr></thead><tbody>'+data.issues.map(p=>'<tr><td>'+escapeH(p.cohort)+'</td><td>'+escapeH(p.company)+'</td><th>'+escapeH(p.name)+'</th><td>'+p.reasons.map(r=>escapeH(r)).join('<br>')+'</td><td>'+escapeH(p.detail||'—')+'</td></tr>').join('')+'</tbody></table></div>'+(!data.issues.length?'<p>이상·미작성 항목이 없습니다.</p>':'')+'<div class="modal-actions"><button class="btn btn-primary" type="button">확인</button></div>';
+ document.body.append(dialog);dialog.querySelector('button').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();dialog.showModal();
 }
 
 init();

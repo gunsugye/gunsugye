@@ -1,4 +1,5 @@
 import {surveyServerV416,surveyClientV416} from './survey-periods.mjs';
+import {supplyOverview} from './supply-overview.mjs';
 import {surveyHistoryClientV528,surveyHistoryHtmlV528} from './survey-history.mjs';
 import {rosterGunAuditClientV417} from './roster-firearm-audit.mjs';
 import {personGroupsClientV424} from './person-groups.mjs';
@@ -163,7 +164,8 @@ js=js.replace('function supplyRender(){queueMicrotask(supplyRenderAlertsV523);',
  .replace('  supplyMetricsOnly();\n}\nasync function supplySave','  supplyMetricsOnly();supplyReviewUpdateV531();\n}\nasync function supplySave')
  .replace("if(x)supplySave(x.dataset.supplySave);","if(x)supplyReviewOpenV531([x.dataset.supplySave]);")
  .replace("data-supply-save=\"${escapeH(p.id)}\" ${supplyDrafts.has(p.id)?'':'hidden'}>저장</button>","data-supply-save=\"${escapeH(p.id)}\" ${supplyDrafts.has(p.id)?'':'hidden'}>검토</button>");
-js=js.replace(/^init\(\);$/m,()=>read('scripts/supply-review-client.js.txt')+'\ninit();');
+js=js.replace('function supplyCatalogUI(){','function supplyCatalogUI(){queueMicrotask(supplyOverviewMountV558);');
+js=js.replace(/^init\(\);$/m,()=>read('scripts/supply-review-client.js.txt')+'\nconst supplyOverviewV558='+supplyOverview.toString()+';\n'+read('scripts/supply-overview-client.js.txt')+'\ninit();');
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css') + read('scripts/condition-colors.css');
 html=personalInterfaceHtml(html).replace('예시 화면 · ⠿ 이동을 끌어 순서 변경 · 저장 후 반영','예시 화면 · 이동으로 순서 변경 · 접기로 기본 펼침 설정 · 저장 후 반영');
 html=dutyRequestsHtmlV400(html);
@@ -232,7 +234,7 @@ write('docs/index.html',trainingManagementHtmlV473(read('docs/index.html')));
 write('docs/index.html',assetInspectionHtmlV382(read('docs/index.html')));
 write('docs/index.html',saberGroupsHtmlV498(conditionTextV497(read('docs/index.html'))));
 write('docs/index.html',read('docs/index.html').replace('<nav id="sidebarMenu" aria-label="일반학기 메뉴">','<nav id="sidebarMenu" aria-label="일반학기 메뉴"><button class="nav-btn" data-view="supplyRequests" type="button">군수품 수정 요청·전수조사</button>').replace('<section id="rosterView"',supplyRequestsHtmlV506+'<section id="rosterView"'));
-write('docs/assets/app.css', css+read('scripts/supply-requests.css'));
+write('docs/assets/app.css', css+read('scripts/supply-requests.css')+read('scripts/supply-overview.css'));
 // 저장된 세션은 화면 로딩과 서버 검증을 함께 시작하며, 업무 자료는 검증 응답 후에만 사용합니다.
 write('docs/assets/app.js', js);
 
