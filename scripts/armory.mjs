@@ -7,16 +7,23 @@ export function armorySpecsV493(){return [
 ];}
 export function armoryCompanyV493(value){return String(value??'').normalize('NFKC').replace(/\s|중대/g,'');}
 export function armoryNumberV493(value){return String(value??'').normalize('NFKC').replace(/\s/g,'').toUpperCase();}
+export function armoryOperatingRecordsV559(rows,records,archived){
+ const assigned=new Set(rows.map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));
+ const operating=new Map();
+ for(const r of archived){const n=armoryNumberV493(r.number);if(['퇴교','퇴학'].includes(r.status)&&!r.deletedAt&&n&&!assigned.has(n))operating.set(n,r.number);}
+ return armorySpecsV493().map(g=>{const record=records.find(r=>r.id===g.id)||{id:g.id},manual=(record.spares||[]).filter(n=>!operating.has(armoryNumberV493(n))),automatic=g.id==='b2-a2'?[...operating.values()]:[];
+ return {...record,manualSpares:manual,automaticSpares:automatic,spares:[...manual,...automatic]};});
+}
 export function armoryModelV493(rows,records,company=''){
  const specs=armorySpecsV493().filter(g=>!company||g.companies.includes(company));
  const visible=rows.filter(r=>!company||armoryCompanyV493(r.company)===company);
  const groups=specs.map(g=>{
   const assigned=visible.filter(r=>g.companies.includes(armoryCompanyV493(r.company))),record=records.find(r=>r.id===g.id)||{};
   const numbers=new Set(assigned.map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));
-  return {...g,assigned,assignedCount:numbers.size,missing:assigned.filter(r=>!armoryNumberV493(r.firearmNumber)).length,pistols:record.pistols??null,bayonets:record.bayonets??null,spares:record.spares||[],version:record.version||'',updatedAt:record.updatedAt||''};
+  return {...g,assigned,assignedCount:numbers.size,missing:assigned.filter(r=>!armoryNumberV493(r.firearmNumber)).length,pistols:record.pistols??null,bayonets:record.bayonets??null,spares:record.spares||[],manualSpares:record.manualSpares??record.spares??[],automaticSpares:record.automaticSpares||[],version:record.version||'',updatedAt:record.updatedAt||''};
  });
  const gunLocations=new Map();
- for(const g of groups){for(const r of g.assigned){const n=armoryNumberV493(r.firearmNumber);if(n){if(!gunLocations.has(n))gunLocations.set(n,[]);gunLocations.get(n).push(g.name+' · '+r.name);}}for(const n of g.spares){const key=armoryNumberV493(n);if(!gunLocations.has(key))gunLocations.set(key,[]);gunLocations.get(key).push(g.name+' · 여유 총기');}}
+ for(const g of groups){for(const r of g.assigned){const n=armoryNumberV493(r.firearmNumber);if(n){if(!gunLocations.has(n))gunLocations.set(n,[]);gunLocations.get(n).push(g.name+' · '+r.name);}}for(const n of g.spares){const key=armoryNumberV493(n);if(!gunLocations.has(key))gunLocations.set(key,[]);gunLocations.get(key).push(g.name+' · 운영용 총기');}}
  return {groups,unclassified:company?[]:visible.filter(r=>!armorySpecsV493().some(g=>g.companies.includes(armoryCompanyV493(r.company)))),duplicates:[...gunLocations].filter(([,places])=>places.length>1).map(([number,places])=>({number,places})),totalUnique:gunLocations.size,company};
 }
 export function armoryNavV493(source,server=false){
@@ -35,5 +42,5 @@ export function armoryClientV493(source,client){
 }
 export function armoryServerV493(source,server){
  source=armoryNavV493(source,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getArmoryV493')return accessGuardV284_('getRosterData',[]);if(name==='saveArmoryV493'){referenceAdminV409_();return accessPolicyV284_();}");
- return source+'\n'+[armorySpecsV493,armoryCompanyV493,armoryNumberV493,armoryModelV493].map(f=>f.toString()).join('\n')+'\n'+server;
+ return source+'\n'+[armorySpecsV493,armoryCompanyV493,armoryNumberV493,armoryOperatingRecordsV559,armoryModelV493].map(f=>f.toString()).join('\n')+'\n'+server;
 }
