@@ -27,6 +27,6 @@ test('기간 저장 후 폼 동기화 실패는 저장 성공과 재시도 안�
  const result=c.setSurveyPeriodV416('duty',{enabled:false});assert.equal(result.mode,'request');assert.match(result.formWarning,/자동 재시도/);
 });
 test('생성 API와 종료 트리거가 배포 코드에 연결된다',()=>{
- const built=readFileSync(new URL('../apps-script/Legacy.gs',import.meta.url),'utf8'),methods=JSON.parse(readFileSync(new URL('../apps-script/methods.json',import.meta.url),'utf8'));
+ const built=readFileSync(new URL('../scripts/build.mjs',import.meta.url),'utf8'),methods=JSON.parse(readFileSync(new URL('../apps-script/methods.json',import.meta.url),'utf8'));
  assert.ok(built.includes('surveyFormsClose: function()'));assert.ok(JSON.stringify(methods).includes('createSurveyFormV566'));assert.ok(JSON.stringify(methods).includes('getSurveyFormV566'));
 });
