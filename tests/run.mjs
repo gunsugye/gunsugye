@@ -15,6 +15,7 @@ await import('./api.test.mjs');
 await import('./static.test.mjs');
 await import('./journal.test.mjs');
 await import('./deploy.test.mjs');
+await import('./pages-deploy.test.mjs');
 await import('./navigation.test.mjs');
 await import('./calendar.test.mjs');
 await import('./departures.test.mjs');
