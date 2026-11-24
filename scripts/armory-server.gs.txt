@@ -15,7 +15,37 @@ function getArmoryV493(){
  const company=policy.reader?armoryCompanyV493(policy.company):'';
  if(policy.reader&&!/^[1-8]$/.test(company))throw Error('소속 중대를 확인하세요.');
  const rows=sh?rosterRows_(sh):[],records=armoryOperatingRecordsV559(rows,armoryRecordsV493_(ss),specialGunItemsV255_(ss));
- return {...armoryModelV493(rows,records,company),canEdit:!policy.reader&&(cfg.canManageUsers||fullEditorsV281_().includes(cfg.email)),readAt:iso_()};
+ return {...armoryModelV493(rows,records,company,armoryRepairRowsV563_(ss)),canEdit:!policy.reader&&(cfg.canManageUsers||fullEditorsV281_().includes(cfg.email)),readAt:iso_()};
+}
+const ARMORY_REPAIR_V563={TAB:'총기수리이동',HEAD:['총기번호','명단ID','중대','원무기고','이름','상태','버전','이동시각','복귀시각','처리계정']};
+function armoryRepairRowsV563_(ss){
+ const sh=ss.getSheetByName(ARMORY_REPAIR_V563.TAB);if(!sh||sh.getLastRow()<2)return [];
+ return sh.getRange(2,1,sh.getLastRow()-1,10).getDisplayValues().map((r,i)=>({number:r[0],personId:r[1],company:r[2],origin:r[3],name:r[4],status:r[5],version:r[6],startedAt:r[7],completedAt:r[8],row:i+2})).filter(r=>r.number);
+}
+function saveArmoryRepairV563(input){
+ referenceAdminV409_();
+ return lockAndRun_(()=>{
+  if(!input||!['start','complete'].includes(input.action))throw Error('수리 작업을 확인하세요.');
+  const ss=spreadsheet_(),roster=rosterRequired_(ss),found=rosterFind_(roster,String(input.personId||''));
+  if(!found||!found.item.firearmNumber||armoryNumberV493(found.item.firearmNumber)!==armoryNumberV493(input.number))throw Error('총기 배정이 변경되었습니다. 다시 조회하세요.');
+  const p=found.item,number=armoryNumberV493(p.firearmNumber),records=armoryRepairRowsV563_(ss),old=records.find(r=>armoryNumberV493(r.number)===number),origin=armorySpecsV493().find(g=>g.companies.includes(armoryCompanyV493(p.company)));
+  if(!origin)throw Error('소속 중대와 원무기고를 확인하세요.');
+  if(String(p.updatedAt||'')!==String(input.expectedUpdatedAt||''))throw Error('총기 상태가 변경되었습니다. 다시 조회하세요.');
+  if(input.action==='start'){
+   if(old?.status==='수리 중')throw Error('이미 수리 중인 총기입니다. 다시 조회하세요.');
+   if(!/수리필요|사용불가|교체필요/.test(String(p.firearmStatus||'').replace(/\s/g,'')))throw Error('수리 필요·사용불가 총기만 이동할 수 있습니다.');
+   if(rosterRows_(roster).filter(r=>armoryNumberV493(r.firearmNumber)===number).length!==1)throw Error('중복 배정된 총기번호입니다. 명단부터 확인하세요.');
+  }else{
+   if(!old||old.status!=='수리 중'||old.version!==input.version)throw Error('수리 기록이 변경되었습니다. 다시 조회하세요.');
+   if(old.personId!==p.id||old.origin!==origin.id)throw Error('이동 이후 소속·배정이 변경되었습니다. 원배정을 확인하세요.');
+  }
+  const sh=specialSheetV255_(ss,ARMORY_REPAIR_V563.TAB,ARMORY_REPAIR_V563.HEAD,true),stamp=iso_(),row=old?.row||sh.getLastRow()+1;
+  ensureRows_(sh,row);
+  sh.getRange(row,1,1,10).setValues([[safeCell_(p.firearmNumber),p.id,p.company,origin.id,safeCell_(p.name),input.action==='start'?'수리 중':'복귀 완료',Utilities.getUuid(),input.action==='start'?stamp:old.startedAt,input.action==='complete'?stamp:'',safeCell_(config_().email)]]);
+  if(input.action==='complete')roster.getRange(found.row,11).setValue('정상');
+  roster.getRange(found.row,8).setValue(stamp);
+  return {ok:true};
+ });
 }
 function saveArmoryV493(input){
  referenceAdminV409_();
@@ -28,6 +58,8 @@ function saveArmoryV493(input){
   if(!Array.isArray(input.spares)||input.spares.length>1000)throw Error('운영용 총기번호는 1,000개까지 입력할 수 있습니다.');
   const spares=input.spares.map(value=>{if(typeof value!=='string')throw Error('총기번호를 확인하세요.');const n=value.normalize('NFKC').trim();if(!n||n.length>60||/[\r\n]/.test(n))throw Error('총기번호는 한 줄에 하나씩 60자 이내로 입력하세요.');return n;});
   const keys=spares.map(armoryNumberV493);if(new Set(keys).size!==keys.length)throw Error('중복된 운영용 총기번호가 있습니다.');
+  const repairing=new Set(armoryRepairRowsV563_(ss).filter(r=>r.status==='수리 중').map(r=>armoryNumberV493(r.number)));
+  if(keys.some(n=>repairing.has(n)))throw Error('수리 중 총기는 자동 연동됩니다. 수동 목록에서는 제외하세요.');
   const automatic=new Set(specialGunItemsV255_(ss).filter(r=>['퇴교','퇴학'].includes(r.status)&&!r.deletedAt).map(r=>armoryNumberV493(r.number)).filter(Boolean));
   if(keys.some(n=>automatic.has(n)))throw Error('퇴교자 총기는 2대대 2무기고에 자동 연동됩니다. 수동 목록에서는 제외하세요.');
   const roster=rosterTab_(ss),assigned=new Set((roster?rosterRows_(roster):[]).map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));

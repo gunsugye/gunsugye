@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.62',title:'예도 화면 정리',notes:['예도 화면의 상태 기록 삭제 버튼을 제거했습니다.']};
+export const releaseDetails={version:'5.63',title:'총기 수리 이동·복귀 관리',notes:['수리 중 총기를 2대대 2무기고 운영용으로 이동하고 원위치에 이동 표지를 남깁니다.','수리 완료 시 정상 상태로 바꾸고 원무기고로 복귀합니다.','운영용 총기를 총기번호·구분·원소속으로 정리했습니다.']};

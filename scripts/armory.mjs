@@ -14,16 +14,19 @@ export function armoryOperatingRecordsV559(rows,records,archived){
  return armorySpecsV493().map(g=>{const record=records.find(r=>r.id===g.id)||{id:g.id},manual=(record.spares||[]).filter(n=>!operating.has(armoryNumberV493(n))),automatic=g.id==='b2-a2'?[...operating.values()]:[];
  return {...record,manualSpares:manual,automaticSpares:automatic,spares:[...manual,...automatic]};});
 }
-export function armoryModelV493(rows,records,company=''){
+export function armoryModelV493(rows,records,company='',repairs=[]){
+ const active=repairs.filter(r=>r.status==='수리 중'),moving=new Map(active.map(r=>[armoryNumberV493(r.number),r]));
+ rows=rows.map(r=>({...r,repairTransfer:moving.get(armoryNumberV493(r.firearmNumber))||null}));
  const specs=armorySpecsV493().filter(g=>!company||g.companies.includes(company));
  const visible=rows.filter(r=>!company||armoryCompanyV493(r.company)===company);
  const groups=specs.map(g=>{
   const assigned=visible.filter(r=>g.companies.includes(armoryCompanyV493(r.company))),record=records.find(r=>r.id===g.id)||{};
-  const numbers=new Set(assigned.map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));
-  return {...g,assigned,assignedCount:numbers.size,missing:assigned.filter(r=>!armoryNumberV493(r.firearmNumber)).length,pistols:record.pistols??null,bayonets:record.bayonets??null,spares:record.spares||[],manualSpares:record.manualSpares??record.spares??[],automaticSpares:record.automaticSpares||[],version:record.version||'',updatedAt:record.updatedAt||''};
+  const numbers=new Set(assigned.filter(r=>!r.repairTransfer).map(r=>armoryNumberV493(r.firearmNumber)).filter(Boolean));
+  const inbound=g.id==='b2-a2'?active:[],base=(record.spares||[]).filter(n=>!moving.has(armoryNumberV493(n))),spares=[...base,...inbound.map(r=>r.number)];
+  return {...g,assigned,assignedCount:numbers.size,repairCount:assigned.filter(r=>r.repairTransfer).length,repairSpares:inbound.map(r=>company&&armoryCompanyV493(r.company)!==company?{number:r.number,status:r.status}:r),missing:assigned.filter(r=>!armoryNumberV493(r.firearmNumber)).length,pistols:record.pistols??null,bayonets:record.bayonets??null,spares,manualSpares:(record.manualSpares??record.spares??[]).filter(n=>!moving.has(armoryNumberV493(n))),automaticSpares:record.automaticSpares||[],version:record.version||'',updatedAt:record.updatedAt||''};
  });
  const gunLocations=new Map();
- for(const g of groups){for(const r of g.assigned){const n=armoryNumberV493(r.firearmNumber);if(n){if(!gunLocations.has(n))gunLocations.set(n,[]);gunLocations.get(n).push(g.name+' · '+r.name);}}for(const n of g.spares){const key=armoryNumberV493(n);if(!gunLocations.has(key))gunLocations.set(key,[]);gunLocations.get(key).push(g.name+' · 운영용 총기');}}
+ for(const g of groups){for(const r of g.assigned){const n=armoryNumberV493(r.firearmNumber);if(n&&!r.repairTransfer){if(!gunLocations.has(n))gunLocations.set(n,[]);gunLocations.get(n).push(g.name+' · '+r.name);}}for(const n of g.spares){const key=armoryNumberV493(n);if(!gunLocations.has(key))gunLocations.set(key,[]);gunLocations.get(key).push(g.name+' · 운영용 총기');}}
  return {groups,unclassified:company?[]:visible.filter(r=>!armorySpecsV493().some(g=>g.companies.includes(armoryCompanyV493(r.company)))),duplicates:[...gunLocations].filter(([,places])=>places.length>1).map(([number,places])=>({number,places})),totalUnique:gunLocations.size,company};
 }
 export function armoryNavV493(source,server=false){
@@ -41,6 +44,6 @@ export function armoryClientV493(source,client){
  return insertAppClient(source,armoryCompanyV493.toString()+'\n'+client);
 }
 export function armoryServerV493(source,server){
- source=armoryNavV493(source,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getArmoryV493')return accessGuardV284_('getRosterData',[]);if(name==='saveArmoryV493'){referenceAdminV409_();return accessPolicyV284_();}");
+ source=armoryNavV493(source,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getArmoryV493')return accessGuardV284_('getRosterData',[]);if(['saveArmoryV493','saveArmoryRepairV563'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
  return source+'\n'+[armorySpecsV493,armoryCompanyV493,armoryNumberV493,armoryOperatingRecordsV559,armoryModelV493].map(f=>f.toString()).join('\n')+'\n'+server;
 }

@@ -67,10 +67,38 @@ test('총기 화면은 저장 후에도 동일 중대를 합치고 수리 명단
  const built=read('docs/assets/app.js'),helper=built.match(/^function armoryCompanyV493\(value\)\{[^\n]+/m);
  assert.ok(helper,'배포 코드에 중대 정규화 함수가 있어야 합니다');
  vm.runInContext(helper[0],context);
+ vm.runInContext(read('scripts/armory-client.js.txt'),context);
  vm.runInContext(read('scripts/firearms-client.js.txt'),context);
  vm.runInContext("firearmsStateV410.rows=[{id:'a',name:'가',company:'4',cohort:'77',firearmStatus:'수리 필요'},{id:'b',name:'나',company:'４중대',cohort:'77',firearmStatus:'수리 필요'}];firearmsRenderV410();",context);
  assert.equal((elements.get('[data-gun-summary]').innerHTML.match(/4중대/g)||[]).length,1);
  assert.match(elements.get('[data-gun-summary]').innerHTML,/<th>4중대<\/th><td>2<\/td>/);
  assert.match(elements.get('[data-gun-issues]').innerHTML,/<details class="gun-company-v559"><summary>4중대 · 2명/);
  assert.doesNotMatch(elements.get('[data-gun-issues]').innerHTML,/<details[^>]*\bopen\b/);
+});
+test('수리 이동은 원명단을 유지하고 수량을 이동하며 복귀 시 전체 수량을 보존한다',()=>{
+ const rows=[{id:'p',company:'4',name:'검증',firearmNumber:'001',firearmStatus:'수리 필요'}],records=[{id:'b2-a2',spares:['009']}],repair={number:'001',personId:'p',company:'4',origin:'b1-a2',name:'검증',status:'수리 중',version:'v1'};
+ const moved=armoryModelV493(rows,records,'',[repair]);
+ assert.equal(moved.groups[1].assignedCount,0);assert.equal(moved.groups[1].assigned.length,1);assert.equal(moved.groups[1].assigned[0].repairTransfer.origin,'b1-a2');
+ assert.deepEqual(moved.groups[3].spares,['009','001']);assert.equal(moved.totalUnique,2);assert.equal(moved.duplicates.length,0);
+ const returned=armoryModelV493(rows,records,'',[{...repair,status:'복귀 완료'}]);
+ assert.equal(returned.groups[1].assignedCount,1);assert.deepEqual(returned.groups[3].spares,['009']);assert.equal(returned.totalUnique,2);
+ const scoped=armoryModelV493(rows,records,'7',[repair]);assert.equal(scoped.groups[0].repairSpares[0].name,undefined);assert.equal(scoped.groups[0].repairSpares[0].personId,undefined);
+ const same=armoryModelV493([{...rows[0],company:'7'}],records,'',[{...repair,company:'7',origin:'b2-a2'}]);assert.equal(same.groups[3].assignedCount,0);assert.equal(same.totalUnique,2);
+});
+
+test('수리 시작·완료는 권한과 배정·버전을 확인하고 완료 시 정상으로 복귀한다',()=>{
+ const sheets=new Map(),person={id:'p',name:'검증',company:'4',firearmNumber:'001',firearmStatus:'수리 필요',updatedAt:'initial'};let admin=true,seq=0;
+ const sheet=(name,header)=>{const cells=[header];const sh={cells,getLastRow:()=>cells.length,getRange(row,col,n=1,w=1){return {getDisplayValues:()=>Array.from({length:n},(_,i)=>Array.from({length:w},(_,j)=>String(cells[row+i-1]?.[col+j-1]??''))),setValues(values){values.forEach((v,i)=>{cells[row+i-1]??=[];v.forEach((x,j)=>cells[row+i-1][col+j-1]=x);});},setValue(value){this.setValues([[value]]);if(name==='roster'&&col===11)person.firearmStatus=value;if(name==='roster'&&col===8)person.updatedAt=value;}};}};sheets.set(name,sh);return sh;};
+ const rosterSheet=sheet('roster',[]),ss={getSheetByName:n=>sheets.get(n)||null};
+ const context=vm.createContext({armorySpecsV493,armoryCompanyV493,armoryNumberV493,referenceAdminV409_:()=>{if(!admin)throw Error('권한 없음');},lockAndRun_:fn=>fn(),spreadsheet_:()=>ss,rosterRequired_:()=>rosterSheet,rosterFind_:()=>({item:{...person},row:2}),rosterRows_:()=>[{...person}],specialSheetV255_:(s,n,h)=>sheets.get(n)||sheet(n,h),ensureRows_(){},safeCell_:v=>v,Utilities:{getUuid:()=>String(++seq)},iso_:()=>String(++seq),config_:()=>({email:'test@example.com'})});
+ vm.runInContext(read('scripts/armory-server.gs.txt'),context);
+ const input={personId:'p',number:'001',expectedUpdatedAt:'initial',action:'start'};
+ admin=false;assert.throws(()=>context.saveArmoryRepairV563(input),/권한/);admin=true;
+ assert.throws(()=>context.saveArmoryRepairV563({...input,number:'999'}),/배정/);
+ context.saveArmoryRepairV563(input);input.expectedUpdatedAt=person.updatedAt;assert.throws(()=>context.saveArmoryRepairV563(input),/이미 수리/);
+ const active=context.armoryRepairRowsV563_(ss)[0];assert.equal(active.origin,'b1-a2');
+ assert.throws(()=>context.saveArmoryRepairV563({...input,action:'complete',version:'old'}),/수리 기록/);
+ context.saveArmoryRepairV563({...input,action:'complete',version:active.version});
+ assert.equal(person.firearmStatus,'정상');assert.equal(context.armoryRepairRowsV563_(ss)[0].status,'복귀 완료');
+ assert.throws(()=>context.saveArmoryRepairV563({...input,expectedUpdatedAt:person.updatedAt}),/수리 필요/);
 });
