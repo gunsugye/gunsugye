@@ -9,8 +9,9 @@ function forget(){window.LOGBOOK_NAVIGATION?.clear();token='';expiresAt=0;active
 function showLogin(message){forget();$('pagesLogin').hidden=false;$('pagesSession').hidden=true;if(appLoaded){$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;}status(message);}
 async function request(path,method,args=[]){
  const loginEmail=path==='/session'?String($('pagesEmail').value||'').trim().toLowerCase():undefined;
- let response;try{response=await fetch(config.apiUrl.replace(/\/$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({method,args,...(loginEmail?{loginEmail}:{})}),cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(90000)});}
- catch{throw Error('서버 응답을 확인할 수 없습니다. 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.');}
+ const initial=path==='/session'||method==='getBootstrap';
+ let response;try{response=await fetch(config.apiUrl.replace(/\/$/,'')+path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({method,args,...(loginEmail?{loginEmail}:{})}),cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(initial?30000:90000)});}
+ catch{throw Error(initial?'초기 연결이 지연되고 있습니다. 다시 연결을 눌러 주세요.':'서버 응답을 확인할 수 없습니다. 자동 재시도하지 않습니다. 새로고침 후 저장 결과를 확인하세요.');}
  let body;try{body=await response.json();}catch{throw Error('API 서버 응답 형식을 확인하세요.');}
  if(response.status===401||response.status===403)showLogin(body.error||'다시 로그인하세요.');
  if(!response.ok||!body.ok)throw Error(body.error||'요청 처리에 실패했습니다.');return body.result;
@@ -34,12 +35,12 @@ function runner(success,failure,userObject){return new Proxy({},{get(_target,nam
  return(...args)=>{call(name,args).then(result=>success?.(result,userObject),error=>failure?failure(error,userObject):console.error(error.message));};
 }});}
 window.google=window.google||{};window.google.script={run:runner()};
-function loadApp(bootstrap){
+async function loadApp(bootstrap){
  window.LOGBOOK_NAVIGATION?.preview();
- firstWorkspace=request('/rpc','getWorkspaceExtraV221',[]);firstWorkspace.catch(()=>{});
- firstBootstrap=bootstrap;
  const account=value=>{$('pagesAccount').textContent=value.userEmail||'로그인됨';$('pagesSession').hidden=false;document.documentElement?.removeAttribute?.('data-session-restoring');};
- if(bootstrap&&typeof bootstrap.then==='function')bootstrap.then(account,error=>{if(!token){showLogin(error.message||'로그인을 다시 확인하세요.');return;}document.documentElement?.removeAttribute?.('data-session-restoring');$('pagesLogin').hidden=false;$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;status(error.message||'연결을 다시 확인하세요.');});else account(bootstrap);
+ try{firstBootstrap=await bootstrap;account(firstBootstrap);}
+ catch(error){if(!token){showLogin(error.message||'로그인을 다시 확인하세요.');return;}document.documentElement?.removeAttribute?.('data-session-restoring');$('pagesLogin').hidden=false;$('pagesGoogleButton').hidden=true;$('pagesRetry').hidden=false;status(error.message||'연결을 다시 확인하세요.');return;}
+ firstWorkspace=request('/rpc','getWorkspaceExtraV221',[]);firstWorkspace.catch(()=>{});
  if(appLoaded){location.reload();return;}
  const version=document.documentElement?.dataset?.appVersion||'';
  const script=document.createElement('script');script.src='./assets/app.js'+(version?'?v='+encodeURIComponent(version):'');

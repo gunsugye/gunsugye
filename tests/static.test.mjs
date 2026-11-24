@@ -3,6 +3,15 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+test('초기 연결 실패 시 업무 화면·추가 조회를 실행하지 않고 세션을 유지한 채 재연결을 표시한다',async()=>{
+ const elements=new Map(),el=id=>{if(!elements.has(id))elements.set(id,{hidden:false,addEventListener(){}});return elements.get(id);};
+ const calls=[],scripts=[];let reject;let removed=false;
+ const context=vm.createContext({window:{LOGBOOK_CONFIG:{googleClientId:'client.apps.googleusercontent.com',apiUrl:'https://api.example'}},document:{getElementById:el,createElement:()=>({}),body:{appendChild:s=>scripts.push(s)}},localStorage:{getItem:()=>JSON.stringify({token:'session.valid.signature',expiresAt:Date.now()+60000}),removeItem(){removed=true;}},fetch:(_u,o)=>{calls.push(JSON.parse(o.body).method);return new Promise((_r,j)=>{reject=j;});},AbortSignal,Date,Proxy,console,setTimeout,clearTimeout});
+ vm.runInContext(read('docs/assets/pages.js'),context);
+ assert.deepEqual(calls,['getBootstrap']);assert.equal(scripts.length,0);
+ reject(Error('timeout'));await new Promise(r=>setImmediate(r));
+ assert.equal(el('pagesRetry').hidden,false);assert.equal(el('pagesLogin').hidden,false);assert.match(el('pagesLoginStatus').textContent,/초기 연결/);assert.equal(removed,false);assert.equal(scripts.length,0);assert.deepEqual(calls,['getBootstrap']);
+});
 const read = path => readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 
 test('Pages 경로에 맞는 상대 URL을 사용하고 압축 부트스트랩을 제거했다', () => {

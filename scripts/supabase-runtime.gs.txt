@@ -11,7 +11,7 @@ function pagesStorageRpc_(input){
   if(!value.ok){const error=Error(value.error||'Supabase 연결을 확인하세요.');error.storageCode=value.code;throw error;}
   if(value.compressed)return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(value.compressed),'application/gzip')).getDataAsString('UTF-8'));
   return value.result;
- }catch(error){last=error;if(error.storageCode==='40001'||attempt)throw error;}
+ }catch(error){last=error;if(input.action!=='commit'||error.storageCode==='40001'||attempt)throw error;}
  throw last;
 }
 function pagesStorageContext_(actor){
@@ -26,19 +26,26 @@ function pagesStorageContext_(actor){
  if(mode!=='supabase')return {spreadsheet:SpreadsheetApp,properties:PropertiesService,drive:DriveApp,cache:CacheService,wrap:api=>api};
  const manifest=pagesStorageRpc_({action:'manifest'});if(!manifest?.books?.length)throw Error('Supabase 기준 자료를 확인하세요.');
  const fetched=new Map(),original=JSON.parse(JSON.stringify(manifest.settings)),settings={...manifest.settings},attachments=[],nativeCache=CacheService.getScriptCache();let fatal;
- const methodKey=String(actor?.method==='readCompressedV282'?actor?.args?.[0]:actor?.method||'trigger').toLowerCase(),profileKey='sb:profile:'+methodKey;
+ const touched=new Set();
+ const methodKey=String(actor?.method==='readCompressedV282'?actor?.args?.[0]:actor?.method||'trigger').toLowerCase(),profileKey='sb:profile:v2:'+methodKey;
  const cacheKey=(book,sheet)=>{const meta=manifest.books.find(b=>b.id===book)?.sheets.find(s=>s.id===sheet);return meta?'sb:sheet:'+manifest.id+':'+book+':'+sheet+':'+meta.revision:null;};
  function remember(book,sheet,data){
   fetched.set(book+':'+sheet,data);try{const key=cacheKey(book,sheet);if(!key)return;const value=Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(JSON.stringify(data),'application/json')).getBytes()),parts=[];for(let at=0;at<value.length;at+=80000)parts.push(value.slice(at,at+80000));if(parts.length>20)return;nativeCache.putAll(Object.fromEntries(parts.map((p,i)=>[key+':'+i,p])),300);nativeCache.put(key,String(parts.length),300);}catch(_){}
  }
  function recall(book,sheet){try{const key=cacheKey(book,sheet),count=Number(nativeCache.get(key)||0);if(!count||count>20)return null;const names=Array.from({length:count},(_,i)=>key+':'+i),all=nativeCache.getAll(names);if(names.some(k=>!all[k]))return null;return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(names.map(k=>all[k]).join('')),'application/gzip')).getDataAsString('UTF-8'));}catch(_){return null;}}
- try{const profile=JSON.parse(nativeCache.get(profileKey)||'[]'),missing=[];
+ const missing=[];
+ try{const profile=JSON.parse(nativeCache.get(profileKey)||'[]');
   if(/^pagespersonal(supplies|details|supplyrequest)$/.test(methodKey))for(const b of manifest.books)for(const s of b.sheets)if(s.title==='생도명단'||s.title.startsWith('군수품_'))if(!profile.some(p=>p.book===b.id&&p.sheet===s.id))profile.push({book:b.id,sheet:s.id});
-  for(const s of profile){if(!cacheKey(s.book,s.sheet))continue;const data=recall(s.book,s.sheet);if(data)fetched.set(s.book+':'+s.sheet,data);else missing.push(s);}if(missing.length)for(const row of pagesStorageRpc_({action:'read',sheets:missing}))if(row.data)remember(row.book,row.sheet,row.data);
+  let prefetchRows=0;
+  for(const s of profile){if(!cacheKey(s.book,s.sheet))continue;const data=recall(s.book,s.sheet);if(data)fetched.set(s.book+':'+s.sheet,data);else {
+   const size=manifest.books.find(b=>b.id===s.book)?.sheets.find(t=>t.id===s.sheet)?.rows||0;
+   if(missing.length<6&&prefetchRows+size<=1500){missing.push(s);prefetchRows+=size;}
+  }}
  }catch(_){/* a cache miss falls back to authoritative reads */}
+ if(missing.length)for(const row of pagesStorageRpc_({action:'read',sheets:missing}))if(row.data)remember(row.book,row.sheet,row.data);
  const runtimeKey=key=>/(?:SECRET|TOKEN|SESSION|PASSWORD|NONCE|RATE_|LEASE|CACHE|TRIGGER)/i.test(key)||key.startsWith('SUPABASE_STORE_');
  const cachedSheet=(book,sheet)=>{
-  const key=book+':'+sheet;if(fetched.has(key))return fetched.get(key);
+  const key=book+':'+sheet;touched.add(key);if(fetched.has(key))return fetched.get(key);
   const result=recall(book,sheet)||pagesStorageRpc_({action:'read',sheets:[{book,sheet}]})[0]?.data;if(!result)throw Error('Supabase에서 항목을 찾을 수 없습니다.');remember(book,sheet,result);return result;
  };
  const store=createSheetStore(manifest,cachedSheet,{onUnsupported:e=>{fatal=e;},newId:()=>Math.floor(Math.random()*2147483646)+1,formatDate:(date,tz,format)=>Utilities.formatDate(date,tz||'Asia/Seoul',format==='@'||format==='General'?'yyyy-MM-dd HH:mm:ss':format.replace(/hh/g,'HH'))});
@@ -67,7 +74,7 @@ function pagesStorageContext_(actor){
  const context={transactional:true,spreadsheet,properties:{getScriptProperties:()=>properties},drive,cache:{getScriptCache:()=>cache,getUserCache:()=>cache},wrap(api){
   return Object.fromEntries(Object.entries(api).map(([name,fn])=>[name,function(){
    const result=fn.apply(null,arguments);if(fatal)throw fatal;
-   try{const sheets=[...fetched.keys()].map(key=>{const at=key.lastIndexOf(':');return {book:key.slice(0,at),sheet:Number(key.slice(at+1))};});if(sheets.length<=80)nativeCache.put(profileKey,JSON.stringify(sheets),21600);}catch(_){}
+   try{const sheets=[...touched].map(key=>{const at=key.lastIndexOf(':');return {book:key.slice(0,at),sheet:Number(key.slice(at+1))};});if(sheets.length<=80)nativeCache.put(profileKey,JSON.stringify(sheets),21600);}catch(_){}
    const edits=[...new Set([...Object.keys(original),...Object.keys(settings)])].filter(k=>original[k]!==settings[k]).map(key=>({key,before:original[key]??null,after:settings[key]??null}));
    const payload={changes:store.changes(),schema:store.schema(),books:store.bookChanges(),settings:edits,attachments};
    if(Object.values(payload).some(list=>list.length)){

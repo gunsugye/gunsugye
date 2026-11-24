@@ -6,6 +6,8 @@ import {randomUUID} from 'node:crypto';
 import {gzipSync,gunzipSync} from 'node:zlib';
 const source=readFileSync(new URL('../scripts/supabase-runtime.gs.txt',import.meta.url),'utf8');
 const compat=readFileSync(new URL('../scripts/supabase-sheet-compat.mjs',import.meta.url),'utf8').replace('export function','function');
+test('failed reads are not immediately duplicated',()=>{const f=setup();let calls=0;f.context.UrlFetchApp.fetch=()=>{calls++;throw Error('timeout');};assert.throws(()=>f.storage(),/timeout/);assert.equal(calls,1);});
+test('prefetched but unused sheets are removed from the next method profile',()=>{const f=setup();f.cache.set('sb:profile:v2:save',JSON.stringify([{book:'b',sheet:1}]));const s=f.storage();s.wrap({read:()=>true}).read();assert.equal(f.cache.get('sb:profile:v2:save'),'[]');});
 function setup(compress=false){
  const props=new Map([['SUPABASE_STORE_MODE','supabase'],['SUPABASE_STORE_URL','https://example.supabase.co/functions/v1/logbook-store'],['SUPABASE_STORE_SECRET','a'.repeat(64)],['PAGES_PERSONAL_SESSION_old','keep']]);
  const native={getProperty:k=>props.get(k)||null,getProperties:()=>Object.fromEntries(props),setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k)};
