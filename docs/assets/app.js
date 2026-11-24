@@ -4303,6 +4303,7 @@ function managedDeleteEnhanceV426(){
 function managedDeleteScheduleV426(){if(managedDeleteFrameV426)return;managedDeleteFrameV426=requestAnimationFrame(()=>{managedDeleteFrameV426=0;managedDeleteEnhanceV426();});}
 const managedDeleteObserverV426=new MutationObserver(managedDeleteScheduleV426);managedDeleteObserverV426.observe(document.body,{childList:true,subtree:true});managedDeleteScheduleV426();
 
+function armoryCompanyV493(value){return String(value??'').normalize('NFKC').replace(/\s|중대/g,'');}
 let armoryStateV493=null,armorySavingV493=false;
 function armoryInitV493(){
  if($('armoryPanelV493'))return;

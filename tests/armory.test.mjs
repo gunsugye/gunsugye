@@ -63,7 +63,10 @@ test('생성 앱은 기존 총기 화면에서 통합 조회 API를 사용한다
 });
 test('총기 화면은 저장 후에도 동일 중대를 합치고 수리 명단은 접어서 표시한다',()=>{
  const elements=new Map(),root={querySelector:key=>{if(!elements.has(key))elements.set(key,{});return elements.get(key);}};
- const context=vm.createContext({canEdit:false,$:()=>root,armoryCompanyV493,firearmSummaryV410:rows=>({people:rows.length,quantity:rows.length}),escapeH:v=>String(v??''),companyLabelV257:v=>v+'중대'});
+ const context=vm.createContext({canEdit:false,$:()=>root,firearmSummaryV410:rows=>({people:rows.length,quantity:rows.length}),escapeH:v=>String(v??''),companyLabelV257:v=>v+'중대'});
+ const built=read('docs/assets/app.js'),helper=built.match(/^function armoryCompanyV493\(value\)\{[^\n]+/m);
+ assert.ok(helper,'배포 코드에 중대 정규화 함수가 있어야 합니다');
+ vm.runInContext(helper[0],context);
  vm.runInContext(read('scripts/firearms-client.js.txt'),context);
  vm.runInContext("firearmsStateV410.rows=[{id:'a',name:'가',company:'4',cohort:'77',firearmStatus:'수리 필요'},{id:'b',name:'나',company:'４중대',cohort:'77',firearmStatus:'수리 필요'}];firearmsRenderV410();",context);
  assert.equal((elements.get('[data-gun-summary]').innerHTML.match(/4중대/g)||[]).length,1);

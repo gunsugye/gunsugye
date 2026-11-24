@@ -38,7 +38,7 @@ export function armoryClientV493(source,client){
  .replace("const data=await server('getRosterData');s.rows=data.items||[];","const rows=await armoryLoadV493();s.rows=rows;")
  .replace("v==='trainPersonnel'||v==='trainSupply'","v==='firearms'||v==='firearmRequests'||v==='trainPersonnel'||v==='trainSupply'")
  .replace('window.logbookReloadState=()=>({busy:!!(', 'window.logbookReloadState=()=>({busy:!!(armorySavingV493||');
- return insertAppClient(source,client);
+ return insertAppClient(source,armoryCompanyV493.toString()+'\n'+client);
 }
 export function armoryServerV493(source,server){
  source=armoryNavV493(source,true).replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(name==='getArmoryV493')return accessGuardV284_('getRosterData',[]);if(name==='saveArmoryV493'){referenceAdminV409_();return accessPolicyV284_();}");
