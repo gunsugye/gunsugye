@@ -30,7 +30,7 @@ function createSupplyFormV546(refreshChoices){referenceAdminV409_();const existi
  const meta=old||{id:form.getId(),publishedUrl:form.getPublishedUrl(),editUrl:form.getEditUrl(),campaignId:policy.id,ready:false};props.setProperty(key,JSON.stringify(meta));
  form.setAcceptingResponses(false);if(form.supportsAdvancedResponderPermissions())form.setPublished(false);
  while(form.getItems().length)form.deleteItem(0);
- form.setDescription('기수·중대·이름·교번을 정확히 입력하세요. 제출 내용은 군수계 검토 후 반영됩니다.').setCollectEmail(false).setLimitOneResponsePerUser(false).setPublishingSummary(false).setProgressBar(true).setConfirmationMessage('응답이 저장되었습니다. 군수계 검토 후 반영됩니다.');
+ form.setDescription('기수·중대·이름·교번을 정확히 입력하세요. 제출 내용은 명단 일치 시 자동 반영되며, 확인이 필요한 응답은 검토 후 반영됩니다.').setCollectEmail(false).setLimitOneResponsePerUser(false).setPublishingSummary(false).setProgressBar(true).setConfirmationMessage('응답이 저장되었습니다. 명단 일치 시 자동 반영되며, 확인이 필요한 응답은 검토 후 반영됩니다.');
  const identityChoices=supplyFormIdentityChoicesV549_(ss);
  for(const title of ['기수','중대'])form.addMultipleChoiceItem().setTitle(title).setChoiceValues(identityChoices[title]).setRequired(true);
  for(const title of ['이름','교번'])form.addTextItem().setTitle(title).setRequired(true);
@@ -53,15 +53,28 @@ function supplyFormImportV551_(meta){
  const ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),all=FormApp.openById(meta.id).getResponses();
  const candidates=all.map(response=>{
   const answers=Object.fromEntries(response.getItemResponses().map(r=>[r.getItem().getTitle(),String(r.getResponse()??'')])),identity={name:answers.이름,cohort:answers.기수||answers['기수 (이전 응답)'],company:answers.중대||answers['중대 (이전 응답)'],cadetNumber:answers.교번},person=supplyFormPersonV546_(people,identity),changes=meta.mapping.map(m=>({itemId:m.itemId,snapshot:'form-review',value:{status:m.includeStatus?answers[m.name+' · 상태']||'':'',detail:answers[m.name+' · 세부사항']||'',extra:Object.fromEntries(m.fields.map(field=>[field,answers[m.name+' · '+field]||'']))}})),at=response.getTimestamp().toISOString(),base='form:'+meta.id+':'+response.getId(),fingerprint=personalHashV330_([at,identity,changes]),saved={personId:person?.id||'',identity,source:'Google Forms',formResponseId:base,responseVersion:fingerprint,policy:meta.policy,payload:{campaignId:meta.campaignId,changes}},json=JSON.stringify(saved);
-  if(json.length>45000)throw Error('응답 내용이 너무 깁니다. 응답 시트를 확인하세요.');return {base,at,saved,row:[base+':'+fingerprint,at,'검토 필요',person?.id||'',meta.campaignId,json,'',person?'Google Forms 제출·수정 응답 · 관리자 확인 후 반영':'명단 불일치 · 기수·중대·이름·교번 확인',0]};
+  if(json.length>45000)throw Error('응답 내용이 너무 깁니다. 응답 시트를 확인하세요.');return {base,at,saved,row:[base+':'+fingerprint,at,person?'대기':'검토 필요',person?.id||'',meta.campaignId,json,'',person?'':'명단 불일치 · 기수·중대·이름·교번 확인',0]};
  });
  const lock=LockService.getUserLock();if(!lock.tryLock(1000))throw Error('응답 접수 작업이 진행 중입니다. 다음 자동 확인 때 재시도합니다.');
  try{const book=supplyInboxBookV542_(true),sh=supplyInboxTabV542_(book,true,true),existing=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,9).getDisplayValues():[],ids=new Set(existing.map(r=>r[0])),legacy=new Map(existing.map(r=>[r[0],r]));
   const pending=candidates.filter(c=>{if(ids.has(c.row[0]))return false;const prior=legacy.get(c.base);if(!prior)return true;try{const saved=JSON.parse(prior[5]);return personalHashV330_([new Date(prior[1]).toISOString(),saved.identity,saved.payload.changes])!==c.saved.responseVersion;}catch(_){return true;}}),rows=pending.slice(0,40).map(c=>{let revision=0;for(const prior of existing){try{const old=JSON.parse(prior[5]);if(old.formResponseId===c.base||prior[0]===c.base)revision=Math.max(revision,Number(old.responseRevision||0));}catch(_){}}c.saved.responseRevision=revision+1;c.row[5]=JSON.stringify(c.saved);return c.row;});
-  if(rows.length){const start=sh.getLastRow()+1;ensureRows_(sh,start+rows.length-1);sh.getRange(start,1,rows.length,9).setValues(rows);}return {imported:rows.length,remaining:Math.max(0,pending.length-rows.length)};
+  if(rows.length){const start=sh.getLastRow()+1;ensureRows_(sh,start+rows.length-1);sh.getRange(start,1,rows.length,9).setValues(rows);}supplyInboxTriggerV542_();return {imported:rows.length,remaining:Math.max(0,pending.length-rows.length)};
  }finally{lock.releaseLock();}
 }
 function supplyInboxFindV546_(id){const book=supplyInboxBookV542_(false);if(book)for(const direct of [true,false]){const sh=supplyInboxTabV542_(book,direct,false);if(!sh||sh.getLastRow()<2)continue;const found=sh.getRange(2,1,sh.getLastRow()-1,1).createTextFinder(String(id)).matchEntireCell(true).findNext();if(found){const row=found.getRow(),record=sh.getRange(row,1,1,9).getDisplayValues()[0];return {sh,row,record,saved:JSON.parse(record[5])};}}throw Error('접수 기록을 찾을 수 없습니다.');}
+function approveSupplyInboxV554(plans){
+ referenceAdminV409_();if(!Array.isArray(plans)||!plans.length||plans.length>40)throw Error('1~40건을 선택하세요.');
+ supplyInboxTriggerV542_();const lock=LockService.getScriptLock();if(!lock.tryLock(500))throw Error('다른 기록을 반영 중입니다. 선택 내역은 유지됩니다. 잠시 후 다시 눌러주세요.');
+ try{const ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss));return {results:plans.map(plan=>{try{
+  const {sh,row,record,saved}=supplyInboxFindV546_(plan.id);
+  if(personalHashV330_(record)!==plan.version||!['검토 필요','재시도'].includes(record[2]))throw Error('접수 상태가 변경되었습니다. 다시 확인하세요.');
+  const person=people.find(p=>p.id===saved.personId)||supplyFormPersonV546_(people,saved.identity||{});
+  if(!person)throw Error('명단 불일치: 내용 확인·처리에서 인원을 확인하세요.');
+  // Queue approval only; the worker validates each value and applies latest-response rules.
+  saved.personId=person.id;sh.getRange(row,4).setValue(person.id);sh.getRange(row,6).setValue(JSON.stringify(saved));
+  sh.getRange(row,8,1,2).setValues([['관리자 일괄 반영 승인',0]]);sh.getRange(row,3).setValue('대기');return {id:plan.id,ok:true};
+ }catch(error){return {id:plan.id,ok:false,error:String(error.message||error)};}})};}finally{lock.releaseLock();}
+}
 function getSupplyInboxReviewV546(id){referenceAdminV409_();const entry=supplyInboxFindV546_(id),ss=spreadsheet_(),people=rosterRows_(rosterRequired_(ss)),person=people.find(p=>p.id===entry.saved.personId)||supplyFormPersonV546_(people,entry.saved.identity||{}),items=new Map(supplyRegistryItems_(ss).map(i=>[i.id,i.name]));return {id,status:entry.record[2],error:entry.record[7],version:personalHashV330_(entry.record),person:person?{name:person.name,cohort:person.cohort,company:person.company}:null,identity:entry.saved.identity||null,changes:entry.saved.payload.changes.map(c=>{let current=null,snapshot='';if(person)try{const own=supplyRequestOwnV506_(ss,person,c.itemId);current=own.value;snapshot=own.snapshot;}catch(_){}return {...c,name:items.get(c.itemId)||c.itemId,current,currentSnapshot:snapshot};})};}
 function resolveSupplyInboxV546(input){referenceAdminV409_();return lockAndRun_(()=>{
  const {sh,row,record,saved}=supplyInboxFindV546_(input?.id);if(personalHashV330_(record)!==input.version||!['검토 필요','재시도'].includes(record[2]))throw Error('접수 상태가 변경되었습니다. 다시 열어주세요.');

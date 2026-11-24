@@ -16,10 +16,19 @@ function fixture(){
  const sheet=name=>({name,rows:[],setName(next){sheets.delete(this.name);this.name=next;sheets.set(next,this);},getLastRow(){return this.rows.length;},getRange(row,col,height,width){return range(this,row,col,height,width);},appendRow(cells){this.rows.push(cells);}});
  const first=sheet('Sheet1');sheets.set(first.name,first);
  const book={getId:()=> 'inbox1',getUrl:()=> 'https://docs.google.com/spreadsheets/d/inbox1/edit',getSheets:()=>[...sheets.values()],getSheetByName:name=>sheets.get(name)||null,insertSheet:name=>{const sh=sheet(name);sheets.set(name,sh);return sh;}};
- const context=vm.createContext({Date,Map,Set,JSON,PropertiesService:{getScriptProperties:()=>({getProperty:key=>props.get(key),setProperty:(key,value)=>props.set(key,value)})},SpreadsheetApp:{create:()=>book,openById:id=>{assert.equal(id,'inbox1');return book;}},ScriptApp:{getProjectTriggers:()=>triggers,newTrigger:name=>({timeBased(){return this;},everyMinutes(){return this;},create(){triggers.push({getHandlerFunction:()=>name});}})},LockService:{getUserLock:()=>({waitLock(){},releaseLock(){}})},personalPersonV331_:()=>({person,ss:main}),supplySurveyPolicyV506_:()=>({mode:'direct',id:'survey1',label:'조사'}),supplyRegistryItems_:()=>[{id:'a'}],personalHashV330_:value=>createHash('sha256').update(JSON.stringify(value)).digest('hex'),iso_:()=>new Date().toISOString(),lockAndRun_:fn=>fn(),spreadsheet_:()=>main,rosterRequired_:()=>main,rosterRows_:()=>[person],supplyRequestOwnV506_:()=>({snapshot:'current'}),personalSupplyBatchV507_:(payload,details,policy,locked)=>{assert.equal(locked,true);applied.push({payload,details,policy});},referenceAdminV409_:()=>{}});
+ const context=vm.createContext({Date,Map,Set,JSON,PropertiesService:{getScriptProperties:()=>({getProperty:key=>props.get(key),setProperty:(key,value)=>props.set(key,value)})},SpreadsheetApp:{create:()=>book,openById:id=>{assert.equal(id,'inbox1');return book;}},ScriptApp:{getProjectTriggers:()=>triggers,newTrigger:name=>({timeBased(){return this;},everyMinutes(){return this;},create(){triggers.push({getHandlerFunction:()=>name});}})},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}}),getUserLock:()=>({waitLock(){},releaseLock(){}})},personalPersonV331_:()=>({person,ss:main}),supplySurveyPolicyV506_:()=>({mode:'direct',id:'survey1',label:'조사'}),supplyRegistryItems_:()=>[{id:'a'}],personalHashV330_:value=>createHash('sha256').update(JSON.stringify(value)).digest('hex'),iso_:()=>new Date().toISOString(),lockAndRun_:fn=>fn(),spreadsheet_:()=>main,rosterRequired_:()=>main,rosterRows_:()=>[person],supplyRequestOwnV506_:()=>({snapshot:'current'}),personalSupplyBatchV507_:(payload,details,policy,locked)=>{assert.equal(locked,true);applied.push({payload,details,policy});},referenceAdminV409_:()=>{}});
  vm.runInContext(readFileSync(new URL('../scripts/supply-inbox-server.gs.txt',import.meta.url),'utf8')+readFileSync(new URL('../scripts/supply-survey-lifecycle-server.gs.txt',import.meta.url),'utf8'),context);
  return {context,sheets,applied,triggers};
 }
+
+test('다른 저장이 잠금을 사용하면 시도 횟수 증가 없이 다음 실행에서 반영한다',()=>{
+ const f=fixture();f.context.personalSupplyStageV542_({campaignId:'survey1',changes:[{itemId:'a',snapshot:'before',value:{status:'정상',detail:'',extra:{수량:'1'}}}]});
+ const row=f.sheets.get('전수조사_접수').rows[1];
+ f.context.LockService.getScriptLock=()=>({tryLock:()=>false,releaseLock(){assert.fail('not acquired');}});
+ assert.equal(f.context.supplyInboxProcessV542_().busy,true);assert.equal(row[2],'대기');assert.equal(row[8],0);assert.equal(f.applied.length,0);
+ f.context.LockService.getScriptLock=()=>({tryLock:()=>true,releaseLock(){}});
+ assert.equal(f.context.supplyInboxProcessV542_().processed,1);assert.equal(row[2],'완료');
+});
 
 test('군수품 제출은 원본을 수정하지 않고 별도 시트에 한 번 접수한 뒤 후속 처리한다',()=>{
  const f=fixture(),payload={campaignId:'survey1',changes:[{itemId:'a',snapshot:'before',value:{status:'정상',detail:'',extra:{수량:'1'}}}]};

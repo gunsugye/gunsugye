@@ -15,7 +15,7 @@ export function supplyRequestsClientV506(source,client){
 export function supplyRequestsServerV506(source,server){
  source=source.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['supplyRequests',")
  .replace("items:['supply'","items:['supplyRequests','supply'")
- .replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getSupplyRequestsV506','resolveSupplyRequestsV506','setSupplySurveyV506','getSupplyInboxV542','processSupplyInboxV542','getSupplyFormV546','createSupplyFormV546','importSupplyFormV546','getSupplyInboxReviewV546','resolveSupplyInboxV546'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
+ .replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getSupplyRequestsV506','resolveSupplyRequestsV506','setSupplySurveyV506','getSupplyInboxV542','processSupplyInboxV542','getSupplyFormV546','createSupplyFormV546','importSupplyFormV546','getSupplyInboxReviewV546','resolveSupplyInboxV546','approveSupplyInboxV554'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
  source=source.replace(/ if\(section!=='uniform'\)try\{for\(const item of supplyRegistryItems_\(ss\)\)\{[^\n]+/,
  " if(section!=='uniform')try{const history=supplyRequestRowsV506_(ss,person.id);for(const item of supplyRegistryItems_(ss))try{result.supplies.push(personalSupplyDTOv506_(ss,person,item,history));}catch(error){warnings.push(item.name+' 조회 실패: '+error.message);}}catch(_){warnings.push('군수품 조회 실패');}");
  return source+'\n'+server;
