@@ -1,0 +1,83 @@
+/** Server-side Supabase adapter. Google remains the identity/Forms/export bridge. */
+function pagesNativeFormBook_(book){return book?SpreadsheetApp.openById(book.getId()):null;}
+function pagesStorageRpc_(input){
+ const props=PropertiesService.getScriptProperties(),url=props.getProperty('SUPABASE_STORE_URL'),secret=props.getProperty('SUPABASE_STORE_SECRET');
+ if(!/^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/logbook-store$/.test(url||'')||!secret)throw Error('Supabase 연결 설정을 확인하세요.');
+ // Retrying an unchanged commit UUID is safe: PostgreSQL deduplicates the transaction.
+ let last;
+ for(let attempt=0;attempt<2;attempt++)try{
+  const response=UrlFetchApp.fetch(url,{method:'post',contentType:'application/json',headers:{Authorization:'Bearer '+secret},payload:JSON.stringify(input),muteHttpExceptions:true});
+  let value;try{value=JSON.parse(response.getContentText());}catch(_){throw Error('저장 서버 응답을 확인하지 못했습니다.');}
+  if(!value.ok){const error=Error(value.error||'Supabase 연결을 확인하세요.');error.storageCode=value.code;throw error;}
+  if(value.compressed)return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(value.compressed),'application/gzip')).getDataAsString('UTF-8'));
+  return value.result;
+ }catch(error){last=error;if(error.storageCode==='40001'||attempt)throw error;}
+ throw last;
+}
+function pagesStorageContext_(actor){
+ const nativeProps=PropertiesService.getScriptProperties();let mode=actor?.storagePreview?'supabase':nativeProps.getProperty('SUPABASE_STORE_MODE');
+ if(mode==='freeze'&&Number(nativeProps.getProperty('SUPABASE_STORE_FROZEN_AT'))>0&&Date.now()-Number(nativeProps.getProperty('SUPABASE_STORE_FROZEN_AT'))>20*60000){
+  const lock=LockService.getUserLock();lock.waitLock(10000);
+  try{if(nativeProps.getProperty('SUPABASE_STORE_MODE')==='freeze'){
+   const state=pagesStorageRpc_({action:'manifest'});mode=state.activatedAt?'supabase':'sheets';nativeProps.setProperty('SUPABASE_STORE_MODE',mode);
+  }else mode=nativeProps.getProperty('SUPABASE_STORE_MODE');}finally{lock.releaseLock();}
+ }
+ if(mode==='freeze')throw Error('데이터 저장소 전환 중입니다. 잠시 후 다시 시도하세요.');
+ if(mode!=='supabase')return {spreadsheet:SpreadsheetApp,properties:PropertiesService,drive:DriveApp,cache:CacheService,wrap:api=>api};
+ const manifest=pagesStorageRpc_({action:'manifest'});if(!manifest?.books?.length)throw Error('Supabase 기준 자료를 확인하세요.');
+ const fetched=new Map(),original=JSON.parse(JSON.stringify(manifest.settings)),settings={...manifest.settings},attachments=[],nativeCache=CacheService.getScriptCache();let fatal;
+ const methodKey=String(actor?.method==='readCompressedV282'?actor?.args?.[0]:actor?.method||'trigger').toLowerCase(),profileKey='sb:profile:'+methodKey;
+ const cacheKey=(book,sheet)=>{const meta=manifest.books.find(b=>b.id===book)?.sheets.find(s=>s.id===sheet);return meta?'sb:sheet:'+manifest.id+':'+book+':'+sheet+':'+meta.revision:null;};
+ function remember(book,sheet,data){
+  fetched.set(book+':'+sheet,data);try{const key=cacheKey(book,sheet);if(!key)return;const value=Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(JSON.stringify(data),'application/json')).getBytes()),parts=[];for(let at=0;at<value.length;at+=80000)parts.push(value.slice(at,at+80000));if(parts.length>20)return;nativeCache.putAll(Object.fromEntries(parts.map((p,i)=>[key+':'+i,p])),300);nativeCache.put(key,String(parts.length),300);}catch(_){}
+ }
+ function recall(book,sheet){try{const key=cacheKey(book,sheet),count=Number(nativeCache.get(key)||0);if(!count||count>20)return null;const names=Array.from({length:count},(_,i)=>key+':'+i),all=nativeCache.getAll(names);if(names.some(k=>!all[k]))return null;return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(names.map(k=>all[k]).join('')),'application/gzip')).getDataAsString('UTF-8'));}catch(_){return null;}}
+ try{const profile=JSON.parse(nativeCache.get(profileKey)||'[]'),missing=[];
+  if(/^pagespersonal(supplies|details|supplyrequest)$/.test(methodKey))for(const b of manifest.books)for(const s of b.sheets)if(s.title==='생도명단'||s.title.startsWith('군수품_'))if(!profile.some(p=>p.book===b.id&&p.sheet===s.id))profile.push({book:b.id,sheet:s.id});
+  for(const s of profile){if(!cacheKey(s.book,s.sheet))continue;const data=recall(s.book,s.sheet);if(data)fetched.set(s.book+':'+s.sheet,data);else missing.push(s);}if(missing.length)for(const row of pagesStorageRpc_({action:'read',sheets:missing}))if(row.data)remember(row.book,row.sheet,row.data);
+ }catch(_){/* a cache miss falls back to authoritative reads */}
+ const runtimeKey=key=>/(?:SECRET|TOKEN|SESSION|PASSWORD|NONCE|RATE_|LEASE|CACHE|TRIGGER)/i.test(key)||key.startsWith('SUPABASE_STORE_');
+ const cachedSheet=(book,sheet)=>{
+  const key=book+':'+sheet;if(fetched.has(key))return fetched.get(key);
+  const result=recall(book,sheet)||pagesStorageRpc_({action:'read',sheets:[{book,sheet}]})[0]?.data;if(!result)throw Error('Supabase에서 항목을 찾을 수 없습니다.');remember(book,sheet,result);return result;
+ };
+ const store=createSheetStore(manifest,cachedSheet,{onUnsupported:e=>{fatal=e;},newId:()=>Math.floor(Math.random()*2147483646)+1,formatDate:(date,tz,format)=>Utilities.formatDate(date,tz||'Asia/Seoul',format==='@'||format==='General'?'yyyy-MM-dd HH:mm:ss':format.replace(/hh/g,'HH'))});
+ const properties={getProperty:key=>runtimeKey(key)?nativeProps.getProperty(key):(settings[key]??null),getProperties:()=>({...Object.fromEntries(Object.entries(nativeProps.getProperties()).filter(([k])=>runtimeKey(k))),...settings}),
+  setProperty(key,value){if(runtimeKey(key))nativeProps.setProperty(key,String(value));else settings[key]=String(value);return properties;},
+  deleteProperty(key){if(runtimeKey(key))nativeProps.deleteProperty(key);else delete settings[key];return properties;},
+  setProperties(values,deleteOthers){if(deleteOthers)throw Error('전체 설정 삭제는 지원하지 않습니다.');Object.entries(values).forEach(([k,v])=>properties.setProperty(k,v));return properties;}
+ };
+ const spreadsheet=new Proxy(SpreadsheetApp,{get(target,key){
+  if(key==='create')return (...args)=>{const book=SpreadsheetApp.create.apply(SpreadsheetApp,args);if(!/^군수계 (성무기초군사훈련 - 전용 데이터|Google Forms 조사 · 응답 관리|군수품 전수조사·수정요청 접수)$/.test(args[0]))return book;return store.adoptBook({id:book.getId(),title:book.getName(),locale:book.getSpreadsheetLocale(),timeZone:book.getSpreadsheetTimeZone(),sheets:book.getSheets().map(sh=>({id:sh.getSheetId(),title:sh.getName()}))});};
+  if(key==='openById')return id=>store.hasBook(id)?store.openById(id):SpreadsheetApp.openById(id);
+  if(key==='openByUrl')return url=>{const id=String(url).match(/\/d\/([\w-]+)/)?.[1];return id&&store.hasBook(id)?store.openById(id):SpreadsheetApp.openByUrl(url);};
+  if(key==='flush')return ()=>{};
+  const value=target[key];return typeof value==='function'?value.bind(target):value;
+ }});
+ const drive=new Proxy(DriveApp,{get(target,key){
+  if(key==='getFileById')return id=>{
+   const local=attachments.find(a=>a.id===id),known=manifest.attachments.some(a=>a.id===id);if(!local&&!known)return DriveApp.getFileById(id);
+   const a=local||pagesStorageRpc_({action:'attachment',id});if(!a)throw Error('생활실 배치도 자료를 찾을 수 없습니다.');return {getId:()=>a.id,getName:()=>a.name||'생활실 편성안',getBlob:()=>Utilities.newBlob(a.content,'application/json')};
+  };
+  if(key==='createFile')return (name,content,type)=>{if(type==='application/json'&&/^생활실_/.test(name)){const a={id:'sb_'+Utilities.getUuid(),name,content:String(content)};attachments.push(a);return {getId:()=>a.id};}return DriveApp.createFile(name,content,type);};
+  const value=target[key];return typeof value==='function'?value.bind(target):value;
+ }});
+ const cacheKeyFor=key=>'sb:'+manifest.id+':'+(/^personal:(name:|ip:|session-cleanup)/.test(key)?'auth':manifest.revision)+':'+key;
+ const cache={get:key=>nativeCache.get(cacheKeyFor(key)),put:(key,v,ttl)=>nativeCache.put(cacheKeyFor(key),v,ttl),remove:key=>nativeCache.remove(cacheKeyFor(key)),removeAll:keys=>nativeCache.removeAll(keys.map(cacheKeyFor)),getAll:keys=>{const data=nativeCache.getAll(keys.map(cacheKeyFor));return Object.fromEntries(keys.filter(k=>data[cacheKeyFor(k)]!=null).map(k=>[k,data[cacheKeyFor(k)]]));},putAll:(data,ttl)=>nativeCache.putAll(Object.fromEntries(Object.entries(data).map(([k,v])=>[cacheKeyFor(k),v])),ttl)};
+ const context={transactional:true,spreadsheet,properties:{getScriptProperties:()=>properties},drive,cache:{getScriptCache:()=>cache,getUserCache:()=>cache},wrap(api){
+  return Object.fromEntries(Object.entries(api).map(([name,fn])=>[name,function(){
+   const result=fn.apply(null,arguments);if(fatal)throw fatal;
+   try{const sheets=[...fetched.keys()].map(key=>{const at=key.lastIndexOf(':');return {book:key.slice(0,at),sheet:Number(key.slice(at+1))};});if(sheets.length<=80)nativeCache.put(profileKey,JSON.stringify(sheets),21600);}catch(_){}
+   const edits=[...new Set([...Object.keys(original),...Object.keys(settings)])].filter(k=>original[k]!==settings[k]).map(key=>({key,before:original[key]??null,after:settings[key]??null}));
+   const payload={changes:store.changes(),schema:store.schema(),books:store.bookChanges(),settings:edits,attachments};
+   if(Object.values(payload).some(list=>list.length)){
+    if(actor?.storagePreview)throw Error('읽기 검증 중 변경이 발생했습니다: '+name);
+    pagesStorageRpc_({action:'commit',request:actor?.nonce||Utilities.getUuid(),actor:actor?.email||'',method:actor?.method||name,payload});
+    // Small settings mirror retains trigger identity and export configuration; Supabase is authoritative.
+    edits.forEach(e=>{try{if(e.after===null)nativeProps.deleteProperty(e.key);else nativeProps.setProperty(e.key,e.after);}catch(_){}});
+   }
+   return result;
+  }]));
+ }};
+ return context;
+}

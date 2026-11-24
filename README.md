@@ -4,16 +4,16 @@
 
 배포 후 접속할 주소: **https://gunsugye.github.io/gunsugye/**
 
-기존 Google Sheets와 Apps Script 업무 기능을 유지하면서 화면을 GitHub Pages로 옮기는 이전 버전입니다. Google 계정으로 로그인하면 API 서버가 서명을 확인하고, 기존 관리자·편집자·중대별 권한으로 업무를 처리합니다.
+기존 화면과 업무 기능을 유지하면서 운영 자료를 Supabase에 저장합니다. Google 계정으로 로그인하면 API 서버가 서명을 확인하고, 기존 관리자·편집자·중대별 권한으로 업무를 처리합니다.
 
 ```text
-GitHub Pages 화면 → Cloudflare Workers API → Apps Script → 기존 Google Sheets
-       Google 로그인         서명 검증             업무·권한 처리
+GitHub Pages 화면 → Cloudflare Workers API → Apps Script → Supabase
+       Google 로그인         서명 검증             업무·권한 처리   자료 조회·저장
 ```
 
 처음 설정은 [DEPLOY.md](DEPLOY.md) 순서대로 진행하세요. Google OAuth 클라이언트 ID, Apps Script 배포 주소, Worker 주소를 연결하기 전에는 로그인 설정 안내 화면이 표시됩니다.
 
-이미 운영 중인 사이트에 30일 로그인 유지와 당일/장기업무를 적용하려면 [UPDATE.md](UPDATE.md)를 따르세요.
+변경 내역은 [UPDATE.md](UPDATE.md), 저장소와 복구 방식은 [SUPABASE.md](SUPABASE.md)를 확인하세요. Google Forms, 스마트당직 조회와 스프레드시트 내보내기는 기존 Google 연결을 사용합니다.
 
 이 PC의 세 계정 연결을 마쳤다면 [자동 배포](AUTO-DEPLOY.md) 명령으로 수정한 기능을 한 번에 배포할 수 있습니다.
 
@@ -29,7 +29,7 @@ GitHub Pages 화면 → Cloudflare Workers API → Apps Script → 기존 Google
 
 로컬 원본 `Code.gs.txt`에는 실제 명단을 복원하는 압축 초기 자료가 포함되어 있어 `.gitignore`로 제외했습니다. `apps-script/Legacy.gs`도 같은 자료를 포함하므로 GitHub에 올리지 않습니다. 화면과 게이트웨이만 담은 `release/github-upload`를 업로드에 사용할 수 있습니다. 이 폴더는 `node scripts/package.mjs`로 만듭니다.
 
-원본 파일은 수정하지 않았습니다. 다시 생성하려면 로컬에 두 원본을 둔 상태에서 실행하세요.
+다시 생성하려면 로컬에 두 원본을 둔 상태에서 실행하세요.
 
 ```powershell
 node scripts/build.mjs
@@ -43,4 +43,4 @@ Google 로그인 토큰은 최초 인증에만 사용합니다. 서버가 발급
 
 일지는 당일업무와 장기업무로 나눕니다. 당일업무는 지정일에만 표시하고, 장기업무는 시작일부터 완료일까지 같은 기록을 이어서 표시합니다. 완료일은 서버의 한국 날짜로 기록하며, 진행 중으로 되돌리면 다시 이어집니다. 기존 기록은 당일업무입니다. 업무기록의 기존 13열을 보존하고 N/O열에 업무유형·완료일을 추가합니다. 월간 통계와 전체 목록은 기록당 한 건으로 집계합니다.
 
-실제 Google Sheets 조회·저장, Google 로그인 팝업, Cloudflare 배포는 계정 설정을 마친 뒤 확인해야 합니다. 최초에는 복제한 테스트 시트로 조회·저장·삭제·권한별 접근을 점검하고 운영 시트로 연결하세요.
+서버 인증값은 비공개 서버 설정에만 보관합니다. 운영 자료를 검증용 값으로 바꾸지 말고 별도 데이터셋으로 조회·저장·삭제·권한별 접근을 확인하세요. 기존 Sheets는 전환 전 원본으로 보관하며, 전환 후 업무 기록은 앱에서 수정합니다.

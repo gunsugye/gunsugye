@@ -1,0 +1,28 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {randomUUID} from 'node:crypto';
+import {gzipSync,gunzipSync} from 'node:zlib';
+const source=readFileSync(new URL('../scripts/supabase-runtime.gs.txt',import.meta.url),'utf8');
+const compat=readFileSync(new URL('../scripts/supabase-sheet-compat.mjs',import.meta.url),'utf8').replace('export function','function');
+function setup(compress=false){
+ const props=new Map([['SUPABASE_STORE_MODE','supabase'],['SUPABASE_STORE_URL','https://example.supabase.co/functions/v1/logbook-store'],['SUPABASE_STORE_SECRET','a'.repeat(64)],['PAGES_PERSONAL_SESSION_old','keep']]);
+ const native={getProperty:k=>props.get(k)||null,getProperties:()=>Object.fromEntries(props),setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k)};
+ const manifest={id:'db',revision:1,settings:{order:'old'},attachments:[],books:[{id:'b',title:'book',sheets:[{id:1,title:'items',revision:0}]}]};
+ const data={columns:2,revision:0,payload:[['ID','수량'],['001',1]].map((values,i)=>({number:i+1,values,display:values.map(String),formulas:['',''],formats:['@','0'],dates:[]}))};
+ const cache=new Map(),calls=[],commits=[];let reject=false,nativeOpens=0;
+ const context=vm.createContext({Date,PropertiesService:{getScriptProperties:()=>native},SpreadsheetApp:{openById:()=>{nativeOpens++;throw Error('Native storage must not be used');}},DriveApp:{},Utilities:{getUuid:randomUUID},CacheService:{getScriptCache:()=>({get:k=>cache.get(k),put:(k,v)=>cache.set(k,v)})},UrlFetchApp:{fetch:(url,options)=>{const input=JSON.parse(options.payload);calls.push(input.action);let result;if(input.action==='manifest')result=structuredClone(manifest);else if(input.action==='read')result=input.sheets.map(s=>({...s,data:structuredClone(data)}));else if(input.action==='commit'){commits.push(input);if(reject)return {getContentText:()=>JSON.stringify({ok:false,error:'stale',code:'40001'})};result={ok:true};}return {getContentText:()=>JSON.stringify({ok:true,result})};}}});
+ const blob=(value,type)=>({bytes:Buffer.from(value),type,getBytes(){return this.bytes;},getDataAsString(){return this.bytes.toString('utf8');}});
+ Object.assign(context.Utilities,{newBlob:blob,base64Encode:b=>Buffer.from(b).toString('base64'),base64Decode:s=>Buffer.from(s,'base64'),gzip:b=>{assert.ok(b.type,'Blob MIME type required');return blob(gzipSync(b.bytes),'application/gzip');},ungzip:b=>{assert.equal(b.type,'application/gzip');return blob(gunzipSync(b.bytes),'application/json');}});
+ context.LockService={getUserLock:()=>({waitLock(){},releaseLock(){}})};
+ if(compress){const fetch=context.UrlFetchApp.fetch;context.UrlFetchApp.fetch=(url,options)=>{const result=fetch(url,options),value=JSON.parse(result.getContentText());return JSON.parse(options.payload).action==='read'?{getContentText:()=>JSON.stringify({ok:true,compressed:gzipSync(JSON.stringify(value.result)).toString('base64')})}:result;};}
+ vm.runInContext(compat+'\n'+source,context);
+ return {props,manifest,calls,commits,cache,context,storage:()=>context.pagesStorageContext_({email:'test@example.com',nonce:randomUUID(),method:'save'}),reject:()=>{reject=true;},nativeOpens:()=>nativeOpens};
+}
+test('Supabase runtime stages record and setting changes in one commit and retains sessions',()=>{const f=setup(),s=f.storage(),p=s.properties.getScriptProperties();const api=s.wrap({save(){s.spreadsheet.openById('b').getSheetByName('items').getRange(2,2).setValue(0);p.setProperty('order','new');return 'saved';}});assert.equal(api.save(),'saved');assert.equal(f.commits.length,1);assert.equal(f.commits[0].payload.changes[0].edits[0].after.values[1],0);assert.equal(f.commits[0].payload.settings[0].after,'new');assert.equal(f.props.get('PAGES_PERSONAL_SESSION_old'),'keep');assert.equal(f.props.get('order'),'new');assert.equal(f.nativeOpens(),0);});
+test('Supabase failure never reports success, mirrors settings, or falls back to Sheets',()=>{const f=setup(),s=f.storage();f.reject();const api=s.wrap({save(){s.properties.getScriptProperties().setProperty('order','new');return 'saved';}});assert.throws(()=>api.save(),/stale/);assert.equal(f.commits.length,1);assert.equal(f.props.has('order'),false);assert.equal(f.nativeOpens(),0);});
+test('discarded/unsupported operations cannot commit a partly changed request',()=>{const f=setup(),s=f.storage();const api=s.wrap({save(){const sh=s.spreadsheet.openById('b').getSheetByName('items');sh.getRange(2,2).setValue(0);try{sh.unsupported();}catch(_){}return 'saved';}});assert.throws(()=>api.save(),/Unsupported/);assert.equal(f.commits.length,0);});
+test('auth throttling survives data revisions and the cutover freeze stops all app operations',()=>{const f=setup(),s=f.storage();s.cache.getScriptCache().put('personal:ip:test','30',900);f.manifest.revision=2;assert.equal(f.storage().cache.getScriptCache().get('personal:ip:test'),'30');f.props.set('SUPABASE_STORE_MODE','freeze');assert.throws(()=>f.storage(),/전환 중/);});
+test('compressed Edge responses decode with the required Apps Script Blob MIME type',()=>{const f=setup(true),s=f.storage();assert.deepEqual(Array.from(s.spreadsheet.openById('b').getSheetByName('items').getRange(2,1,1,2).getValues()[0]),['001',1]);});
+test('expired maintenance resumes Sheets only before activation, and Supabase after activation',()=>{for(const active of [false,true]){const f=setup();f.props.set('SUPABASE_STORE_MODE','freeze');f.props.set('SUPABASE_STORE_FROZEN_AT',String(Date.now()-21*60000));f.manifest.activatedAt=active?'2026-11-24T01:00:00Z':null;f.storage();assert.equal(f.props.get('SUPABASE_STORE_MODE'),active?'supabase':'sheets');assert.equal(f.commits.length,0);}});

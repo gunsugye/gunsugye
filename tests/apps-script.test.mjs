@@ -54,6 +54,7 @@ function fixture() {
   const cache = new Map();
   const context = vm.createContext({
     console,
+    SpreadsheetApp: {}, DriveApp: {},
     PropertiesService: { getScriptProperties: () => props },
     CacheService: { getScriptCache: () => ({ get: key => cache.get(key), put: (key, value) => cache.set(key, value) }) },
     LockService: { getUserLock: () => ({ waitLock() {}, releaseLock() {} }), getScriptLock: () => ({ waitLock() {}, tryLock:()=>true, releaseLock() {} }) },

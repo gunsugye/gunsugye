@@ -1,4 +1,6 @@
 import { existsSync } from 'node:fs';
+await import('./supabase-snapshot.test.mjs');
+await import('./supabase-store.test.mjs');
 await import('./training-candidates.test.mjs');
 await import('./saber-groups.test.mjs');
 await import('./condition-states.test.mjs');
@@ -76,3 +78,4 @@ await import('./supply-forms.test.mjs');
 await import('./supply-survey-lifecycle.test.mjs');
 await import('./supply-form-korean.test.mjs');
 import './supply-blueprints.test.mjs';
+await import('./supabase-runtime.test.mjs');

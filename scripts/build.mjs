@@ -298,8 +298,14 @@ legacy = legacy.replace('const sh=ss.getSheets().find(x=>x.getSheetId()===item.s
 legacy = legacy.replace(/PropertiesService\.getUserProperties\(\)/g, 'pagesUserProperties_()');
 legacy = legacy.replace(/(['"])trainingScheduledHandoffV227\1/g, "'pagesTrainingScheduled_'");
 legacy = legacy.replace(/(['"])surveysOnSubmitV299\1/g, "'pagesSurveySubmit_'");
+legacy = legacy.replace('function lockAndRun_(fn){','function lockAndRun_(fn){\n  if(pagesStorage_.transactional)return fn();');
+// Google owns raw Form response tabs and export formatting; application records use Supabase.
+legacy = legacy.replace('function supplyFormsKoreanV553_(){\n const book=supplyInboxBookV542_(false);','function supplyFormsKoreanV553_(){\n const book=pagesNativeFormBook_(supplyInboxBookV542_(false));');
+legacy = legacy.replace('function supplyFormResponseTabV552_(meta){\n const book=supplyInboxBookV542_(false);','function supplyFormResponseTabV552_(meta){\n const book=pagesNativeFormBook_(supplyInboxBookV542_(false));');
 const prefix = `/** 자동 생성: node scripts/build.mjs. 원본 Code.gs.txt를 수정한 뒤 다시 생성하세요. */
 function pagesCreateLegacy_(pagesActor_) {
+const pagesStorage_ = pagesStorageContext_(pagesActor_);
+const SpreadsheetApp = pagesStorage_.spreadsheet, PropertiesService = pagesStorage_.properties, DriveApp = pagesStorage_.drive, CacheService = pagesStorage_.cache;
 function pagesEmail_() {
  if (!pagesActor_ || !pagesActor_.email) pagesForbidden_();
  return pagesActor_.email;
@@ -314,7 +320,7 @@ function pagesUserProperties_() {
 const suffix = `
 ${requestPerformanceCode}
 const pagesMethods_ = {${uniqueMethods.join(',')}};
-return {
+return pagesStorage_.wrap({
  instructorTemporary: function(action,id,input){return trainV490Temporary_(action,id,input);},
  personal: function(action,input){
   if(['login','get','duty','details','supplies','uniform'].includes(action)){pagesReadRequestV307_={};}
@@ -351,11 +357,11 @@ return {
  deferredSurvey: function() { const inbox=supplyInboxProcessV542_();surveyDeferredProcessV537_();return inbox; },
  supplyFormsPoll: function(){return supplyFormsPollV551_();},
  supplyFormsClose: function(){return supplyFormCloseDueV550_();}
-};
+});
 }
 `;
 legacy=legacy.replace('const NAV_FIXED_V233=[',"const NAV_FIXED_V233=['surveyRecords',").replace('const NAV_GROUPS_V233=[',"const NAV_GROUPS_V233=[{id:'requestReview',title:'수정요청(전수조사) 검토',items:['surveyRecords']},");
-write('apps-script/Legacy.gs', prefix + `\nconst navModelV301_ = ${normalizeNavigation.toString()};\n` + legacy + suffix);
+write('apps-script/Legacy.gs', read('scripts/supabase-sheet-compat.mjs').replace('export function createSheetStore','function pagesCreateSheetStore_')+'\n'+read('scripts/supabase-runtime.gs.txt').replace('createSheetStore(','pagesCreateSheetStore_(')+'\n'+prefix + `\nconst navModelV301_ = ${normalizeNavigation.toString()};\n` + legacy + suffix);
 write('apps-script/methods.json', JSON.stringify(uniqueMethods, null, 2) + '\n');
 console.log(`화면/CSS/JS 생성, Apps Script API ${uniqueMethods.length}개 연결 완료`);
 

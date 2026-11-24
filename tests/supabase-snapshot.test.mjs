@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {createHash} from 'node:crypto';
+const source=readFileSync(new URL('../scripts/supabase-snapshot-export.gs.txt',import.meta.url),'utf8');
+function fixture(){let reads=0;const date=new Date('2026-11-24T01:23:00Z');const book={getSheets:()=>[{getSheetId:()=>1,getLastRow:()=>1,getLastColumn:()=>4,getRange:()=>({getValues:()=>[['001',0,false,date]],getDisplayValues:()=>[['001','0','FALSE','2026-11-24']],getFormulas:()=>[['','','','=NOW()']],getNumberFormats:()=>[['@','0','General','yyyy-mm-dd']]})}]};
+ const context=vm.createContext({Date,Object,Set,Error,MIGRATION_TOKEN_HASH:createHash('sha256').update('test-token').digest('hex'),MIGRATION_EXPIRES:Date.now()+60000,Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,v)=>[...createHash('sha256').update(v).digest()]},PropertiesService:{getScriptProperties:()=>({getProperties:()=>({LOGBOOK_SHEET_ID:'a'.repeat(30)})})},SpreadsheetApp:{openById(){reads++;return book;}}});vm.runInContext(source,context);return {context,reads:()=>reads};}
+test('migration export rejects expired tokens, wrong tokens and unrelated books before reading',()=>{const f=fixture();const base={token:'test-token',action:'rows',book:'a'.repeat(30),sheet:1,start:1,count:1};assert.throws(()=>f.context.pagesMigrationSnapshot_({...base,token:'wrong'}),/authorization/);assert.throws(()=>f.context.pagesMigrationSnapshot_({...base,book:'b'.repeat(30)}),/source/);f.context.MIGRATION_EXPIRES=0;assert.throws(()=>f.context.pagesMigrationSnapshot_(base),/authorization/);assert.equal(f.reads(),0);});
+test('migration export preserves leading zeros, zero quantities, booleans, dates and formulas',()=>{const f=fixture(),result=f.context.pagesMigrationSnapshot_({token:'test-token',action:'rows',book:'a'.repeat(30),sheet:1,start:1,count:1});assert.equal(result.rows[0].values[0],'001');assert.equal(result.rows[0].values[1],0);assert.equal(result.rows[0].values[2],false);assert.equal(result.rows[0].dates[0],3);assert.equal(result.rows[0].formulas[3],'=NOW()');});

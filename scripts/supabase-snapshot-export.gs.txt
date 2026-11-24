@@ -1,0 +1,25 @@
+/** Temporary, expiring, read-only migration endpoint. Injected only into private deployment staging. */
+function pagesMigrationSnapshot_(input){
+ const hash=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(input.token||''),Utilities.Charset.UTF_8).map(b=>('0'+((b+256)%256).toString(16)).slice(-2)).join('');
+ if(Date.now()>MIGRATION_EXPIRES||hash!==MIGRATION_TOKEN_HASH)throw Error('Migration authorization expired or invalid');
+ if(input.action==='connectivity'){
+  const started=Date.now(),response=UrlFetchApp.fetch('https://ylwzhooidqgvecocnzai.supabase.co/functions/v1/logbook-migration-import',{method:'post',muteHttpExceptions:true,payload:'{}',contentType:'application/json'});
+  return {status:response.getResponseCode(),milliseconds:Date.now()-started};
+ }
+ const props=PropertiesService.getScriptProperties().getProperties();
+ const ids=[...new Set(Object.entries(props).filter(([k,v])=>/(?:SHEET_ID|BOOK_V542|FOUNDATION.*ID|SOURCE.*ID)/.test(k)&&/^[\w-]{25,}$/.test(v)).map(([,v])=>v))];
+ if(input.action==='manifest'){
+  const books=[],errors=[];
+  for(const id of ids)try{const b=SpreadsheetApp.openById(id);books.push({id,title:b.getName(),locale:b.getSpreadsheetLocale(),timeZone:b.getSpreadsheetTimeZone(),sheets:b.getSheets().map(s=>({id:s.getSheetId(),title:s.getName(),rows:s.getLastRow(),columns:s.getLastColumn()}))});}catch(e){errors.push({id,message:String(e.message)});}
+  const settings=Object.fromEntries(Object.entries(props).filter(([k])=>!/(?:SECRET|TOKEN|SESSION|PASSWORD|NONCE|RATE_|LEASE|CACHE|TRIGGER|SUPABASE_STORE_)/i.test(k)));
+  const attachments=[];
+  for(const [key,id] of Object.entries(settings))if(/DORM_PLAN_FILE/.test(key))try{attachments.push({key,id,content:DriveApp.getFileById(id).getBlob().getDataAsString('UTF-8')});}catch(e){errors.push({id,key,message:String(e.message)});}
+  return {books,settings,attachments,errors,at:new Date().toISOString()};
+ }
+ if(input.action!=='rows'||!ids.includes(input.book))throw Error('Invalid migration source');
+ const book=SpreadsheetApp.openById(input.book),sh=book.getSheets().find(s=>s.getSheetId()===input.sheet),start=Number(input.start),count=Number(input.count);
+ if(!sh||!Number.isInteger(start)||start<1||!Number.isInteger(count)||count<1||count>200)throw Error('Invalid migration range');
+ const last=sh.getLastRow(),columns=sh.getLastColumn();if(start>last||!columns)return {rows:[],last,columns};
+ const r=sh.getRange(start,1,Math.min(count,last-start+1),columns),values=r.getValues(),display=r.getDisplayValues(),formulas=r.getFormulas(),formats=r.getNumberFormats();
+ return {last,columns,rows:values.map((v,i)=>({number:start+i,values:v,display:display[i],formulas:formulas[i],formats:formats[i],dates:v.map((cell,j)=>cell instanceof Date?j:-1).filter(j=>j>=0)}))};
+}
