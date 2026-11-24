@@ -1,5 +1,5 @@
 create or replace function public.logbook_read_sheets(p_dataset uuid,p_sheets jsonb) returns jsonb
-language sql stable set search_path='' as $$
+language sql stable set search_path='' set work_mem='16MB' as $$
  with requested as materialized (
  select value->>'book' book,(value->>'sheet')::bigint sheet,ordinality pos
  from jsonb_array_elements(p_sheets) with ordinality
