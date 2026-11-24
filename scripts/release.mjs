@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.61',title:'현황표 형식 통일',notes:['현황표 제목행·셀 간격·숫자 정렬을 통일했습니다.','근무물품 확인 명단은 품목별로, 군수품 확인 명단은 중대별로 펼쳐 봅니다.','비품과 근무물품 요약표에서 확인이 필요한 칸만 색으로 표시합니다.']};
+export const releaseDetails={version:'5.62',title:'예도 화면 정리',notes:['예도 화면의 상태 기록 삭제 버튼을 제거했습니다.']};
