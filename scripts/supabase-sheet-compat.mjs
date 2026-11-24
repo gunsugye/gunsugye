@@ -18,7 +18,7 @@ export function createSheetStore(manifest, readSheet, options={}) {
  function load(book,meta){
   const key=book.id+':'+meta.id;if(loaded.has(key))return loaded.get(key);
   const data=meta.created?{payload:[],columns:0,revision:0}:readSheet(book.id,meta.id);if(!data)throw Error('Missing database sheet');
-  const original=clone(data.payload),rows=clone(data.payload);let width=data.columns,structural=false,maxRows=Math.max(1000,rows.length),maxColumns=Math.max(26,width);
+  const original=clone(data.payload),rows=clone(data.payload),dirty=new Set();let width=data.columns,structural=false,maxRows=Math.max(1000,rows.length),maxColumns=Math.max(26,width);
   const empty=n=>({number:n,values:Array(width).fill(''),display:Array(width).fill(''),formulas:Array(width).fill(''),formats:Array(width).fill('General'),dates:[]});
   function rowAt(n,create=false){if(create)while(rows.length<n)rows.push(empty(rows.length+1));return rows[n-1]||empty(n);}
   const populated=row=>row.values.some((v,i)=>v!==''&&v!==null&&v!==undefined||!!row.formulas[i]);
@@ -30,7 +30,7 @@ export function createSheetStore(manifest, readSheet, options={}) {
    if(value===undefined||value===null)value='';if(!(value instanceof Date)&&!['string','number','boolean'].includes(typeof value))throw Error('Unsupported cell value');
    if(typeof value==='number'&&!Number.isFinite(value))throw Error('Invalid numeric value');
    const literal=typeof value==='string'&&value.startsWith("'");if(literal)value=value.slice(1);if(!literal&&typeof value==='string'&&value.startsWith('='))return fail('Formula evaluation needs native Sheets');
-   const row=rowAt(n,true);while(row.values.length<c){row.values.push('');row.display.push('');row.formulas.push('');row.formats.push('General');}
+   const row=rowAt(n,true);dirty.add(n);while(row.values.length<c){row.values.push('');row.display.push('');row.formulas.push('');row.formats.push('General');}
    row.dates=row.dates.filter(i=>i!==c-1);row.formulas[c-1]='';
    if(value instanceof Date){row.values[c-1]=value.toISOString();row.display[c-1]=options.formatDate?options.formatDate(value,book.timeZone,row.formats[c-1]):value.toISOString();row.dates.push(c-1);}
    else {row.values[c-1]=value;row.display[c-1]=typeof value==='boolean'?(value?'TRUE':'FALSE'):String(value);}
@@ -44,7 +44,7 @@ export function createSheetStore(manifest, readSheet, options={}) {
     setValues(values){if(!Array.isArray(values)||values.length!==h||values.some(v=>!Array.isArray(v)||v.length!==w))throw Error('Cell dimensions differ');values.forEach((v,i)=>v.forEach((x,j)=>set(r+i,c+j,x)));return out;},
     setValue(value){for(let i=0;i<h;i++)for(let j=0;j<w;j++)set(r+i,c+j,value);return out;},
     clearContent(){return out.setValues(grid(()=>''));},clear(){return out.clearContent();},
-    setNumberFormat(format){for(let i=0;i<Math.min(h,rows.length-r+1);i++)for(let j=0;j<w;j++){const row=rowAt(r+i);while(row.formats.length<c+j)row.formats.push('General');row.formats[c+j-1]=format;if(row.dates.includes(c+j-1)&&options.formatDate)row.display[c+j-1]=options.formatDate(new Date(row.values[c+j-1]),book.timeZone,format);}return out;},
+    setNumberFormat(format){for(let i=0;i<Math.min(h,rows.length-r+1);i++)for(let j=0;j<w;j++){const row=rowAt(r+i);dirty.add(r+i);while(row.formats.length<c+j)row.formats.push('General');row.formats[c+j-1]=format;if(row.dates.includes(c+j-1)&&options.formatDate)row.display[c+j-1]=options.formatDate(new Date(row.values[c+j-1]),book.timeZone,format);}return out;},
     createTextFinder(text){let entire=false,matchCase=false,regex=false;const finder={matchEntireCell(v){entire=v;return finder;},matchCase(v){matchCase=v;return finder;},useRegularExpression(v){regex=v;return finder;},findAll(){const found=[];const want=matchCase?String(text):String(text).toLowerCase();for(let i=0;i<h;i++)for(let j=0;j<w;j++){let actual=String(get(r+i,c+j,'display'));if(!matchCase)actual=actual.toLowerCase();const match=regex?new RegExp(entire?'^(?:'+text+')$':text,matchCase?'':'i').test(actual):entire?actual===want:actual.includes(want);if(match)found.push(range(r+i,c+j));}return found;},findNext(){return finder.findAll()[0]||null;}};return finder;}
    };
    // Formatting is presentation-only in the existing app; preserve stored formats where read.
@@ -63,7 +63,7 @@ export function createSheetStore(manifest, readSheet, options={}) {
    insertRowBefore(at){return sheet.insertRowsBefore(at,1);},insertRowsAfter(at,count){if(at===maxRows){maxRows+=count;return sheet;}return sheet.insertRowsBefore(at+1,count);},
    insertColumnsAfter(at,count){if(at!==maxColumns)throw Error('Inserting populated columns is not supported');maxColumns+=count;return sheet;},
    getFilter:()=>null,getBandings:()=>[],getProtections:()=>[],protect(){const p={getDescription:()=>'',getEditors:()=>[],canDomainEdit:()=>false};for(const name of ['setDescription','setWarningOnly','addEditor','addEditors','removeEditor','removeEditors','setDomainEdit','setUnprotectedRanges','remove'])p[name]=()=>p;return p;},
-   patch(){if(meta.deleted)return null;const edits=[];for(let i=0;i<Math.min(rows.length,original.length);i++)if(!same(rows[i],original[i]))edits.push({number:i+1,before:original[i],after:clone(rows[i])});if(!structural&&!edits.length&&rows.length===original.length)return null;
+   patch(){if(meta.deleted)return null;const edits=[];if(!structural)for(const n of [...dirty].sort((a,b)=>a-b)){const i=n-1;if(i<original.length&&!same(rows[i],original[i]))edits.push({number:n,before:original[i],after:clone(rows[i])});}if(!structural&&!edits.length&&rows.length===original.length)return null;
     return structural?{book:book.id,sheet:meta.id,columns:width,revision:data.revision,mode:'replace',rows:clone(rows)}:{book:book.id,sheet:meta.id,columns:width,mode:'patch',edits,append:clone(rows.slice(original.length))};}
   };
   for(const name of ['setFrozenRows','setFrozenColumns','setHiddenGridlines','autoResizeColumns','autoResizeRows','hideColumns','setColumnWidth','setColumnWidths','setConditionalFormatRules'])sheet[name]=()=>sheet;

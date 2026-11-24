@@ -43,6 +43,8 @@ create table public.logbook_commits (
  created_at timestamptz not null default now(),
  primary key(dataset_id,request_id)
 );
+create index logbook_rows_identity_lookup
+ on public.logbook_rows(dataset_id,book_id,sheet_id,(pg_catalog.jsonb_hash(payload->'values'->0))) where row_number>1;
 alter table public.logbook_datasets enable row level security;
 alter table public.logbook_books enable row level security;
 alter table public.logbook_sheets enable row level security;
@@ -120,7 +122,7 @@ begin
     -- Existing API IDs are unique even when two callers read the same pre-append snapshot.
     if cur.rows_count>0 and coalesce(item->'values'->>0,'')<>''
        and exists(select 1 from public.logbook_rows h where h.dataset_id=p_dataset and h.book_id=cur.book_id and h.sheet_id=cur.id and h.row_number=1 and (h.payload->'values'->>0) ~ '(ID|아이디)$')
-       and exists(select 1 from public.logbook_rows r where r.dataset_id=p_dataset and r.book_id=cur.book_id and r.sheet_id=cur.id and r.row_number>1 and r.payload->'values'->0=item->'values'->0)
+       and exists(select 1 from public.logbook_rows r where r.dataset_id=p_dataset and r.book_id=cur.book_id and r.sheet_id=cur.id and r.row_number>1 and pg_catalog.jsonb_hash(r.payload->'values'->0)=pg_catalog.jsonb_hash(item->'values'->0) and r.payload->'values'->0=item->'values'->0)
     then raise exception 'Record changed; reload before saving' using errcode='40001';end if;
     cur.rows_count:=cur.rows_count+1;
     insert into public.logbook_rows values(p_dataset,cur.book_id,cur.id,cur.rows_count,jsonb_set(item,'{number}',to_jsonb(cur.rows_count)));
