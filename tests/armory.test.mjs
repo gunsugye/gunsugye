@@ -6,6 +6,12 @@ import {armorySpecsV493,armoryCompanyV493,armoryNumberV493,armoryOperatingRecord
 import {normalizeNavigation} from '../scripts/navigation.mjs';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const roster=Array.from({length:8},(_,i)=>({id:'p'+i,cohort:'77',company:(i+1)+'중대',name:'예시'+i,firearmNumber:'00'+i,firearmStatus:'정상'}));
+test('배정 실수량은 번호 중복과 미등록을 제외하고 이동 총기를 한 번만 차감한다',()=>{
+ const context=vm.createContext({});vm.runInContext(read('scripts/armory-client.js.txt'),context);
+ const rows=[{firearmNumber:'001',repairTransfer:{}},{firearmNumber:'００１',repairTransfer:{}},{firearmNumber:'002'},{firearmNumber:''}];
+ assert.deepEqual({...context.armoryQuantitiesV565(rows)},{assigned:2,moved:1,actual:1});
+ assert.deepEqual({...context.armoryQuantitiesV565(rows.map(r=>({...r,repairTransfer:null})))},{assigned:2,moved:0,actual:2});
+});
 test('같은 중대 표기 통합과 퇴교 총기 자동 이전은 중복·삭제·재배정을 제외한다',()=>{
  assert.equal(new Set(['4','4중대','４중대','4 중대'].map(armoryCompanyV493)).size,1);
  const archived=[{number:'A',status:'퇴교'},{number:'ａ',status:'퇴학'},{number:'B',status:'위탁'},{number:'C',status:'퇴교',deletedAt:'date'},{number:'D',status:'퇴교'}];
