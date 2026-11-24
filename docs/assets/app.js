@@ -4192,7 +4192,7 @@ async function surveySetV416(state,input){
   const policy=await server('setSurveyPeriodV416',state.kind,input);state.data={...state.data,policy};
   if(input.enabled===false)surveyDraftResetV419(state);
   state.busy=false;const loaded=await surveyLoadV416(state,true);
-  message.textContent=(input.update?'조사명·종료일을 수정했습니다.':input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.');
+  message.textContent=(input.update?'조사명·종료일을 수정했습니다.':input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.')+(policy.formWarning?' '+policy.formWarning:'');
  }catch(error){message.textContent=error.message;}finally{state.busy=false;surveyModeRenderV419(state);}
 }
 async function surveyLoadV416(state,reset=false){
@@ -4203,11 +4203,40 @@ async function surveyLoadV416(state,reset=false){
   if(p.mode==='direct'){const form=panel.querySelector('form'),end=new Date(p.endsAt);form.elements.label.value=p.label;form.elements.endsAt.value=new Date(end.getTime()-end.getTimezoneOffset()*60000).toISOString().slice(0,16);}
   else if(Date.parse(panel.querySelector('form').elements.endsAt.value)<=Date.now())surveyDraftResetV419(state);
   select.replaceChildren(new Option('저장된 조사 선택',''),...d.periods.map(period=>new Option(period.label+' · '+surveyTimeV416(period.startedAt)+(period.id===p.id&&p.mode==='direct'?' · 진행 중':' · 종료'),period.id)));
-  select.value=d.selected;surveyRecordsV416(state);message.textContent='';return true;
+  select.value=d.selected;surveyRecordsV416(state);surveyFormLoadV566(state);message.textContent='';return true;
  }catch(error){message.textContent=error.message;return false;}finally{state.busy=false;surveyModeRenderV419(state);}
 }
 
 function surveyRecordsV416(state){const {panel,data:d}=state;if(!d)return;const query=panel.querySelector('[data-survey-search]').value.trim().toLowerCase(),match=r=>!query||[r.requester.cohort,r.requester.company,r.requester.name].join(' ').toLowerCase().includes(query);panel.querySelector('[data-survey-count]').textContent='응답 인원 '+d.respondents+'명 · 저장 이력 '+d.totalResponses+'건 · 마지막 응답에서 변경 '+d.changed+'명';panel.querySelector('[data-survey-records]').innerHTML=d.latest.filter(match).map(row=>{const records=d.responses.filter(r=>r.personId===row.personId);const content=r=>'<p>'+escapeH(surveyTimeV416(r.createdAt))+' · '+(r.changed?'변경 즉시 반영':'변경 없음 확인')+'</p>'+(r.changes?.length?'<div class="roster-wrap"><table class="roster-table"><thead><tr><th>품목</th><th>이전 기록</th><th>반영 기록</th></tr></thead><tbody>'+r.changes.map(c=>'<tr><th>'+escapeH(c.label)+'</th><td>'+escapeH(surveyValueTextV416(c.before))+'</td><td>'+escapeH(surveyValueTextV416(c.value))+'</td></tr>').join('')+'</tbody></table></div>':'')+(r.confirmed?'<details><summary>확인한 전체 입력</summary><p>'+escapeH(surveyValueTextV416(r.confirmed))+'</p></details>':'');return '<article class="asset-request-card" data-person-cohort="'+escapeH(row.requester.cohort||'')+'" data-person-company="'+escapeH(row.requester.company||'')+'"><h3>'+escapeH(String(row.requester.cohort||'').replace(/(?:\s*기)+$/u,'')+'기 · '+String(row.requester.company||'').replace(/중대$/,'')+'중대 · '+row.requester.name)+'</h3>'+content(row)+(records.length>1?'<details><summary>이전 저장 이력 '+(records.length-1)+'건</summary>'+records.filter(r=>r.id!==row.id).map(content).join('')+'</details>':'')+'</article>';}).join('')||'<p>저장된 응답이 없습니다. 종료된 조사도 위 목록에서 선택할 수 있습니다.</p>';}
+
+function surveyFormPanelV566(state){
+ let box=state.panel.querySelector('[data-survey-google]');if(box)return box;
+ box=document.createElement('section');box.dataset.surveyGoogle='';
+ box.innerHTML='<h3>Google Forms 전수조사</h3><div class="supply-actions"><button type="button" class="btn btn-primary" data-survey-google-create>Google Forms 주소 생성</button><span data-survey-google-links></span></div><p class="help">응답은 별도 응답 시트에서 확인합니다. 군수품 외 항목은 원본 기록에 자동 반영하지 않습니다.</p><p data-survey-google-message role="status"></p>';
+ state.panel.querySelector('[data-survey-history]').before(box);
+ box.querySelector('button').onclick=()=>surveyFormCreateV566(state);return box;
+}
+function surveyFormRenderV566(state,meta){
+ const box=surveyFormPanelV566(state),button=box.querySelector('button'),links=box.querySelector('[data-survey-google-links]'),policy=state.data?.policy;
+ button.hidden=!!meta?.ready;button.disabled=state.busy||state.formBusy||policy?.mode!=='direct'||state.data?.selected!==policy?.id;
+ links.replaceChildren();
+ if(meta?.ready)for(const [label,url] of [['응답하기',meta.publishedUrl],['폼 편집',meta.editUrl],['응답 시트',meta.bookUrl]]){
+  if(!/^https:\/\/docs\.google\.com\//.test(url||''))continue;const a=document.createElement('a');a.className='btn';a.textContent=label+' ↗';a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.style.marginRight='8px';links.append(a);
+ }
+ box.querySelector('[data-survey-google-message]').textContent=meta?.ready?(meta.closed?'마감된 조사입니다. 응답은 계속 확인할 수 있습니다.':'조사 종료 시 폼도 자동으로 마감됩니다.'):policy?.mode==='direct'?'':'전수조사 기간을 시작하면 폼을 생성할 수 있습니다.';
+}
+async function surveyFormLoadV566(state){
+ const id=state.data?.selected||state.data?.policy?.id;if(!id){surveyFormRenderV566(state,null);return;}
+ const token=state.formLoadToken=(state.formLoadToken||0)+1;
+ try{const meta=await server('getSurveyFormV566',state.kind,id);if(token===state.formLoadToken&&id===(state.data?.selected||state.data?.policy?.id))surveyFormRenderV566(state,meta);}
+ catch(error){if(token===state.formLoadToken)surveyFormPanelV566(state).querySelector('[data-survey-google-message]').textContent=error.message;}
+}
+async function surveyFormCreateV566(state){
+ if(state.formBusy)return;state.formBusy=true;const box=surveyFormPanelV566(state),button=box.querySelector('button'),message=box.querySelector('[data-survey-google-message]');button.disabled=true;message.textContent='Google Forms 생성 중…';
+ try{const meta=await server('createSurveyFormV566',state.kind);surveyFormRenderV566(state,meta);}
+ catch(error){message.textContent=error.message+' · 다시 누르면 같은 조사 폼을 확인합니다.';}
+ finally{state.formBusy=false;button.disabled=state.data?.policy?.mode!=='direct';}
+}
 
 let surveyHistoryBusyV528=false,surveyHistoryDataV528=null,surveyHistoryReadyV528=false;
 async function surveyHistoryLoadV528(){

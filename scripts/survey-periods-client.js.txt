@@ -60,7 +60,7 @@ async function surveySetV416(state,input){
   const policy=await server('setSurveyPeriodV416',state.kind,input);state.data={...state.data,policy};
   if(input.enabled===false)surveyDraftResetV419(state);
   state.busy=false;const loaded=await surveyLoadV416(state,true);
-  message.textContent=(input.update?'조사명·종료일을 수정했습니다.':input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.');
+  message.textContent=(input.update?'조사명·종료일을 수정했습니다.':input.enabled?'전수조사 기간으로 전환했습니다.':'일반 기간으로 전환했습니다. 조사 기록은 계속 보관됩니다.')+(loaded?'':' 기록 조회는 새로고침해 주세요.')+(policy.formWarning?' '+policy.formWarning:'');
  }catch(error){message.textContent=error.message;}finally{state.busy=false;surveyModeRenderV419(state);}
 }
 async function surveyLoadV416(state,reset=false){
@@ -71,7 +71,7 @@ async function surveyLoadV416(state,reset=false){
   if(p.mode==='direct'){const form=panel.querySelector('form'),end=new Date(p.endsAt);form.elements.label.value=p.label;form.elements.endsAt.value=new Date(end.getTime()-end.getTimezoneOffset()*60000).toISOString().slice(0,16);}
   else if(Date.parse(panel.querySelector('form').elements.endsAt.value)<=Date.now())surveyDraftResetV419(state);
   select.replaceChildren(new Option('저장된 조사 선택',''),...d.periods.map(period=>new Option(period.label+' · '+surveyTimeV416(period.startedAt)+(period.id===p.id&&p.mode==='direct'?' · 진행 중':' · 종료'),period.id)));
-  select.value=d.selected;surveyRecordsV416(state);message.textContent='';return true;
+  select.value=d.selected;surveyRecordsV416(state);surveyFormLoadV566(state);message.textContent='';return true;
  }catch(error){message.textContent=error.message;return false;}finally{state.busy=false;surveyModeRenderV419(state);}
 }
 

@@ -1,0 +1,28 @@
+function surveyFormPanelV566(state){
+ let box=state.panel.querySelector('[data-survey-google]');if(box)return box;
+ box=document.createElement('section');box.dataset.surveyGoogle='';
+ box.innerHTML='<h3>Google Forms 전수조사</h3><div class="supply-actions"><button type="button" class="btn btn-primary" data-survey-google-create>Google Forms 주소 생성</button><span data-survey-google-links></span></div><p class="help">응답은 별도 응답 시트에서 확인합니다. 군수품 외 항목은 원본 기록에 자동 반영하지 않습니다.</p><p data-survey-google-message role="status"></p>';
+ state.panel.querySelector('[data-survey-history]').before(box);
+ box.querySelector('button').onclick=()=>surveyFormCreateV566(state);return box;
+}
+function surveyFormRenderV566(state,meta){
+ const box=surveyFormPanelV566(state),button=box.querySelector('button'),links=box.querySelector('[data-survey-google-links]'),policy=state.data?.policy;
+ button.hidden=!!meta?.ready;button.disabled=state.busy||state.formBusy||policy?.mode!=='direct'||state.data?.selected!==policy?.id;
+ links.replaceChildren();
+ if(meta?.ready)for(const [label,url] of [['응답하기',meta.publishedUrl],['폼 편집',meta.editUrl],['응답 시트',meta.bookUrl]]){
+  if(!/^https:\/\/docs\.google\.com\//.test(url||''))continue;const a=document.createElement('a');a.className='btn';a.textContent=label+' ↗';a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.style.marginRight='8px';links.append(a);
+ }
+ box.querySelector('[data-survey-google-message]').textContent=meta?.ready?(meta.closed?'마감된 조사입니다. 응답은 계속 확인할 수 있습니다.':'조사 종료 시 폼도 자동으로 마감됩니다.'):policy?.mode==='direct'?'':'전수조사 기간을 시작하면 폼을 생성할 수 있습니다.';
+}
+async function surveyFormLoadV566(state){
+ const id=state.data?.selected||state.data?.policy?.id;if(!id){surveyFormRenderV566(state,null);return;}
+ const token=state.formLoadToken=(state.formLoadToken||0)+1;
+ try{const meta=await server('getSurveyFormV566',state.kind,id);if(token===state.formLoadToken&&id===(state.data?.selected||state.data?.policy?.id))surveyFormRenderV566(state,meta);}
+ catch(error){if(token===state.formLoadToken)surveyFormPanelV566(state).querySelector('[data-survey-google-message]').textContent=error.message;}
+}
+async function surveyFormCreateV566(state){
+ if(state.formBusy)return;state.formBusy=true;const box=surveyFormPanelV566(state),button=box.querySelector('button'),message=box.querySelector('[data-survey-google-message]');button.disabled=true;message.textContent='Google Forms 생성 중…';
+ try{const meta=await server('createSurveyFormV566',state.kind);surveyFormRenderV566(state,meta);}
+ catch(error){message.textContent=error.message+' · 다시 누르면 같은 조사 폼을 확인합니다.';}
+ finally{state.formBusy=false;button.disabled=state.data?.policy?.mode!=='direct';}
+}

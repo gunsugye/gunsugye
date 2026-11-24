@@ -7,6 +7,7 @@ await import('./condition-states.test.mjs');
 await import('./armory.test.mjs');
 await import('./instructor-portal.test.mjs');
 await import('./survey-periods.test.mjs');
+await import('./survey-forms.test.mjs');
 await import('./roster-firearm-audit.test.mjs');
 await import('./repair-unification.test.mjs');
 await import('./person-groups.test.mjs');

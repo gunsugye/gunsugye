@@ -1,0 +1,68 @@
+// Each campaign keeps its own Form. Raw answers stay in Google's response sheet.
+function surveyFormKeyV566_(kind,id){return 'SURVEY_FORM_V566_'+surveyKindV416_(kind)+'_'+id;}
+function surveyFormFieldsV566_(kind,ss){
+ const state=['정상','수리 필요','사용 불가'],detail=name=>({title:name+' · 세부사항',paragraph:true,required:false});
+ if(kind==='firearm')return [{title:'총기번호',required:true},{title:'총기 상태',options:state,required:true},detail('총기')];
+ if(kind==='uniform')return UNIFORM_V278.ITEMS.flatMap(name=>[{title:name+' · 사이즈',required:true},detail(name)]);
+ if(kind==='duty')return [{title:'근무 소속·직책',required:true},...['흉장','블럭','방문 앞 명패','삼각명패','아크릴판'].flatMap(name=>[{title:name+' · 수량',options:['해당 없음','0','1','2'],other:true,required:true},detail(name)]),{title:'예도 · 상태',options:['해당 없음',...state],required:true},detail('예도')];
+ if(kind==='asset'){
+  const items=assetV244Catalog_(ss.getSheetByName(ROOM_ASSET_V244.CATALOG));
+  if(!items.length)throw Error('생활실 비품 품목을 먼저 등록하세요.');
+  return [{title:'관·층·호실',required:true},{title:'자리',options:['1번','2번','공용'],required:true},...items.flatMap(item=>[{title:item.name+' · 상태',options:['해당 없음',...state],required:true},detail(item.name)])];
+ }
+ throw Error('조사 항목을 확인하세요.');
+}
+function surveyFormReadV566_(kind,id){const raw=PropertiesService.getScriptProperties().getProperty(surveyFormKeyV566_(kind,id));return raw?JSON.parse(raw):null;}
+function getSurveyFormV566(kind,id){
+ assetRequestAdminV336_();surveyKindV416_(kind);const policy=surveyPolicyV416_(kind),selected=String(id||policy.id||'');
+ return selected?surveyFormReadV566_(kind,selected):null;
+}
+function surveyFormSyncV566_(meta,policy){
+ if(!meta?.ready)return meta;
+ const open=policy.id===meta.campaignId&&policy.mode==='direct'&&Date.parse(policy.endsAt)>Date.now();
+ if(meta.closed===!open&&meta.title===policy.label&&meta.endsAt===policy.endsAt)return meta;
+ const form=FormApp.openById(meta.id);form.setTitle(policy.label);form.setAcceptingResponses(open);
+ const next={...meta,title:policy.label,endsAt:policy.endsAt,closed:!open};PropertiesService.getScriptProperties().setProperty(surveyFormKeyV566_(meta.kind,meta.campaignId),JSON.stringify(next));return next;
+}
+function surveyFormsCloseV566_(){
+ const props=PropertiesService.getScriptProperties();let failure;
+ for(const [key,raw] of Object.entries(props.getProperties())){
+  if(!key.startsWith('SURVEY_FORM_V566_'))continue;
+  try{const meta=JSON.parse(raw);if(!meta.ready)continue;const current=surveyPolicyV416_(meta.kind),policy=current.id===meta.campaignId?current:{id:meta.campaignId,label:meta.title,endsAt:meta.endsAt,mode:'request'};surveyFormSyncV566_(meta,policy);}catch(error){failure=error;}
+ }
+ if(failure)throw failure;
+}
+function surveyFormsScheduleV566_(){
+ if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='pagesSurveyFormsClose_'))ScriptApp.newTrigger('pagesSurveyFormsClose_').timeBased().everyMinutes(1).create();
+}
+function createSurveyFormV566(kind){
+ assetRequestAdminV336_();surveyKindV416_(kind);
+ return supplyFormCreateRunV548_(()=>{
+  const policy=surveyPolicyV416_(kind);if(policy.mode!=='direct')throw Error('전수조사 기간을 먼저 시작하세요.');
+  const props=PropertiesService.getScriptProperties(),key=surveyFormKeyV566_(kind,policy.id),old=surveyFormReadV566_(kind,policy.id);
+  surveyFormsScheduleV566_();if(old?.ready)return surveyFormSyncV566_(old,policy);
+  const ss=spreadsheet_(),choices=supplyFormIdentityChoicesV549_(ss),fields=surveyFormFieldsV566_(kind,ss);
+  const form=old?FormApp.openById(old.id):FormApp.create(policy.label),meta=old||{id:form.getId(),kind,campaignId:policy.id,ready:false,publishedUrl:form.getPublishedUrl(),editUrl:form.getEditUrl()};
+  props.setProperty(key,JSON.stringify(meta));form.setAcceptingResponses(false);
+  // An interrupted draft is safe to rebuild; a ready Form is never cleared.
+  while(form.getItems().length)form.deleteItem(0);
+  form.setTitle(policy.label).setDescription('기수·중대·이름·교번을 확인해 주세요. 해당 없는 물품은 해당 없음을 선택하세요. 세부사항은 선택 입력입니다. 응답은 Google Forms 응답 시트에 보관하며 관리자가 확인합니다.').setCollectEmail(false).setLimitOneResponsePerUser(false).setPublishingSummary(false).setAllowResponseEdits(true).setConfirmationMessage('응답이 저장되었습니다.');
+  for(const title of ['기수','중대'])form.addMultipleChoiceItem().setTitle(title).setChoiceValues(choices[title]).setRequired(true);
+  for(const title of ['이름','교번'])form.addTextItem().setTitle(title).setRequired(true);
+  for(const field of fields){const q=field.options?form.addMultipleChoiceItem().setChoiceValues(field.options).showOtherOption(!!field.other):field.paragraph?form.addParagraphTextItem():form.addTextItem();q.setTitle(field.title).setRequired(!!field.required);}
+  const book=pagesNativeFormBook_(supplyInboxBookV542_(true));book.setSpreadsheetLocale('ko_KR');book.setSpreadsheetTimeZone('Asia/Seoul');
+  form.setDestination(FormApp.DestinationType.SPREADSHEET,book.getId());
+  // Keep a response-tab link, including for completed campaigns.
+  const normalize=url=>String(url||'').split('?')[0].replace(/\/$/,''),urls=[meta.publishedUrl,meta.editUrl].map(normalize);
+  const tab=book.getSheets().find(sh=>{const url=normalize(sh.getFormUrl());return url&&(urls.includes(url)||url.includes('/'+meta.id+'/'));});
+  if(tab){const base=(policy.label+' · 응답').replace(/[\[\]:*?\/\\]/g,' ').slice(0,85);let name=base,n=2;while(book.getSheetByName(name)&&book.getSheetByName(name).getSheetId()!==tab.getSheetId())name=base+' ('+(n++)+')';tab.setName(name);}
+  if(form.supportsAdvancedResponderPermissions())form.setPublished(true);
+  const latest=surveyPolicyV416_(kind),open=latest.id===policy.id&&latest.mode==='direct';form.setAcceptingResponses(open);
+  const saved={...meta,ready:true,title:policy.label,endsAt:policy.endsAt,closed:!open,bookUrl:book.getUrl()+(tab?'#gid='+tab.getSheetId():'')};props.setProperty(key,JSON.stringify(saved));return saved;
+ });
+}
+function setSurveyPeriodV416(kind,input){
+ const result=surveyPeriodSetBaseV566_(kind,input),meta=surveyFormReadV566_(kind,result.id);
+ if(meta?.ready){try{surveyFormSyncV566_(meta,result);}catch(error){return {...result,formWarning:'조사 설정은 저장했습니다. 폼 동기화는 자동 재시도합니다: '+String(error.message||error)};}}
+ return result;
+}

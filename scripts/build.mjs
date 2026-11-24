@@ -129,7 +129,7 @@ js=referenceBatchClientV409(js,read('scripts/reference-batch-client.js.txt'));
 js=firearmClientV410(js,read('scripts/firearms-client.js.txt')+'\n'+read('scripts/menu-settings-client.js.txt'));
 js=linkageClientV412(js,read('scripts/roster-linkage-client.js.txt'));
 js=firearmRequestClientV413(js,read('scripts/firearm-requests-client.js.txt'));
-js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt'));
+js=surveyClientV416(js,read('scripts/survey-periods-client.js.txt')+'\n'+read('scripts/survey-forms-client.js.txt'));
 js=surveyHistoryClientV528(js,read('scripts/survey-history-client.js.txt'));
 js=rosterGunAuditClientV417(js,read('scripts/roster-firearm-audit-client.js.txt'));
 js=personGroupsClientV424(js,read('scripts/person-groups-client.js.txt'));
@@ -285,6 +285,9 @@ legacy+='\n'+read('scripts/supply-forms-server.gs.txt');
 legacy=legacy.replace('function setSupplySurveyV506(input){','function supplySurveySetBaseV550_(input){');
 legacy+='\n'+read('scripts/supply-survey-lifecycle-server.gs.txt');
 legacy+='\n'+read('scripts/supply-form-korean-server.gs.txt');
+legacy=legacy.replace('function setSurveyPeriodV416(kind,input){','function surveyPeriodSetBaseV566_(kind,input){');
+legacy+='\n'+read('scripts/survey-forms-server.gs.txt');
+legacy=legacy.replace("if(['getSurveyPeriodsV416','setSurveyPeriodV416'].includes(name))","if(['getSurveyPeriodsV416','setSurveyPeriodV416','getSurveyFormV566','createSurveyFormV566'].includes(name))");
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
 const names = [...new Set([...legacy.matchAll(/^function\s+([A-Za-z]\w*)\s*\(/gm)].map(m => m[1]))];
@@ -359,6 +362,7 @@ return pagesStorage_.wrap({
  deferredSurvey: function() { const inbox=supplyInboxProcessV542_();surveyDeferredProcessV537_();return inbox; },
  supplyFormsPoll: function(){return supplyFormsPollV551_();},
  supplyFormsClose: function(){return supplyFormCloseDueV550_();}
+ ,surveyFormsClose: function(){return surveyFormsCloseV566_();}
 });
 }
 `;
