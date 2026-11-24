@@ -11,6 +11,20 @@ function dutyItemsFixture(){
  return {context,element};
 }
 
+test('물품 확인 명단은 품목별로 접히고 다시 그려도 펼침과 입력 초안을 유지한다',()=>{
+ const {context,element}=dutyItemsFixture(),issues=element('[data-item-issues]');
+ assert.match(issues.innerHTML,/<details class="table-detail-v561"/);
+ assert.doesNotMatch(issues.innerHTML,/<details[^>]*\bopen\b/);
+ issues.querySelectorAll=()=>[{dataset:{itemIssueKind:'badge'}}];
+ vm.runInContext("dutyItemSetDraftV368('leader','badge',1,'흉장 확인');dutyItemsRenderV368();",context);
+ assert.match(issues.innerHTML,/data-item-issue-kind="badge" open/);
+ assert.match(issues.innerHTML,/흉장 확인/);
+ const summary=element('[data-item-shortage]').innerHTML;
+ assert.match(summary,/table-alert-orange/);assert.match(summary,/table-alert-gray/);
+ assert.doesNotMatch(summary,/<tr[^>]*style=/);
+ assert.equal(vm.runInContext("dutyItemQuantityV368('leader','badge')",context),1);
+});
+
 test('기준 0개 칸은 비우고 기준이 있는 등록 0개와 미등록 입력칸은 유지한다',()=>{
  const {context,element}=dutyItemsFixture(),html=element('[data-item-rows]').innerHTML;
  assert.doesNotMatch(html,/data-item-person="aide" data-item-quantity="badge"/);

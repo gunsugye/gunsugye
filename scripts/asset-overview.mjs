@@ -36,7 +36,7 @@ function assetOverviewRenderV327(){
  const mode=$('assetOverviewModeV327').value,rows=assetOverviewGroupsV327(assetRoomsFilteredV244(),assetDataV244.items,assetDataV244.records,mode);
  $('assetOverviewTitleV327').textContent=(mode==='company'?'중대별':'건물별')+' 비품 현황';
  $('assetOverviewGroupV327').textContent=mode==='company'?'중대':'건물';
- const counts=r=>'<td>'+r.quantity+'</td><td class="asset-good-text">'+r.normal+'</td><td class="asset-bad-text">'+r.repair+'</td><td>'+r.unknown+'</td><td>'+r.unavailable+'</td>';
+ const counts=r=>'<td>'+r.quantity+'</td><td class="asset-good-text">'+r.normal+'</td><td class="'+(r.repair?'table-alert-orange':'')+'">'+r.repair+'</td><td class="'+(r.unknown?'table-alert-gray':'')+'">'+r.unknown+'</td><td class="'+(r.unavailable?'table-alert-red':'')+'">'+r.unavailable+'</td>';
  $('assetKindRowsV244').innerHTML=rows.map((r,i)=>'<tr><td><button type="button" class="btn btn-soft" data-asset-overview-toggle="'+i+'" aria-expanded="false" aria-controls="assetOverviewDetailV327_'+i+'">'+escapeH(r.label)+' · 품목 ▾</button></td><td>'+r.rooms+'</td>'+counts(r)+'<td>'+r.completed+' / '+r.rooms+'</td></tr><tr id="assetOverviewDetailV327_'+i+'" hidden><td colspan="8"><table class="asset-table"><thead><tr><th>품목</th><th>수량</th><th>정상</th><th>수리·교체</th><th>미점검</th><th>사용불가</th><th>관리</th></tr></thead><tbody>'+r.items.map(item=>'<tr><td>'+escapeH(item.name)+'</td>'+counts(item)+'<td>'+(canEdit?'<button type="button" class="btn btn-soft asset-owner" data-asset-hide="'+escapeH(item.id)+'">목록 삭제</button>':'—')+'</td></tr>').join('')+'</tbody></table></td></tr>').join('')||'<tr><td colspan="8">조회 결과 없음</td></tr>';
 }
 `;

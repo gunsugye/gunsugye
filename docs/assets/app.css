@@ -1372,6 +1372,24 @@ tr[data-condition-color="repair"]>td{background-color:var(--condition-repair-bg)
 tr[data-condition-color="unusable"]>td{background-color:var(--condition-unusable-bg)!important}
 tr[data-condition-color="repair"]>td:first-child{box-shadow:inset 3px 0 var(--condition-repair-line)!important}
 tr[data-condition-color="unusable"]>td:first-child{box-shadow:inset 3px 0 var(--condition-unusable-line)!important}
+/* 관리자 현황표 공통 형식. 기존 고정 열과 품목별 상태 색은 유지합니다. */
+:is(.roster-table,.eq-table,.asset-table,.uniform-table-v278){border-collapse:separate;border-spacing:0;width:100%;font-size:14px;line-height:1.5}
+:is(.roster-table,.eq-table,.asset-table,.uniform-table-v278) :is(th,td){padding:10px 12px;vertical-align:middle;border-bottom:1px solid #dce4ef;font-variant-numeric:tabular-nums}
+:is(.roster-table,.eq-table,.asset-table,.uniform-table-v278) thead th{background:#edf3fa;color:#243b53;font-weight:700;text-align:center;white-space:nowrap}
+:is(.roster-wrap,.eq-scroll){overflow-x:auto;overscroll-behavior-x:contain}
+:is(.armory-table-v493,[data-gun-summary],[data-item-shortage],#assetKindRowsV244) td{text-align:center}
+[data-item-shortage] tbody th{text-align:left!important;white-space:nowrap}
+.table-alert-orange{background:#fff3e2!important;color:#854400;font-weight:700}
+.table-alert-gray{background:#edf0f4!important;color:#485569;font-weight:700}
+.table-alert-red{background:#feecec!important;color:#b42318;font-weight:700}
+.table-detail-v561{border:1px solid #d9e2ed;border-radius:10px;margin:12px 0;padding:12px;background:#fff}
+.table-detail-v561>summary{cursor:pointer;font-size:15px;font-weight:700;padding:4px;line-height:1.6}
+.table-detail-v561[open]>summary{margin-bottom:12px}
+.table-detail-v561 summary:focus-visible{outline:2px solid #2563eb;outline-offset:4px;border-radius:4px}
+:is([data-duty-section],[data-item-issues-wrap],.armory-group-v493)>summary{line-height:1.6;padding:6px;cursor:pointer}
+.table-detail-v561 td:last-child{white-space:pre-wrap;min-width:140px;text-align:left}
+#assetKindRowsV244 [data-asset-overview-toggle]{min-width:150px;justify-content:space-between}
+@media(max-width:700px){:is(.roster-table,.eq-table,.asset-table,.uniform-table-v278) :is(th,td){padding:9px 10px}.table-detail-v561{padding:10px}}
 .supply-review-fields-v506{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.supply-review-fields-v506 label{display:grid;gap:5px}.supply-review-wide-v506{grid-column:1/-1}.supply-review-fields-v506 textarea{min-height:65px}.personal-supply-fields-v506{display:grid;gap:8px;margin:8px 0}.personal-supply-fields-v506 label{display:grid;gap:4px}.personal-supply-fields-v506 input,.personal-supply-fields-v506 select{width:100%;min-width:0;text-align:center}.personal-supply-fields-v506 textarea{width:100%;min-width:0}.personal-supply-fields-v506 [hidden]{display:none!important}@media(max-width:650px){.supply-review-fields-v506{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #supplyView .supply-special-tabs,#supplySpecialPaneV256{display:none!important}
 #supplies .personal-table th,#supplies .personal-table td{vertical-align:top}
