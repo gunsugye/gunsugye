@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+if (existsSync(new URL('../Code.gs.txt', import.meta.url))) await import('./supabase-person-supplies.test.mjs');
 await import('./supabase-snapshot.test.mjs');
 await import('./supabase-store.test.mjs');
 await import('./training-candidates.test.mjs');

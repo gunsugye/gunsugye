@@ -6,6 +6,16 @@
 
 ## 저장 경로
 
+### v5.72: 직접 SQL 조회의 첫 적용
+
+`logbook_person_supplies`는 개인 군수품의 헤더와 본인 기록만 한 번에 반환합니다. 서버 전용이며 개인 인증은 기존 `personalPersonV331_`에서 먼저 검사합니다. 11개 품목 샘플에서 11개 개인 행, 약 3.8KB를 반환했습니다(선택지 제외). 전체 명단을 읽는 가상 Sheet 방식의 개인 군수품 조회를 대체합니다. UI·스냅샷·검토 요청 형식은 유지합니다.
+
+`supabase-concurrent-commits.sql`은 일반 데이터 저장의 시작 시점 전체 dataset 잠금을 공유 구조 잠금 및 요청별 잠금으로 바꿉니다. 시트별 CAS와 마지막 revision 갱신은 유지합니다. 구조/설정/첨부 변경은 배타 구조 잠금으로 처리합니다. DB 저장 일부의 병렬성이 개선되며 동일 시트와 마지막 revision 갱신의 대기는 남습니다.
+
+추가 설치 순서: 기존 runtime → conflict-status → person-supplies → concurrent-commits SQL. Edge action 배포 후 앱 서버를 배포합니다. 새 RPC는 PUBLIC/anon/authenticated 권한을 부여하지 않습니다.
+
+인증 및 다른 업무 API는 아직 Apps Script를 경유합니다. 다음 전환은 기존 세션의 폐기·명단 변경 검증을 보존하는 직접 인증 API, 개인/중대 범위 조회 API, 독립 접수 테이블과 후속 처리입니다. Forms·원본 시트 편집 연결은 Google 브리지로 유지해야 합니다. 이 단계만으로 전체 로딩 3초를 보장하지 않습니다.
+
 브라우저 → 기존 인증 Worker → Apps Script 업무·권한 검사 → `logbook-store` Edge Function → Supabase.
 
 `logbook_rows`는 기존 값·표시값·날짜·서식을 보존합니다. 기존 인원 ID, 호실 ID, 품목 ID, 파일/탭 ID를 유지하므로 화면과 연결 관계를 다시 만들 필요가 없습니다. 설정·배치도·새 항목 추가·삭제도 같은 트랜잭션에서 저장합니다. Sheets 파일은 전환 전 원본 보관 및 Google Forms 원시 응답 수집용입니다. 전환 후 업무 수정은 앱에서 합니다.

@@ -35,9 +35,12 @@ function pagesStorageContext_(actor){
  function recall(book,sheet){try{const key=cacheKey(book,sheet),count=Number(nativeCache.get(key)||0);if(!count||count>20)return null;const names=Array.from({length:count},(_,i)=>key+':'+i),all=nativeCache.getAll(names);if(names.some(k=>!all[k]))return null;return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(names.map(k=>all[k]).join('')),'application/gzip')).getDataAsString('UTF-8'));}catch(_){return null;}}
  const missing=[];
  try{const profile=JSON.parse(nativeCache.get(profileKey)||'[]');
-  if(/^pagespersonal(supplies|details|supplyrequest)$/.test(methodKey))for(const b of manifest.books)for(const s of b.sheets)if(s.title==='생도명단'||s.title.startsWith('군수품_'))if(!profile.some(p=>p.book===b.id&&p.sheet===s.id))profile.push({book:b.id,sheet:s.id});
+  if(/^pagespersonal(supplies|details|supplyrequest)$/.test(methodKey))for(const b of manifest.books)for(const s of b.sheets)if(s.title==='생도명단')if(!profile.some(p=>p.book===b.id&&p.sheet===s.id))profile.push({book:b.id,sheet:s.id});
   let prefetchRows=0;
-  for(const s of profile){if(!cacheKey(s.book,s.sheet))continue;const data=recall(s.book,s.sheet);if(data)fetched.set(s.book+':'+s.sheet,data);else {
+  for(const s of profile){if(!cacheKey(s.book,s.sheet))continue;
+   const title=manifest.books.find(b=>b.id===s.book)?.sheets.find(t=>t.id===s.sheet)?.title||'';
+   if(/^pagespersonal(supplies|details)$/.test(methodKey)&&title.startsWith('군수품_')&&title!=='군수품_수정요청')continue;
+   const data=recall(s.book,s.sheet);if(data)fetched.set(s.book+':'+s.sheet,data);else {
    const size=manifest.books.find(b=>b.id===s.book)?.sheets.find(t=>t.id===s.sheet)?.rows||0;
    if(missing.length<6&&prefetchRows+size<=1500){missing.push(s);prefetchRows+=size;}
   }}

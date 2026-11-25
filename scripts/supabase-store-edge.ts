@@ -21,6 +21,7 @@ Deno.serve(async request => {
   if(difference)return json({ok:false},401);
   const input=await request.json();let result;
   if(input.action==='manifest')result=await rpc('logbook_manifest',{p_dataset:dataset});
+  else if(input.action==='person-supplies'&&typeof input.book==='string'&&typeof input.person==='string'&&Array.isArray(input.items)&&input.items.length<=70)result=await rpc('logbook_person_supplies',{p_dataset:dataset,p_book:input.book,p_person:input.person,p_items:input.items});
   else if(input.action==='read'&&Array.isArray(input.sheets)&&input.sheets.length<=80)result=await rpc('logbook_read_sheets',{p_dataset:dataset,p_sheets:input.sheets});
   else if(input.action==='attachment')result=await rpc('logbook_attachment',{p_dataset:dataset,p_id:input.id});
   else if(input.action==='commit'&&/^[0-9a-f-]{36}$/.test(input.request||'')&&typeof input.actor==='string'&&typeof input.method==='string')result=await rpc('logbook_transaction',{p_dataset:dataset,p_request:input.request,p_actor:input.actor,p_method:input.method,p_payload:input.payload});

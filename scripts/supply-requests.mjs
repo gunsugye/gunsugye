@@ -17,7 +17,7 @@ export function supplyRequestsServerV506(source,server){
  .replace("items:['supply'","items:['supplyRequests','supply'")
  .replace('function accessGuardV284_(name,args){',"function accessGuardV284_(name,args){if(['getSupplyRequestsV506','resolveSupplyRequestsV506','setSupplySurveyV506','getSupplyInboxV542','processSupplyInboxV542','getSupplyFormV546','createSupplyFormV546','importSupplyFormV546','getSupplyInboxReviewV546','resolveSupplyInboxV546','approveSupplyInboxV554'].includes(name)){referenceAdminV409_();return accessPolicyV284_();}");
  source=source.replace(/ if\(section!=='uniform'\)try\{for\(const item of supplyRegistryItems_\(ss\)\)\{[^\n]+/,
- " if(section!=='uniform')try{const history=supplyRequestRowsV506_(ss,person.id);for(const item of supplyRegistryItems_(ss))try{result.supplies.push(personalSupplyDTOv506_(ss,person,item,history));}catch(error){warnings.push(item.name+' 조회 실패: '+error.message);}}catch(_){warnings.push('군수품 조회 실패');}");
+ " if(section!=='uniform')try{const history=supplyRequestRowsV506_(ss,person.id),items=supplyRegistryItems_(ss),prepared=personalSupplyReadModelV572_(ss,person,items);for(const item of items)try{const own=prepared?.get(item.id);if(own?.error)throw own.error;result.supplies.push(personalSupplyDTOv506_(ss,person,item,history,own));}catch(error){warnings.push(item.name+' 조회 실패: '+error.message);}}catch(_){warnings.push('군수품 조회 실패');}");
  return source+'\n'+server;
 }
 export function personalSupplyPortalV506(source,client){
