@@ -150,6 +150,10 @@ function pagesMigrateTriggers_() {
 function pagesRosterSyncScheduled_(){return pagesCreateLegacy_(pagesActorForTrigger_()).rosterSyncScheduled();}
 function pagesSurveyDeferred_(){return pagesCreateLegacy_(pagesActorForTrigger_()).deferredSurvey();}
 function pagesSupplyFormsPoll_(){return pagesCreateLegacy_(pagesActorForTrigger_()).supplyFormsPoll();}
+function pagesSupplySourceEdit_(event){
+ const actor=pagesActorForTrigger_();
+ for(let attempt=0;attempt<3;attempt++)try{return pagesCreateLegacy_(actor).supplySourceSync(event);}catch(e){if(e.storageCode!=='40001'||attempt===2)throw e;}
+}
 function pagesSurveyFormsClose_(){return pagesCreateLegacy_(pagesActorForTrigger_()).surveyFormsClose();}
 function pagesSupplyFormClose_(){return pagesCreateLegacy_(pagesActorForTrigger_()).supplyFormsClose();}
 // 이전 버전이 등록한 트리거도 새 실행 경로로 연결합니다.

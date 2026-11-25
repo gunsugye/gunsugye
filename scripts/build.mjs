@@ -288,6 +288,7 @@ legacy+='\n'+read('scripts/supply-survey-lifecycle-server.gs.txt');
 legacy+='\n'+read('scripts/supply-form-korean-server.gs.txt');
 legacy=legacy.replace('function setSurveyPeriodV416(kind,input){','function surveyPeriodSetBaseV566_(kind,input){');
 legacy+='\n'+read('scripts/survey-forms-server.gs.txt');
+legacy+='\n'+read('scripts/supply-source-sync.gs.txt');
 legacy=legacy.replace("if(['getSurveyPeriodsV416','setSurveyPeriodV416'].includes(name))","if(['getSurveyPeriodsV416','setSurveyPeriodV416','getSurveyFormV566','createSurveyFormV566'].includes(name))");
 legacy=trainingAccessServerV473(legacy);
 legacy=conditionServerV497(legacy);
@@ -362,6 +363,7 @@ return pagesStorage_.wrap({
  survey: function(event) { return surveysOnSubmitV299(event); },
  deferredSurvey: function() { const inbox=supplyInboxProcessV542_();surveyDeferredProcessV537_();return inbox; },
  supplyFormsPoll: function(){return supplyFormsPollV551_();},
+ supplySourceSync: function(event,sheetId){return supplySourceSyncV570_(event,sheetId);},
  supplyFormsClose: function(){return supplyFormCloseDueV550_();}
  ,surveyFormsClose: function(){return surveyFormsCloseV566_();}
 });

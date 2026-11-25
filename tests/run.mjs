@@ -83,3 +83,4 @@ await import('./supply-form-korean.test.mjs');
 import './supply-blueprints.test.mjs';
 await import('./supabase-runtime.test.mjs');
 import './supply-overview.test.mjs';
+await import('./supply-source-sync.test.mjs');

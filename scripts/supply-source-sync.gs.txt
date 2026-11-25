@@ -1,0 +1,38 @@
+/** Direct sheet edits are authoritative for edited supply cells. */
+function supplySourceCellsV570_(headers,targetHeaders,row,first,last,initial){
+ const identity=new Set(['명단ID','기수','중대','이름','교번','수정시각','명단상태']);
+ return headers.flatMap((h,i)=>i+1>=first&&i+1<=last&&!identity.has(h)&&h&&targetHeaders.includes(h)&&(!initial||row[i]!=='')?[{column:targetHeaders.indexOf(h)+1,value:row[i]}]:[]);
+}
+function supplySourceSyncV570_(event,sheetId){
+ if(!pagesStorage_.transactional)throw Error('Supabase 연결 상태를 확인하세요.');
+ const ss=spreadsheet_(),native=pagesNativeFormBook_(ss),items=supplyRegistryItems_(ss);
+ if(event?.source&&event.source.getId()!==ss.getId())return;
+ const item=items.find(x=>x.sheetId===Number(event?.range?.getSheet().getSheetId()||sheetId));if(!item)return;
+ const src=native.getSheets().find(s=>s.getSheetId()===item.sheetId),target=supplyOne_(ss,item.id);
+ if(!src)throw Error('군수품 연결 시트가 없습니다: '+item.name);
+ if(src.getLastRow()>5001||src.getLastColumn()>50)throw Error('군수품 연결 시트 범위를 확인하세요.');
+ const headers=src.getRange(1,1,1,src.getLastColumn()).getDisplayValues()[0],th=target.headers;
+ const required=['명단ID','기수','중대','이름','교번'];
+ if(required.some(h=>headers.filter(x=>x===h).length!==1))throw Error('군수품 연결 시트 제목행을 확인하세요.');
+ const firstRow=event?Math.max(2,event.range.getRow()):2,lastRow=event?Math.min(src.getLastRow(),event.range.getLastRow()):src.getLastRow();
+ if(lastRow<firstRow)return {changed:0};
+ const source=src.getRange(firstRow,1,lastRow-firstRow+1,headers.length).getDisplayValues();
+ const rows=target.sh.getLastRow()>1?target.sh.getRange(2,1,target.sh.getLastRow()-1,th.length).getDisplayValues():[];
+ const dest=new Map(),duplicates=new Set(),ids=src.getRange(2,headers.indexOf('명단ID')+1,src.getLastRow()-1,1).getDisplayValues().flat(),seen=new Set();
+ rows.forEach((r,i)=>{if(dest.has(r[0]))duplicates.add(r[0]);dest.set(r[0],{r,row:i+2});});
+ ids.forEach(id=>{if(seen.has(id))duplicates.add(id);seen.add(id);});
+ let changed=0,matched=0,unmatched=0;
+ for(const s of source){
+  const id=s[headers.indexOf('명단ID')],d=dest.get(id);if(!id||!d||duplicates.has(id)){unmatched++;continue;}
+  const normalize=(h,v)=>{v=String(v||'').normalize('NFKC').replace(/\s/g,'');return h==='기수'?v.replace(/기+$/,''):h==='중대'?v.replace(/(?:중대)+$/,''):v;};
+  if(required.slice(1).some(h=>normalize(h,s[headers.indexOf(h)])!==normalize(h,d.r[th.indexOf(h)]))){unmatched++;continue;}
+  matched++;let dirty=false;
+  for(const cell of supplySourceCellsV570_(headers,th,s,event?event.range.getColumn():1,event?event.range.getLastColumn():headers.length,!event)){
+   if(cell.value===d.r[cell.column-1])continue;
+   target.sh.getRange(d.row,cell.column).setValue(safeCell_(cell.value));changed++;dirty=true;
+  }
+  if(dirty)target.sh.getRange(d.row,th.indexOf('수정시각')+1).setValue(iso_());
+ }
+ PropertiesService.getScriptProperties().setProperty('SUPPLY_SOURCE_RESULT_V570',JSON.stringify({item:item.name,at:iso_(),matched,changed,unmatched}));
+ return {item:item.name,matched,changed,unmatched};
+}
