@@ -13,3 +13,9 @@ test('initial import copies recorded values but does not manufacture blank delet
  assert.deepEqual(cells(1,9,true),[{column:6,value:'수리 필요'},{column:8,value:'0'}]);
 });
 test('identity and timestamps are not copied from sheet edits',()=>{assert.deepEqual(cells(1,5,false),[]);assert.deepEqual(cells(7,7,false),[]);});
+test('deterministic database conflicts cannot trigger serialization retries',()=>{
+ for(const file of ['scripts/supabase-store-schema.sql','scripts/supabase-runtime-schema.sql']){
+  const sql=readFileSync(file,'utf8');assert.ok(!sql.includes("errcode='40001'"));assert.ok(sql.includes("errcode='PT409'"));
+ }
+ assert.ok(readFileSync('scripts/supabase-store-edge.ts','utf8').includes("result.code==='PT409'?'40001':result.code"));
+});

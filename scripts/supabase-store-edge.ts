@@ -8,7 +8,7 @@ const json = (value: unknown, status = 200) => new Response(JSON.stringify(value
 async function rpc(name: string, args: unknown) {
  const response = await fetch(endpoint + '/rest/v1/rpc/' + name, {method:'POST',headers:{apikey:serviceKey,authorization:'Bearer '+serviceKey,'content-type':'application/json'},body:JSON.stringify(args)});
  const result = await response.json();
- if (!response.ok) { const error = new Error(result.code === '40001' ? '다른 변경이 먼저 저장되었습니다. 다시 불러온 뒤 저장하세요.' : '데이터베이스 처리를 완료하지 못했습니다.'); Object.assign(error,{dbCode:result.code}); throw error; }
+ if (!response.ok) { const code=result.code==='PT409'?'40001':result.code; const error = new Error(code === '40001' ? '다른 변경이 먼저 저장되었습니다. 다시 불러온 뒤 저장하세요.' : '데이터베이스 처리를 완료하지 못했습니다.'); Object.assign(error,{dbCode:code}); throw error; }
  return result;
 }
 Deno.serve(async request => {

@@ -40,7 +40,7 @@ begin
     coalesce((select max(position)+1 from public.logbook_sheets where dataset_id=p_dataset and book_id=x->>'book'),1),coalesce(x->'metadata','{}'));
   else
    select * into strict s from public.logbook_sheets where dataset_id=p_dataset and book_id=x->>'book' and id=(x->>'sheet')::bigint for update;
-   if s.revision<>(x->>'revision')::bigint then raise exception 'Record changed; reload before saving' using errcode='40001'; end if;
+   if s.revision<>(x->>'revision')::bigint then raise exception 'Record changed; reload before saving' using errcode='PT409'; end if;
    if x->>'op'='delete' then
     delete from public.logbook_sheets where dataset_id=p_dataset and book_id=s.book_id and id=s.id;
    elsif x->>'op'='rename' then
@@ -57,12 +57,12 @@ begin
  end loop;
  for x in select value from jsonb_array_elements(coalesce(p_payload->'settings','[]')) loop
   select settings->(x->>'key') into prior from public.logbook_datasets where id=p_dataset;
-  if coalesce(prior,'null'::jsonb) is distinct from x->'before' then raise exception 'Settings changed; reload before saving' using errcode='40001'; end if;
+  if coalesce(prior,'null'::jsonb) is distinct from x->'before' then raise exception 'Settings changed; reload before saving' using errcode='PT409'; end if;
   update public.logbook_datasets set settings=case when x->'after'='null'::jsonb then settings-(x->>'key') else jsonb_set(settings,array[x->>'key'],x->'after') end where id=p_dataset;
  end loop;
  for x in select value from jsonb_array_elements(coalesce(p_payload->'books','[]')) where value->'before'<>'null'::jsonb loop
   select metadata into strict prior from public.logbook_books where dataset_id=p_dataset and id=x->>'id';
-  if prior is distinct from x->'before' then raise exception 'Book metadata changed' using errcode='40001'; end if;
+  if prior is distinct from x->'before' then raise exception 'Book metadata changed' using errcode='PT409'; end if;
   update public.logbook_books set metadata=x->'after' where dataset_id=p_dataset and id=x->>'id';
  end loop;
  for x in select value from jsonb_array_elements(coalesce(p_payload->'attachments','[]')) loop

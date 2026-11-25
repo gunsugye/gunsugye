@@ -103,7 +103,7 @@ begin
  for change in select value from jsonb_array_elements(p_changes) order by value->>'book', (value->>'sheet')::bigint loop
   select * into strict cur from public.logbook_sheets where dataset_id=p_dataset and book_id=change->>'book' and id=(change->>'sheet')::bigint for update;
   if change->>'mode'='replace' then
-   if cur.revision<>(change->>'revision')::bigint then raise exception 'Record changed; reload before saving' using errcode='40001';end if;
+   if cur.revision<>(change->>'revision')::bigint then raise exception 'Record changed; reload before saving' using errcode='PT409';end if;
    if jsonb_typeof(change->'rows')<>'array' then raise exception 'Invalid rows';end if;
    delete from public.logbook_rows where dataset_id=p_dataset and book_id=cur.book_id and sheet_id=cur.id;
    insert into public.logbook_rows(dataset_id,book_id,sheet_id,row_number,payload)
@@ -114,7 +114,7 @@ begin
    for edit in select value from jsonb_array_elements(change->'edits') loop
     target:=(edit->>'number')::integer;
     select payload into prior from public.logbook_rows where dataset_id=p_dataset and book_id=cur.book_id and sheet_id=cur.id and row_number=target;
-    if prior is null or prior is distinct from edit->'before' then raise exception 'Record changed; reload before saving' using errcode='40001';end if;
+    if prior is null or prior is distinct from edit->'before' then raise exception 'Record changed; reload before saving' using errcode='PT409';end if;
     if target<>(edit->'after'->>'number')::integer then raise exception 'Invalid row number';end if;
     update public.logbook_rows set payload=edit->'after' where dataset_id=p_dataset and book_id=cur.book_id and sheet_id=cur.id and row_number=target;
    end loop;
@@ -123,7 +123,7 @@ begin
     if cur.rows_count>0 and coalesce(item->'values'->>0,'')<>''
        and exists(select 1 from public.logbook_rows h where h.dataset_id=p_dataset and h.book_id=cur.book_id and h.sheet_id=cur.id and h.row_number=1 and (h.payload->'values'->>0) ~ '(ID|아이디)$')
        and exists(select 1 from public.logbook_rows r where r.dataset_id=p_dataset and r.book_id=cur.book_id and r.sheet_id=cur.id and r.row_number>1 and pg_catalog.jsonb_hash(r.payload->'values'->0)=pg_catalog.jsonb_hash(item->'values'->0) and r.payload->'values'->0=item->'values'->0)
-    then raise exception 'Record changed; reload before saving' using errcode='40001';end if;
+    then raise exception 'Record changed; reload before saving' using errcode='PT409';end if;
     cur.rows_count:=cur.rows_count+1;
     insert into public.logbook_rows values(p_dataset,cur.book_id,cur.id,cur.rows_count,jsonb_set(item,'{number}',to_jsonb(cur.rows_count)));
    end loop;
