@@ -4,7 +4,7 @@ function personalSupplyDirectBatchV532_(ss,person,policy,prepared){
    const key=policy.id+'|'+person.id+'|'+change.itemId,changed=!supplyRequestSameV506_(own.value,value),original=own.value;
    let updatedAt=own.old?.updatedAt||'';
    if(changed){const written=supplyRequestWriteV506_(ss,person,change.itemId,value,own);undo.push(written.undo);updatedAt=written.updatedAt;}
-   const data={itemId:change.itemId,itemName:own.r.item.name,requester:{cohort:person.cohort,company:person.company,name:person.name},before:original,value,campaignLabel:policy.label,changed};
+   const data={itemId:change.itemId,itemName:own.r.item.name,requester:{cohort:person.cohort,company:person.company,name:person.name,cadetNumber:person.cadetNumber||''},before:original,value,campaignLabel:policy.label,changed};
    responses.push([key,policy.id,person.id,now,data.changed?'변경':'확인',JSON.stringify(data)]);
    results.push({direct:true,confirmed:true});
   }

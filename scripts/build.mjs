@@ -279,6 +279,7 @@ legacy=armoryServerV493(legacy,read('scripts/armory-server.gs.txt'));
 legacy=supplyQuantityOrderServerV500(legacy,read('scripts/supply-quantity-order-server.gs.txt'));
 legacy=supplyRequestsServerV506(legacy,read('scripts/supply-requests-server.gs.txt')+'\n'+read('scripts/supply-batch-server.gs.txt')+'\n'+read('scripts/supply-direct-batch-server.gs.txt'));
 legacy+='\n'+read('scripts/supply-review-server.gs.txt');
+legacy+='\n'+read('scripts/supply-survey-people.gs.txt');
 legacy+='\n'+read('scripts/survey-deferred-server.gs.txt');
 legacy+='\n'+read('scripts/supply-inbox-server.gs.txt');
 legacy+='\n'+read('scripts/supply-forms-server.gs.txt');

@@ -1,0 +1,18 @@
+function supplySurveyIdentityV567_(person,fallback){
+ const clean=value=>String(value??'').normalize('NFKC').replace(/\s/g,''),parts=[clean(person?.cohort).replace(/(?:기)+$/,''),clean(person?.company).replace(/(?:중대)+$/,''),clean(person?.name),clean(person?.cadetNumber)];
+ return parts.every(Boolean)?JSON.stringify(parts):'명단:'+fallback;
+}
+function supplySurveyPeopleV567_(responses,people,items){
+ const byId=new Map(people.map(p=>[p.id,p])),groups=new Map(),active=new Map();
+ for(const p of people){const key=supplySurveyIdentityV567_(p,p.id);if(!active.has(key))active.set(key,p);}
+ for(const r of responses){const current=byId.get(r.personId),identity={...r.requester,cadetNumber:r.requester?.cadetNumber||current?.cadetNumber||''},key=supplySurveyIdentityV567_(identity,r.personId||r.id);
+  if(!groups.has(key))groups.set(key,{key,requester:identity,records:[],items:[]});groups.get(key).records.push(r);
+ }
+ for(const group of groups.values()){
+  group.records.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||String(b.id).localeCompare(String(a.id)));
+  const latest=new Map();for(const r of group.records)if(!latest.has(r.itemId))latest.set(r.itemId,r);group.items=[...latest.values()];group.createdAt=group.records[0].createdAt;
+ }
+ const list=[...groups.values()].sort((a,b)=>String(a.requester.cohort).localeCompare(String(b.requester.cohort),'ko',{numeric:true})||String(a.requester.company).localeCompare(String(b.requester.company),'ko',{numeric:true})||String(a.requester.name).localeCompare(String(b.requester.name),'ko'));
+ const missing=[...active].map(([key,p])=>({...p,missingItems:items.filter(item=>!groups.get(key)?.items.some(r=>r.itemId===item.id)).map(item=>item.name)})).filter(p=>p.missingItems.length);
+ return {responsePeople:list,responded:list.length,activePeople:active.size,confirmedItems:list.reduce((n,g)=>n+g.items.filter(r=>items.some(i=>i.id===r.itemId)).length,0),totalItems:active.size*items.length,missing};
+}
