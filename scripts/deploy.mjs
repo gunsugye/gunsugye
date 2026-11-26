@@ -26,7 +26,7 @@ export function publicFiles(directory, prefix = '') {
     if (entry.isSymbolicLink()) throw new Error('업로드 대상에 심볼릭 링크가 있습니다.');
     if (entry.isDirectory()) return publicFiles(resolve(directory, entry.name), path);
     if (!entry.isFile()) throw new Error('일반 파일만 업로드할 수 있습니다.');
-    if (/(^|\/)(?:\.deploy|\.clasp[^/]*|\.clasprc[^/]*|node_modules|tools|Code\.gs\.txt|Index\.html\.txt|Legacy\.gs|\.env[^/]*|\.dev\.vars)(\/|$)/i.test(path)) throw new Error(`비공개 파일은 업로드하지 않습니다: ${path}`);
+    if (/(^|\/)(?:\.deploy|\.clasp[^/]*|\.clasprc[^/]*|node_modules|tools|Code\.gs\.txt|Index\.html\.txt|Legacy\.gs|google-native-(?:client|credentials)\.json|\.env[^/]*|\.dev\.vars)(\/|$)/i.test(path)||/(^|\/)api\/native\/business\.mjs$/i.test(path)) throw new Error(`비공개 파일은 업로드하지 않습니다: ${path}`);
     return [path];
   });
 }

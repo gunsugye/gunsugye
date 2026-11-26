@@ -1,5 +1,6 @@
 import {surveyServerV416,surveyClientV416} from './survey-periods.mjs';
-import {supplyOverview} from './supply-overview.mjs';
+import {supplyOverview,supplyOverviewPeople} from './supply-overview.mjs';
+import {supplyStatusDisplay} from './supply-status-display.mjs';
 import {surveyHistoryClientV528,surveyHistoryHtmlV528} from './survey-history.mjs';
 import {rosterGunAuditClientV417} from './roster-firearm-audit.mjs';
 import {personGroupsClientV424} from './person-groups.mjs';
@@ -148,6 +149,7 @@ js=supplyRequestsClientV506(js,read('scripts/supply-requests-client.js.txt'));
 js=quantityColorsClientV502(js);
 js=js.replace(/^init\(\);$/m,()=>read('scripts/condition-colors.js.txt')+'\ninit();');
 js=conditionTextV497(js);
+js=supplyStatusDisplay(js);
 js=saberGroupsClientV498(js);
 const supplySaveCallV530="const saved=await enqueue(()=>server('saveSupplyRow',itemId,copy));";
 if(!js.includes(supplySaveCallV530))throw Error('군수품 저장 호출 위치를 찾지 못했습니다.');
@@ -165,7 +167,7 @@ js=js.replace('function supplyRender(){queueMicrotask(supplyRenderAlertsV523);',
  .replace("if(x)supplySave(x.dataset.supplySave);","if(x)supplyReviewOpenV531([x.dataset.supplySave]);")
  .replace("data-supply-save=\"${escapeH(p.id)}\" ${supplyDrafts.has(p.id)?'':'hidden'}>저장</button>","data-supply-save=\"${escapeH(p.id)}\" ${supplyDrafts.has(p.id)?'':'hidden'}>검토</button>");
 js=js.replace('function supplyCatalogUI(){','function supplyCatalogUI(){queueMicrotask(supplyOverviewMountV558);');
-js=js.replace(/^init\(\);$/m,()=>read('scripts/supply-review-client.js.txt')+'\nconst supplyOverviewV558='+supplyOverview.toString()+';\n'+read('scripts/supply-overview-client.js.txt')+'\ninit();');
+js=js.replace(/^init\(\);$/m,()=>read('scripts/supply-review-client.js.txt')+'\nconst supplyOverviewV558='+supplyOverview.toString()+';\nconst supplyOverviewPeopleV558='+supplyOverviewPeople.toString()+';\n'+read('scripts/supply-overview-client.js.txt')+'\ninit();');
 const css = read('scripts/armory.css') + read('scripts/person-groups.css') + read('scripts/firearms.css') +  read('scripts/supply-schema.css') + unpack('v275CssGzip') + calendarCSS + departuresCSS + journalCSS + roomAssetCSS + dormPlanCSS + laborInterfaceCSS + laborBuildingCSS + laborCardsCSSV374 + laborCardsNoWrapCSSV375 + laborContainCSSV376 + laborCheckboxCSSV377 + laborRemoveGuideCSSV378 + assetPlanCSS + assetRequestsCSS + personalInterfaceCSS + personalInterfaceProfileCSSV401 + developmentRequestsCSS + trainingManagementCSSV473 + read('scripts/duty-person-editor.css') + read('scripts/ui-consistency.css') + read('scripts/condition-colors.css') + read('scripts/table-presentation.css');
 html=personalInterfaceHtml(html).replace('예시 화면 · ⠿ 이동을 끌어 순서 변경 · 저장 후 반영','예시 화면 · 이동으로 순서 변경 · 접기로 기본 펼침 설정 · 저장 후 반영');
 html=dutyRequestsHtmlV400(html);

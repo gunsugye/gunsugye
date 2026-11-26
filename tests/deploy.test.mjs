@@ -11,7 +11,7 @@ test('자동 배포는 공개 파일만 허용하고 업무 원본·인증 파�
   writeFileSync(publicFile, '<html></html>');
   try {
     assert.deepEqual(publicFiles(directory), ['index.html']);
-    for (const name of ['Legacy.gs', 'Code.gs.txt', '.clasprc.json', '.env']) {
+    for (const name of ['Legacy.gs', 'Code.gs.txt', '.clasprc.json', '.env','google-native-client.json','google-native-credentials.json']) {
       const path = join(directory, name); writeFileSync(path, 'test');
       try { assert.throws(() => publicFiles(directory), /비공개/); } finally { unlinkSync(path); }
     }

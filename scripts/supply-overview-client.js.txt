@@ -2,10 +2,18 @@ const supplyOverviewDataV558=new Map();let supplyOverviewBusyV558=false;
 function supplyOverviewMountV558(){
  if(!supplyLoaded||$('supplyOverviewV558'))return;
  const root=document.createElement('details');root.id='supplyOverviewV558';root.className='panel supply-overview';
- root.innerHTML='<summary>군수품 전체 현황</summary><div class="supply-actions"><button type="button" class="btn" data-refresh>다시 불러오기</button><label><input type="checkbox" data-only> 이상·미작성만</label></div><p data-message role="status">조회 가능한 전체 인원 · 저장된 기록 기준</p><div class="supply-overview-scroll"><table><thead><tr><th>품목</th><th>인원</th><th>보유 수량</th><th>수리 필요</th><th>사용불가</th><th>수량 부족</th><th>부속품 없음</th><th>미작성</th></tr></thead><tbody></tbody></table></div><p class="panel-sub">수량 부족은 설정된 최댓값 기준 · 이상 항목은 중복 집계 · 품목을 누르면 명단 확인</p>';
+ root.innerHTML='<summary>군수품 전체 현황</summary><div class="supply-actions"><button type="button" class="btn" data-refresh>다시 불러오기</button><label><input type="checkbox" data-only> 이상·미작성만</label></div><p data-message role="status">조회 가능한 전체 인원 · 저장된 기록 기준</p><div class="supply-overview-scroll"><table><thead><tr><th>품목</th><th>인원</th><th>보유 수량</th><th>수리 필요</th><th>사용불가</th><th>수량 부족</th><th>부속품 없음</th><th>미작성</th></tr></thead><tbody></tbody></table></div><p class="panel-sub">수량 부족은 설정된 최댓값 기준 · 이상 항목은 중복 집계 · 품목을 누르면 명단 확인</p><div data-people><p>명단을 불러오는 중입니다.</p></div>';
  $('supplyControls').after(root);root.addEventListener('toggle',()=>{if(root.open&&!supplyOverviewDataV558.size)supplyOverviewLoadV558();});
  root.querySelector('[data-refresh]').onclick=()=>supplyOverviewLoadV558();root.querySelector('[data-only]').onchange=supplyOverviewRenderV558;
  root.querySelector('tbody').onclick=e=>{const b=e.target.closest('[data-overview-item]');if(b)supplyOverviewDialogV558(b.dataset.overviewItem);};
+}
+function supplyOverviewRenderPeopleV558(){
+ const root=$('supplyOverviewV558'),target=root?.querySelector('[data-people]');if(!target)return;
+ const entries=supplyCatalog.map(item=>({item,summary:supplyOverviewDataV558.get(item.id)?.summary})).filter(x=>x.summary),groups=supplyOverviewPeopleV558(entries),labels={repair:'수리 필요',unusable:'사용 불가',incomplete:'미작성'};
+ const open=new Set([...target.querySelectorAll('details[open][data-list-key]')].map(x=>x.dataset.listKey));
+ const companyLabel=person=>{const value=String(person.company||'').normalize('NFKC').replace(/\s|중대/g,'');return value?value+'중대':'미분류';};
+ const list=kind=>{const companies=new Map();for(const person of groups[kind]){const name=companyLabel(person);if(!companies.has(name))companies.set(name,[]);companies.get(name).push(person);}return [...companies].sort(([a],[b])=>a.localeCompare(b,'ko',{numeric:true})).map(([company,people])=>{const key=kind+'|'+company;people.sort((a,b)=>String(a.cohort||'').localeCompare(String(b.cohort||''),'ko',{numeric:true})||String(a.name||'').localeCompare(String(b.name||''),'ko'));return '<details class="table-detail-v561" data-list-key="'+escapeH(key)+'" '+(open.has(key)?'open':'')+'><summary>'+escapeH(company)+' · '+people.length+'명</summary><div class="supply-overview-scroll"><table><thead><tr><th>기수</th><th>이름</th><th>품목 · 항목</th></tr></thead><tbody>'+people.map(p=>'<tr><td>'+escapeH(p.cohort||'')+'</td><th>'+escapeH(p.name||'')+'</th><td>'+p.items.map(item=>escapeH(item.name)+(item.reasons.length?' · '+item.reasons.map(escapeH).join(', '):'')).join('<br>')+'</td></tr>').join('')+'</tbody></table></div></details>';}).join('')||'<p>해당 인원 없음</p>';};
+ target.innerHTML='<h3>상태별 전체 명단</h3><p class="panel-sub">인원은 각 상태에서 한 번만 집계하며 품목을 함께 표시합니다.</p>'+Object.keys(labels).map(kind=>'<details class="table-detail-v561" data-list-key="'+kind+'" '+(open.has(kind)?'open':'')+'><summary>'+labels[kind]+' · '+groups[kind].length+'명</summary>'+list(kind)+'</details>').join('');
 }
 function supplyOverviewRenderV558(){
  const root=$('supplyOverviewV558');if(!root)return;const only=root.querySelector('[data-only]').checked;
@@ -22,7 +30,7 @@ async function supplyOverviewLoadV558(){
  if(supplyOverviewBusyV558)return;supplyOverviewBusyV558=true;const root=$('supplyOverviewV558'),items=[...supplyCatalog];let index=0,done=0;
  supplyOverviewDataV558.clear();root.querySelector('[data-refresh]').disabled=true;supplyOverviewRenderV558();
  const worker=async()=>{while(index<items.length){const item=items[index++];try{const data=await server('getSupplyItemData',item.id);supplyOverviewDataV558.set(item.id,{summary:supplyOverviewV558(data)});}catch(error){supplyOverviewDataV558.set(item.id,{error:'조회 실패 · '+error.message});}done++;root.querySelector('[data-message]').textContent='불러오기 '+done+' / '+items.length;supplyOverviewRenderV558();}};
- try{await Promise.all([worker(),worker()]);const failed=[...supplyOverviewDataV558.values()].filter(x=>x.error).length;root.querySelector('[data-message]').textContent='저장된 기록 기준 · '+new Date().toLocaleTimeString('ko-KR')+(failed?' · '+failed+'개 조회 실패':'');}
+ try{await Promise.all([worker(),worker()]);const failed=[...supplyOverviewDataV558.values()].filter(x=>x.error).length;root.querySelector('[data-message]').textContent='저장된 기록 기준 · '+new Date().toLocaleTimeString('ko-KR')+(failed?' · '+failed+'개 조회 실패 · 명단 일부 누락 가능':'');supplyOverviewRenderPeopleV558();}
  finally{supplyOverviewBusyV558=false;root.querySelector('[data-refresh]').disabled=false;}
 }
 function supplyOverviewDialogV558(id){

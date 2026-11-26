@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import worker, { verifyGoogleToken, signPayload, handleRequest, readBody, sessionToken, verifySession } from '../api/worker.mjs';
+import worker, { verifyGoogleToken, signPayload, handleRequest, readBody, sessionToken, verifySession,callBackend } from '../api/worker.mjs';
 
 const now = Date.now();
 const clientId = 'test-client.apps.googleusercontent.com';
@@ -115,4 +115,30 @@ test('Apps Script HTML 응답과 연결 오류를 명확하게 보고한다', as
 });
 test('큰 요청은 Content-Length 사전 검사로 차단한다', async () => {
   await assert.rejects(readBody(new Request('https://api.example', { method: 'POST', body: '{}', headers: { 'Content-Length': String(13 * 1024 * 1024) } })), error => error.status === 413);
+});
+
+const nativeEnv={...env,APPS_SCRIPT_URL:undefined,BACKEND_MODE:'native',NATIVE_API_URL:'https://ylwzhooidqgvecocnzai.supabase.co/functions/v1/logbook-native',NATIVE_API_SECRET:'a'.repeat(64)};
+test('native admin routes keep session signatures and forward only the verified actor without Apps Script',async()=>{
+ const actor={email:'owner@gmail.com',sub:'owner',sessionId:crypto.randomUUID(),expiresAt:Date.now()+60000};
+ const credential=await sessionToken(actor,env.API_SHARED_SECRET);let calls=0;
+ const result=await handleRequest(request({method:'getBootstrap',args:[],email:'forged@gmail.com'},credential),nativeEnv,async(url,options)=>{
+  calls++;assert.equal(url,nativeEnv.NATIVE_API_URL);assert.equal(options.headers.Authorization,'Bearer '+nativeEnv.NATIVE_API_SECRET);
+  const body=JSON.parse(options.body);assert.equal(body.email,actor.email);assert.equal(body.sessionId,actor.sessionId);assert.equal(body.payload,undefined);assert.equal(options.redirect,'error');
+  return Response.json({ok:true,result:{ready:true}});
+ });
+ assert.equal(result.status,200);assert.equal(calls,1);
+});
+test('native personal requests use the same direct backend without an Apps Script URL',async()=>{
+ const actor={email:'personal@portal.invalid',sub:'personal:person-1',sessionId:crypto.randomUUID(),expiresAt:Date.now()+60000};
+ const credential=await sessionToken(actor,env.API_SHARED_SECRET);
+ const req=new Request('https://api.example/personal/supplies',{method:'POST',headers:{Origin:env.ALLOWED_ORIGINS,Authorization:'Bearer '+credential},body:'{}'});
+ const response=await handleRequest(req,nativeEnv,async(url,options)=>{assert.equal(url,nativeEnv.NATIVE_API_URL);const body=JSON.parse(options.body);assert.equal(body.method,'pagesPersonalSupplies');assert.equal(body.sub,actor.sub);return Response.json({ok:true,result:[]});});
+ assert.equal(response.status,200);
+});
+test('native outage or invalid configuration never retries a save against the legacy backend',async()=>{
+ let calls=0;const mixed={...nativeEnv,APPS_SCRIPT_URL:env.APPS_SCRIPT_URL};
+ await assert.rejects(callBackend('{}',mixed,async()=>{calls++;throw Error('timeout');}),e=>e.status===504);
+ assert.equal(calls,1);
+ await assert.rejects(callBackend('{}',{...mixed,NATIVE_API_SECRET:''},()=>assert.fail('must not send')),e=>e.status===503);
+ await assert.rejects(callBackend('{}',{...mixed,BACKEND_MODE:'typo'},()=>assert.fail('must not send')),e=>e.status===503);
 });

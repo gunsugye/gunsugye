@@ -92,6 +92,36 @@ export async function readBody(request) {
   catch { throw new ApiError(400, '요청 JSON이 올바르지 않습니다.'); }
 }
 
+export function backendConfig(env) {
+  if (env.BACKEND_MODE === 'native') {
+    if (!/^https:\/\/[a-z0-9]{20}\.supabase\.co\/functions\/v1\/logbook-native$/.test(env.NATIVE_API_URL || '')
+        || !/^[a-f0-9]{64}$/.test(env.NATIVE_API_SECRET || '')) throw new ApiError(503, '독립 서버 연결 설정을 확인하세요.');
+    return { url: env.NATIVE_API_URL, native: true };
+  }
+  if (env.BACKEND_MODE && env.BACKEND_MODE !== 'legacy') throw new ApiError(503, '서버 연결 방식을 확인하세요.');
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(env.APPS_SCRIPT_URL || '')) throw new ApiError(503, 'API 서버 설정을 완료하세요.');
+  return { url: env.APPS_SCRIPT_URL, native: false };
+}
+
+// One authenticated transport for every route. Native mode never falls back to Apps Script.
+export async function callBackend(payload, env, fetcher = fetch) {
+  const backend = backendConfig(env);
+  const headers = { 'Content-Type': 'application/json' };
+  let body = payload;
+  if (backend.native) headers.Authorization = 'Bearer ' + env.NATIVE_API_SECRET;
+  else body = JSON.stringify({ payload, signature: await signPayload(payload, env.API_SHARED_SECRET) });
+  let response;
+  try {
+    response = await fetcher(backend.url, { method: 'POST', headers, body, redirect: backend.native ? 'error' : 'follow', signal: AbortSignal.timeout(backend.native ? 30000 : 85000) });
+  } catch { throw new ApiError(504, '서버 응답을 확인하지 못했습니다. 저장 요청은 자동 재시도하지 않습니다. 새로고침 후 결과를 확인하세요.'); }
+  if (!response.ok) throw new ApiError(502, '데이터 서버 연결에 실패했습니다.');
+  let result;
+  try { result = await response.json(); }
+  catch { throw new ApiError(502, backend.native ? '독립 서버 응답을 확인하세요.' : 'Apps Script 배포 주소와 접근 권한을 확인하세요.'); }
+  if (!result || typeof result.ok !== 'boolean') throw new ApiError(502, '데이터 서버 응답이 올바르지 않습니다.');
+  return result;
+}
+
 export async function handleRequest(request, env, fetcher = fetch) {
   const origin = request.headers.get('origin');
   const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
@@ -107,8 +137,8 @@ export async function handleRequest(request, env, fetcher = fetch) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'POST 요청만 가능합니다.' });
   try {
-    if (!env.GOOGLE_CLIENT_ID || !env.API_SHARED_SECRET || env.API_SHARED_SECRET.length < 32
-        || !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(env.APPS_SCRIPT_URL || '')) throw new ApiError(503, 'API 서버 설정을 완료하세요.');
+    if (!env.GOOGLE_CLIENT_ID || !env.API_SHARED_SECRET || env.API_SHARED_SECRET.length < 32) throw new ApiError(503, 'API 서버 설정을 완료하세요.');
+    backendConfig(env);
     if(path.startsWith('/personal/'))return await handlePersonalRequest(request,env,fetcher,reply,path);
     const token = /^Bearer (\S+)$/.exec(request.headers.get('authorization') || '')?.[1];
     const actor = path === '/instructor/temporary' ? {email:'temporary@instructor.invalid',sub:'instructor-temporary'} : path !== '/session' && token?.startsWith('session.')
@@ -125,19 +155,10 @@ export async function handleRequest(request, env, fetcher = fetch) {
     }
     if (path === '/rpc' && ['pagesSessionCreate', 'pagesSessionLogout'].includes(method)) throw new ApiError(400, '지원하지 않는 API 요청입니다.');
     const payload = JSON.stringify({ version: 1, timestamp: Date.now(), nonce: crypto.randomUUID(), ...actor, method, args: path === '/instructor/temporary' ? [body.method,...body.args] : path === '/rpc' ? body.args : [] });
-    const signature = await signPayload(payload, env.API_SHARED_SECRET);
-    let response;
-    try {
-      response = await fetcher(env.APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payload, signature }), redirect: 'follow', signal: AbortSignal.timeout(85000) });
-    } catch { throw new ApiError(504, '스프레드시트 서버 응답을 확인할 수 없습니다. 저장 요청은 자동 재시도하지 않습니다. 새로고침 후 결과를 확인하세요.'); }
-    if (!response.ok) throw new ApiError(502, '스프레드시트 서버 연결에 실패했습니다.');
-    let result;
-    try { result = await response.json(); }
-    catch { throw new ApiError(502, 'Apps Script 배포 주소와 접근 권한을 확인하세요.'); }
-    if (!result || typeof result.ok !== 'boolean') throw new ApiError(502, '스프레드시트 서버 응답이 올바르지 않습니다.');
+    const result = await callBackend(payload, env, fetcher);
     if (path === '/session' && result.ok) {
       const { sessionId, expiresAt, bootstrap } = result.result || {};
-      if (!sessionId || !Number.isFinite(expiresAt)) throw new ApiError(502, 'Apps Script를 새 버전으로 배포하세요.');
+      if (!sessionId || !Number.isFinite(expiresAt)) throw new ApiError(502, '로그인 서버 응답을 확인하세요.');
       result.result = { bootstrap, expiresAt, token: await sessionToken({ ...actor, sessionId, expiresAt }, env.API_SHARED_SECRET) };
     }
     return reply(result.ok ? 200 : result.code === 'SESSION_EXPIRED' ? 401 : result.code === 'FORBIDDEN' ? 403 : 400, result);
@@ -164,11 +185,8 @@ async function handlePersonalRequest(request,env,fetcher,reply,path){
   if(path==='/personal/firearm-request')args=[{snapshot:body.snapshot,status:body.status,detail:body.detail,campaignId:body.campaignId,...(body.deferResponse===true?{deferResponse:true}:{})}];
   if(path==='/personal/supply-request')args=[{itemId:body.itemId,snapshot:body.snapshot,value:body.value,changes:body.changes,campaignId:body.campaignId}];
  }
- const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args}),signature=await signPayload(payload,env.API_SHARED_SECRET);
- let response;try{response=await fetcher(env.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,signature}),redirect:'follow',signal:AbortSignal.timeout(85000)});}catch(_){throw new ApiError(504,'조회 서버 연결을 확인하세요.');}
- if(!response.ok)throw new ApiError(502,'조회 서버 연결을 확인하세요.');
- let result;try{result=await response.json();}catch(_){throw new ApiError(502,'조회 서버 응답을 확인하세요.');}
- if(!result||typeof result.ok!=='boolean')throw new ApiError(502,'조회 서버 응답을 확인하세요.');
+ const payload=JSON.stringify({version:1,timestamp:Date.now(),nonce:crypto.randomUUID(),...actor,method,args});
+ const result=await callBackend(payload,env,fetcher);
  if(login&&result.ok){const {sessionId,expiresAt,sub,preview}=result.result||{};if(!/^[0-9a-f-]{36}$/.test(sessionId||'')||!Number.isFinite(expiresAt)||expiresAt>Date.now()+30*86400000||expiresAt<=Date.now()||!String(sub).startsWith('personal:'))throw new ApiError(502,'인증 서버를 확인하세요.');result.result={expiresAt,preview,token:await sessionToken({email:'personal@portal.invalid',sub,sessionId,expiresAt},env.API_SHARED_SECRET)};}
  return reply(result.ok?200:result.code==='SESSION_EXPIRED'?401:result.code==='RATE_LIMITED'?429:400,result);
 }

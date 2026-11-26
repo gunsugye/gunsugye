@@ -21,3 +21,20 @@ export function supplyOverview(item){
  }
  return out;
 }
+
+// Group only already-authorized item results, and deduplicate people across items.
+export function supplyOverviewPeople(entries){
+ const groups={repair:new Map(),unusable:new Map(),incomplete:new Map()};
+ for(const {item,summary} of entries){
+  for(const person of summary?.issues||[]){
+   const id=String(person.id||'');if(!id)continue;
+   for(const kind of Object.keys(groups)){
+    if(!person.flags?.includes(kind))continue;
+    const existing=groups[kind].get(id)||{id,name:person.name,cohort:person.cohort,company:person.company,items:[]};
+    const reasons=(person.reasons||[]).filter(reason=>kind==='repair'?/수리\s*필요/.test(reason):kind==='unusable'?/사용\s*불가/.test(reason):/미작성/.test(reason));
+    existing.items.push({name:item.name,reasons});groups[kind].set(id,existing);
+   }
+  }
+ }
+ return Object.fromEntries(Object.entries(groups).map(([k,v])=>[k,[...v.values()]]));
+}
