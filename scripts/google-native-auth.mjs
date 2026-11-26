@@ -4,7 +4,6 @@ import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {OAuth2Client,CodeChallengeMethod} from 'google-auth-library';
 
 export const redirectUri='http://127.0.0.1:53684/oauth/callback';
 export const scopes=['openid','email',
@@ -31,6 +30,7 @@ export function validateGrant(profile,granted,tokens){
 }
 
 export async function authorize(){
+ const {OAuth2Client,CodeChallengeMethod}=await import('google-auth-library');
  const client=validateClient(JSON.parse(readFileSync('.deploy/google-native-client.json','utf8').replace(/^\uFEFF/,'')));
  const auth=new OAuth2Client(client.client_id,client.client_secret,redirectUri);
  const {codeVerifier,codeChallenge}=await auth.generateCodeVerifierAsync(),state=randomBytes(32).toString('base64url');
@@ -65,6 +65,7 @@ export async function authorize(){
  });
 }
 async function checkNetwork(){
+ const {OAuth2Client}=await import('google-auth-library');
  const auth=new OAuth2Client();
  try{await auth.transporter.request({url:'https://oauth2.googleapis.com/token',method:'POST',data:{grant_type:'authorization_code'},timeout:10000,retry:false});}
  catch(error){if(error.response?.status===400){console.log('Google 인증 서버 연결 확인 완료');return;}throw Error('Google 인증 서버 연결 실패: '+(error.code||error.cause?.code||'NETWORK_ERROR'));}
