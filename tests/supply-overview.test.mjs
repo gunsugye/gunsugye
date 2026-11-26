@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {supplyOverview,supplyOverviewPeople} from '../scripts/supply-overview.mjs';
+import {supplyOverview,supplyOverviewPeople,supplyItemSpecialPeople} from '../scripts/supply-overview.mjs';
 test('overview counts people once per issue type, preserves zero and separates missing from shortage',()=>{
  const schema={fields:['클립','보호피','턱끈 상태','세부사항'],numeric:{클립:2},options:{보호피:['유','무']},quantityRange:{max:1}};
  const s=supplyOverview({schema,rows:[{name:'A',status:'정상',extra:{수량:0,클립:0,보호피:'무','턱끈 상태':'수리 필요'}},{name:'B',status:'사용불가',extra:{수량:1,클립:2,보호피:'유','턱끈 상태':'사용불가'}},{name:'C',status:'',extra:{}}]});
@@ -9,3 +9,4 @@ test('overview counts people once per issue type, preserves zero and separates m
 test('complete normal rows need no details and disabled status is not required',()=>{const s=supplyOverview({schema:{includeStatus:false,fields:[],quantityRange:{max:1}},rows:[{extra:{수량:1},detail:''}]});assert.equal(s.issues.length,0);assert.equal(s.incomplete,0);assert.equal(s.quantity,1);});
 test('overview never invents people outside the supplied permission-scoped roster',()=>{const s=supplyOverview({quantityRange:{max:2},rows:[{company:'2',name:'A',status:'정상',extra:{수량:1}}]});assert.equal(s.people,1);assert.equal(s.issues[0].company,'2');assert.equal(s.shortage,1);});
 test('whole roster groups a person once per status and retains each affected item',()=>{const p={id:'p1',name:'가나',cohort:'77',company:'2',flags:['repair','incomplete'],reasons:['상태 · 수리 필요','수량 미작성']};const groups=supplyOverviewPeople([{item:{name:'모포'},summary:{issues:[p]}},{item:{name:'수통'},summary:{issues:[p,{id:'p2',name:'다라',company:'2',flags:['unusable'],reasons:['상태 · 사용불가']}]}}]);assert.equal(groups.repair.length,1);assert.equal(groups.repair[0].items.length,2);assert.equal(groups.incomplete.length,1);assert.deepEqual(groups.unusable.map(x=>x.id),['p2']);assert.deepEqual(groups.repair[0].items[0].reasons,['상태 · 수리 필요']);});
+test('item-specific special list includes repair, unusable and shortage but excludes incomplete-only records',()=>{const summary={issues:[{id:'a',flags:['repair','incomplete'],reasons:['상태 · 수리 필요','수량 미작성']},{id:'b',flags:['unusable'],reasons:['상태 · 사용불가']},{id:'c',flags:['shortage'],reasons:['수량 1개 부족']},{id:'d',flags:['incomplete'],reasons:['상태 미작성']}]};const result=supplyItemSpecialPeople(summary);assert.deepEqual(result.map(x=>x.id),['a','b','c']);assert.deepEqual(result[0].reasons,['상태 · 수리 필요']);assert.equal(summary.issues[0].reasons.length,2);});

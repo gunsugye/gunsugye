@@ -38,3 +38,9 @@ export function supplyOverviewPeople(entries){
  }
  return Object.fromEntries(Object.entries(groups).map(([k,v])=>[k,[...v.values()]]));
 }
+
+export function supplyItemSpecialPeople(summary){
+ return (summary?.issues||[]).filter(person=>(person.flags||[]).some(flag=>['repair','unusable','shortage'].includes(flag))).map(person=>({
+  ...person,reasons:(person.reasons||[]).filter(reason=>/수리\s*필요|사용\s*불가|부족/.test(reason))
+ }));
+}
