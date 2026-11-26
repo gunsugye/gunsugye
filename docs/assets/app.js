@@ -4635,6 +4635,7 @@ const supplyItemSpecialPeopleV558=function supplyItemSpecialPeople(summary){
 };
 const supplyOverviewDataV558=new Map();let supplyOverviewBusyV558=false;
 function supplyOverviewMountV558(){
+ const selectedButton=$('supplySpecialListV575');if(selectedButton)selectedButton.onclick=supplySelectedSpecialListV575;
  if(!supplyLoaded||$('supplyOverviewV558'))return;
  const root=document.createElement('details');root.id='supplyOverviewV558';root.className='panel supply-overview';
  root.innerHTML='<summary>군수품 전체 현황</summary><div class="supply-actions"><button type="button" class="btn" data-refresh>다시 불러오기</button><label><input type="checkbox" data-only> 이상·미작성만</label></div><p data-message role="status">조회 가능한 전체 인원 · 저장된 기록 기준</p><div class="supply-overview-scroll"><table><thead><tr><th>품목</th><th>인원</th><th>보유 수량</th><th>수리 필요</th><th>사용불가</th><th>수량 부족</th><th>부속품 없음</th><th>미작성</th></tr></thead><tbody></tbody></table></div><p class="panel-sub">수량 부족은 설정된 최댓값 기준 · 이상 항목은 중복 집계 · 품목을 누르면 명단 확인</p><div data-people><p>명단을 불러오는 중입니다.</p></div>';
@@ -4642,6 +4643,7 @@ function supplyOverviewMountV558(){
  root.querySelector('[data-refresh]').onclick=()=>supplyOverviewLoadV558();root.querySelector('[data-only]').onchange=supplyOverviewRenderV558;
  root.querySelector('tbody').onclick=e=>{const b=e.target.closest('[data-overview-item]');if(b)supplyOverviewDialogV558(b.dataset.overviewItem);};
 }
+function supplySelectedSpecialListV575(){if(!supplyItem)return;supplyOverviewDialogV558(supplySelected,supplyOverviewV558(supplyItem));}
 function supplyOverviewRenderPeopleV558(){
  const root=$('supplyOverviewV558'),target=root?.querySelector('[data-people]');if(!target)return;
  const entries=supplyCatalog.map(item=>({item,summary:supplyOverviewDataV558.get(item.id)?.summary})).filter(x=>x.summary),groups=supplyOverviewPeopleV558(entries),labels={repair:'수리 필요',unusable:'사용 불가',incomplete:'미작성'};
@@ -4668,8 +4670,8 @@ async function supplyOverviewLoadV558(){
  try{await Promise.all([worker(),worker()]);const failed=[...supplyOverviewDataV558.values()].filter(x=>x.error).length;root.querySelector('[data-message]').textContent='저장된 기록 기준 · '+new Date().toLocaleTimeString('ko-KR')+(failed?' · '+failed+'개 조회 실패 · 명단 일부 누락 가능':'');supplyOverviewRenderPeopleV558();}
  finally{supplyOverviewBusyV558=false;root.querySelector('[data-refresh]').disabled=false;}
 }
-function supplyOverviewDialogV558(id){
- const data=supplyOverviewDataV558.get(id)?.summary;if(!data)return;const item=supplyCatalog.find(x=>x.id===id),dialog=document.createElement('dialog');dialog.className='supply-overview-dialog';
+function supplyOverviewDialogV558(id,selectedSummary){
+ const data=selectedSummary||supplyOverviewDataV558.get(id)?.summary;if(!data)return;const item=supplyCatalog.find(x=>x.id===id),dialog=document.createElement('dialog');dialog.className='supply-overview-dialog';
  const people=supplyItemSpecialPeopleV558(data),groups=new Map();for(const p of people){const raw=String(p.company||'').normalize('NFKC').replace(/\s|중대/g,''),key=raw?raw+'중대':'미분류';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(p);}
  const cohorts=members=>{const years=new Map();for(const p of members){const raw=String(p.cohort||'').normalize('NFKC').replace(/\s|기/g,''),key=raw?raw+'기':'기수 미확인';if(!years.has(key))years.set(key,[]);years.get(key).push(p);}return [...years].sort(([a],[b])=>a.localeCompare(b,'ko',{numeric:true})).map(([year,rows])=>'<details class="table-detail-v561"><summary>'+escapeH(year)+' · '+rows.length+'명</summary><div class="supply-overview-scroll"><table><thead><tr><th>이름</th><th>특이사항</th><th>세부사항</th></tr></thead><tbody>'+rows.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ko')).map(p=>'<tr><th>'+escapeH(p.name||'')+'</th><td>'+p.reasons.map(r=>escapeH(r)).join('<br>')+'</td><td>'+escapeH(p.detail||'—')+'</td></tr>').join('')+'</tbody></table></div></details>').join('');};
  dialog.innerHTML='<h2>'+escapeH(item?.name||'군수품')+' · 특이사항 명단</h2><p>수리 필요 · 사용 불가 · 수량 부족 '+people.length+'명</p>'+[...groups].sort(([a],[b])=>a.localeCompare(b,'ko',{numeric:true})).map(([company,members])=>'<details class="table-detail-v561"><summary>'+escapeH(company)+' · '+members.length+'명</summary>'+cohorts(members)+'</details>').join('')+(!people.length?'<p>해당 인원이 없습니다.</p>':'')+'<div class="modal-actions"><button class="btn btn-primary" type="button">확인</button></div>';
