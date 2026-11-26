@@ -1,1 +1,1 @@
-export const releaseDetails={version:'5.75',title:'군수품 특이사항 명단 바로 열기',notes:['선택한 품목에서 특이사항 명단을 바로 열 수 있습니다.','수리 필요·사용 불가·수량 부족 인원을 중대와 기수별로 확인합니다.']};
+export const releaseDetails={version:'5.76',title:'군수품 품목별 명단',notes:['전체 현황에서 품목을 펼쳐 중대·기수별 명단을 확인합니다.','특이사항 인원만 보거나 전체 인원을 볼 수 있습니다.']};
