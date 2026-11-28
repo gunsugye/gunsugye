@@ -10,7 +10,7 @@ switch ($Action) {
   'test' { & $nodePath --test tests/rebuild.test.mjs tests/rebuild-domain.test.mjs tests/rebuild-release.test.mjs }
   'status' { & tools/git/cmd/git.exe status --short; & tools/github-cli/bin/gh.exe auth status }
   'login' { & tools/github-cli/bin/gh.exe auth login --hostname github.com --git-protocol https --web --scopes repo,workflow --skip-ssh-key }
-  'publish-site' { & $nodePath scripts/build-rebuild.mjs --production; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & $nodePath scripts/publish-rebuild.mjs --production }
+  'publish-site' { & $nodePath scripts/build-cloudflare.mjs; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & $nodePath scripts/publish-cloudflare.mjs }
   'check-deploy' { & $nodePath --test tests/rebuild-release.test.mjs }
 }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

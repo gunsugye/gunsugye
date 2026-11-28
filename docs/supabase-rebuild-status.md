@@ -1,5 +1,11 @@
 # Supabase 기반 재구축 현황
 
+## Cloudflare 운영 주소 확정
+
+관리자: https://gunsugye.pages.dev/ · 개인: https://gunsugye.pages.dev/me/
+
+Cloudflare Pages에 정적 파일만 직접 배포한다. `npm run build`와 `npm run deploy` 또는 `workspace.ps1 publish-site`는 GitHub 없이 Pages로 게시한다. GitHub는 기존 주소 안내와 소스 보관용으로 유지한다. 빌드 출력은 `.deploy/cloudflare-site`이며 부모 폴더나 원본 데이터는 업로드하지 않는다. Supabase 저장 구조와 역할 권한은 동일하다. 새 출처에 대한 Google JavaScript 원본 등록은 별도이며 실제 사용자 로그인은 등록 후 확인한다.
+
 ## 2026-11-28 네트워크 연결 경로 변경
 
 현재 네트워크에서 Supabase 직접 연결이 시간 초과되지만 모바일 데이터에서는 로그인됨을 확인했다. 무료 Workers 구성의 `https://logbook-supabase.gunsugye.workers.dev`를 추가했다. Google GIS 팝업에서 받은 ID 토큰을 Supabase에 교환하며 nonce를 검증한다. Google 클라이언트 ID는 서버의 실제 제공자 설정에서 읽는다. 사용자에게 승인된 JavaScript 원본 추가 완료를 확인받았다.

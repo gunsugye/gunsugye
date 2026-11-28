@@ -11,6 +11,7 @@ if(process.argv.includes('--production')){
  await copyFile('rebuild/vendor/supabase.mjs',`${target}/vendor/supabase.mjs`);
  const admin=(await readFile('rebuild/index.html','utf8')).replaceAll('href="./','href="./app2/').replaceAll('src="./','src="./app2/');
  const personal=(await readFile('rebuild/personal.html','utf8')).replaceAll('href="./','href="../app2/').replaceAll('src="./','src="../app2/');
- await writeFile('docs/index.html',admin);await writeFile('docs/me/index.html',personal);
+ const moved=path=>'<div style="padding:14px;background:#eaf2ff;text-align:center">앱 운영 주소가 변경되었습니다. <a href="https://gunsugye.pages.dev'+path+'">새 앱으로 이동</a></div>';
+ await writeFile('docs/index.html',admin.replace('<body>','<body>'+moved('/')));await writeFile('docs/me/index.html',personal.replace('<body>','<body>'+moved('/me/')));
  console.log('기존 주소용 빌드: docs/index.html, docs/me/index.html');
 }
