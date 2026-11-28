@@ -4,20 +4,21 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
-    "check": "node tests/run.mjs",
-    "release:finalize": "node scripts/finalize-release.mjs",
-    "build": "node scripts/build.mjs",
-    "test": "node tests/run.mjs",
+    "check": "node --test tests/rebuild.test.mjs tests/rebuild-domain.test.mjs tests/rebuild-release.test.mjs",
+    "release:finalize": "node scripts/build-rebuild.mjs --production",
+    "build": "node scripts/build-rebuild.mjs --production",
+    "test": "node --test tests/rebuild.test.mjs tests/rebuild-domain.test.mjs tests/rebuild-release.test.mjs",
     "package": "node scripts/package.mjs",
-    "deploy": "node scripts/deploy.mjs --publish",
-    "deploy:check": "node scripts/deploy.mjs --check",
-    "deploy:preview": "node scripts/deploy.mjs --dry-run"
+    "deploy": "node scripts/publish-rebuild.mjs --production",
+    "deploy:check": "node --test tests/rebuild.test.mjs tests/rebuild-domain.test.mjs tests/rebuild-release.test.mjs",
+    "deploy:preview": "node scripts/build-rebuild.mjs --production"
   },
   "engines": {
     "node": ">=22"
   },
   "devDependencies": {
     "@google/clasp": "^3.4.1",
+    "esbuild": "0.28.2",
     "google-auth-library": "10.5.0",
     "wrangler": "^4.153.0"
   },

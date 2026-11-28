@@ -1,0 +1,23 @@
+export function el(tag,text,className){const n=document.createElement(tag);if(text!==undefined&&text!==null)n.textContent=text;if(className)n.className=className;return n;}
+export function button(text,action,className='action'){const n=el('button',text,className);n.type='button';n.onclick=async()=>{try{await action();}catch(e){notify(e.message||String(e),true);}};return n;}
+export function notify(text,error=false){const n=document.querySelector('.notice');n.textContent=text;n.classList.toggle('error',error);}
+export function select(options,label,value=''){const s=el('select');s.setAttribute('aria-label',label);for(const entry of options){const [v,t]=Array.isArray(entry)?entry:[entry,entry];s.append(new Option(t,v));}s.value=value;return s;}
+export function table(headers,rows){const wrap=el('div',null,'table-wrap'),t=el('table'),head=el('thead'),hr=el('tr');for(const h of headers)hr.append(el('th',h));head.append(hr);t.append(head);const body=el('tbody');for(const row of rows){const tr=el('tr');for(const value of row){const td=el('td');if(value instanceof Node)td.append(value);else td.textContent=value??'—';tr.append(td);}body.append(tr);}t.append(body);wrap.append(t);return wrap;}
+export function dialog(title){const d=el('dialog'),form=el('form'),body=el('div',null,'dialog-body'),error=el('p',null,'error'),actions=el('div',null,'dialog-actions');form.append(el('h2',title),body,error,actions);d.append(form);document.body.append(d);let busy=false;
+ d.addEventListener('cancel',e=>{if(busy)e.preventDefault();});d.addEventListener('close',()=>d.remove());d.showModal();
+ return {d,form,body,actions,error,close:()=>{if(!busy)d.close();},async run(fn){if(busy)return;busy=true;actions.querySelectorAll('button').forEach(b=>b.disabled=true);error.textContent='처리 중입니다.';try{await fn();busy=false;d.close();}catch(e){error.textContent=(e.message||String(e))+' 입력값은 유지됩니다.';}finally{busy=false;actions.querySelectorAll('button').forEach(b=>b.disabled=false);}}};
+}
+export function inputField(f,value='',disabled=false){const label=el('label',f.label);let node;const read=()=>node.type==='checkbox'?node.checked:node.value;
+ if(f.type==='select'){node=select([['','선택'],...f.options],f.label,value);}
+ else if(f.type==='textarea'||(f.type==='text'&&f.key==='notes')){node=el('textarea');node.rows=3;label.className='wide';}
+ else if(f.type==='quantity'){
+  const group=el('div',null,'quantity-input'),s=select([['','선택'],...Array.from({length:Math.min(f.max??1,1000)+1},(_,i)=>[String(i),String(i)]),['custom','직접 입력']],f.label),n=el('input');n.type='number';n.min=0;n.max=100000;n.step=1;n.setAttribute('aria-label',f.label+' 직접 입력');n.value=value??'';s.value=value!==''&&value!==null&&value!==undefined?(Number(value)<=Math.min(f.max??1,1000)?String(value):'custom'):'';n.hidden=s.value!=='custom';s.onchange=()=>{n.hidden=s.value!=='custom';};s.disabled=n.disabled=disabled;group.append(s,n);label.append(group);return {label,read:()=>s.value==='custom'?(n.value===''?null:Number(n.value)):(s.value===''?null:Number(s.value))};
+ }else{node=el('input');node.type=f.type==='boolean'?'checkbox':(['number','date','datetime-local','email'].includes(f.type)?f.type:'text');if(f.type==='boolean')node.checked=Boolean(value);if(f.type==='number'){node.step=1;node.min=f.min??0;node.max=f.max??100000;}}
+ if(f.type!=='boolean')node.value=value??'';node.disabled=disabled;node.name=f.key;label.append(node);return {label,node,read:()=>f.type==='number'?(read()===''?null:Number(read())):read()};
+}
+export function formDialog(title,fields,values,{readonly=false,onSave,onDelete}={}){const box=dialog(title),grid=el('div',null,'form-grid'),controls={};for(const f of fields){const c=inputField(f,values[f.key],readonly);controls[f.key]=c;grid.append(c.label);}box.body.append(grid);let armed=false;
+ if(!readonly&&onDelete)box.actions.append(button('삭제',()=>{if(!armed){armed=true;box.error.textContent='삭제하려면 다시 누르세요.';return;}return box.run(onDelete);},'action danger'));
+ box.actions.append(button(readonly?'확인':'취소',box.close));if(!readonly){const save=button('저장',()=>{},'action primary');save.type='submit';box.actions.append(save);}
+ box.form.onsubmit=e=>{e.preventDefault();if(!readonly)return box.run(()=>onSave(Object.fromEntries(Object.entries(controls).map(([k,c])=>[k,c.read()]))));};return box;
+}
+export function csvDownload(name,headers,rows){const quote=v=>'"'+String(v??'').replaceAll('"','""').replace(/^[=+@-]/,"'$&")+'"';const b=new Blob(['\ufeff'+[headers,...rows].map(r=>r.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(b),a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
