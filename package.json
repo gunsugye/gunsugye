@@ -20,5 +20,8 @@
     "@google/clasp": "^3.4.1",
     "google-auth-library": "10.5.0",
     "wrangler": "^4.153.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.2"
   }
 }
