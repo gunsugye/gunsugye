@@ -1,3 +1,4 @@
+import {googleLogin} from './google-login.mjs';
 import {client,currentMember} from './client.mjs';
 import {el,button,select,table,formDialog,dialog,notify} from './ui.mjs';
 import {catalog,allRows,rows,rpc,setting,personLabel} from './data.mjs';
@@ -5,7 +6,7 @@ import {completeness,itemLabel} from './catalog.mjs';
 import {valueCell} from './inventory.mjs';
 import {sections} from './reviews.mjs';
 const root=document.querySelector('#cards'),header=document.querySelector('header');let member,person,cats,config,selectedPerson;const drafts=new Map(),records=new Map(),loaded=new Set();let batch=null;
-async function boot(){root.replaceChildren();try{member=await currentMember();if(!member){notify('Google 계정으로 로그인하세요.');header.append(button('Google 로그인',async()=>{const {error}=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo:new URL('./',location.href).href}});if(error)throw error;}));return;}
+async function boot(){root.replaceChildren();try{member=await currentMember();if(!member){notify('Google 계정으로 로그인하세요.');header.append(button('Google 로그인',googleLogin));return;}
  header.append(button('로그아웃',async()=>{const {error}=await client.auth.signOut();if(error)throw error;location.reload();}));
  if(!member.person_id)throw Error('이 계정에 연결된 인원이 없습니다. 관리자가 권한 관리에서 인원을 연결해야 합니다.');
  [person]=await rows('app2_people',{filters:{id:selectedPerson||member.person_id}});if(!person)throw Error('연결된 인원을 조회할 수 없습니다.');

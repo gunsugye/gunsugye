@@ -1,6 +1,6 @@
 import {createClient} from './vendor/supabase.mjs';
 import {config} from './config.mjs';
-export const client=createClient(config.url,config.key,{global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)})},auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'gunsugye-app2-auth'}});
+export const client=createClient(config.relay||config.url,config.key,{global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal?AbortSignal.any([options.signal,AbortSignal.timeout(25000)]):AbortSignal.timeout(25000)})},auth:{flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'gunsugye-app2-auth'}});
 export async function currentMember(){
  const {data:{session},error}=await client.auth.getSession();if(error)throw error;if(!session)return null;
  const {data,error:readError}=await client.from('app2_members').select('email,role,company,person_id').eq('email',session.user.email.toLowerCase()).eq('enabled',true).maybeSingle();

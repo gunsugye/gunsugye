@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: '22'
       - name: Check Supabase app and existing URLs
-        run: node --test tests/rebuild.test.mjs tests/rebuild-domain.test.mjs tests/rebuild-release.test.mjs
+        run: node --test tests/rebuild.test.mjs tests/rebuild-domain.test.mjs tests/rebuild-release.test.mjs tests/rebuild-relay.test.mjs
       # 업무 원본은 비공개 로컬 파일입니다. 생성된 docs만 배포합니다.
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

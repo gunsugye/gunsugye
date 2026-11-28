@@ -1,3 +1,4 @@
+import {googleLogin} from './google-login.mjs';
 import {menuFor,menus} from './model.mjs';
 import {modules,moduleFor} from './modules.mjs';
 import {RecordStore} from './store.mjs';
@@ -81,7 +82,7 @@ async function boot(){
  catch(e){member=null;message(errorText(e));}
  if(member){try{menuConfig=await setting('admin-menu',menus);}catch(e){message('메뉴 설정 조회 실패: '+errorText(e));}}
  account.replaceChildren();if(member)account.append(button('로그아웃',async()=>{const {error}=await client.auth.signOut();if(error){message(errorText(error));return;}member=null;content.replaceChildren();boot();}));
- else {account.append(button('Google 로그인',async()=>{const {error}=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo:new URL('./index.html',location.href).href,queryParams:{prompt:'select_account'}}});if(error)message(errorText(error));},'action primary'));account.append(button('인증 초기화',async()=>{await client.auth.signOut({scope:'local'});member=null;content.replaceChildren();boot();}));}
+ else {account.append(button('Google 로그인',googleLogin,'action primary'));account.append(button('인증 초기화',async()=>{await client.auth.signOut({scope:'local'});member=null;content.replaceChildren();boot();}));}
  document.querySelector('.connection').textContent=member?'Supabase 직접 연결':'로그인 필요';renderMenu();show(pageName);
  if(editable())account.append(button('메뉴 구성 편집',()=>editMenu(menuConfig||{id:'admin-menu',value:menus},menus,async()=>{menuConfig=await setting('admin-menu',menus);renderMenu();})));
 }

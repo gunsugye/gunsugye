@@ -6,6 +6,7 @@ function api(path,body,method){const args=['api',`repos/gunsugye/gunsugye${path}
 function files(path){return readdirSync(path,{withFileTypes:true}).flatMap(e=>{if(e.isSymbolicLink())throw Error('Symlink rejected');return e.isDirectory()?files(`${path}/${e.name}`):[`${path}/${e.name}`];});}
 const production=process.argv.includes('--production');
 const paths=[...files('docs/next'),...files('rebuild'),'scripts/build-rebuild.mjs','scripts/publish-rebuild.mjs','scripts/dev-server.mjs',...files('tests').filter(p=>p.split('/').at(-1).startsWith('rebuild')),'docs/supabase-rebuild-status.md','package.json','package-lock.json',...(production?[...files('docs/app2'),'docs/index.html','docs/me/index.html','.github/workflows/pages.yml','workspace.ps1']:[])];
+paths.push(...files('api/supabase-relay'),'scripts/check-rebuild-relay.mjs');
 const head=api('/git/ref/heads/main'),parent=api(`/git/commits/${head.object.sha}`);
 const tree=[];for(const path of paths){const content=readFileSync(path,'utf8');
  if(/sb_secret_[A-Za-z0-9_-]{20,}|-----BEGIN (?:RSA )?PRIVATE KEY-----/.test(content))throw Error(`Secret-like content: ${path}`);
